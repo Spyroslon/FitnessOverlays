@@ -1,5 +1,6 @@
 flask
 requests
+requests-oauthlib
 pillow
 stravalib
 python-dotenv
