@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- python -m http.server 8000 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -31,7 +32,7 @@
         }
         .metrics-box {
             position: absolute;
-            top: 10%;
+            top: 30%;
             left: 50%;
             transform: translate(-50%, 0);
             padding: 10px;
@@ -181,9 +182,14 @@
         <div class="section-container">
             <h2>Options</h2>
             <div class="options-container">
-                <label><input type="checkbox" id="toggle-distance" checked> Show Distance</label>
-                <label><input type="checkbox" id="toggle-time" checked> Show Time</label>
-                <label><input type="checkbox" id="toggle-heartrate" checked> Show Avg Heartrate</label>
+                <label><input type="checkbox" id="toggle-activity-type" checked> Activity Type</label>
+                <label><input type="checkbox" id="toggle-activity-name" checked> Activity Name</label>
+                <label><input type="checkbox" id="toggle-distance" checked> Distance</label>
+                <label><input type="checkbox" id="toggle-time" checked> Time</label>
+                <label><input type="checkbox" id="toggle-average-pace" checked> Average Pace</label>
+                <label><input type="checkbox" id="toggle-elevation-gain" checked> Elevation Gain</label>
+                <label><input type="checkbox" id="toggle-average-heartrate" checked disabled> Average Heartrate</label>
+                <label><input type="checkbox" id="toggle-max-heartrate" checked disabled> Max Heartrate</label>
             </div>
         </div>
         <div class="section-container">
@@ -213,6 +219,14 @@
     </div>
     <div class="image-container">
         <div class="metrics-box" id="metrics-box">
+            <div class="overlay-text activity-type">
+                <span class="metric-label">Activity Type</span>
+                <span class="metric-value" id="activity-type"></span>
+            </div>
+            <div class="overlay-text activity-name">
+                <span class="metric-label">Activity Name</span>
+                <span class="metric-value" id="activity-name"></span>
+            </div>
             <div class="overlay-text distance">
                 <span class="metric-label">Distance</span>
                 <span>
@@ -224,10 +238,32 @@
                 <span class="metric-label">Time</span>
                 <span class="metric-value" id="moving-time"></span>
             </div>
+            <div class="overlay-text average-pace">
+                <span class="metric-label">Average Pace</span>
+                <span class="metric-value" id="average-pace"></span>
+            </div>
+            <div class="overlay-text elevation-gain">
+                <span class="metric-label">Elevation Gain</span>
+                <span>
+                    <span class="metric-value" id="elevation-gain"></span>
+                    <span class="metric-unit">m</span>
+                </span>
+            </div>
+            <div class="overlay-text has-heartrate">
+                <span class="metric-label">Has Heartrate</span>
+                <span class="metric-value" id="has-heartrate"></span>
+            </div>
             <div class="overlay-text average-heartrate">
-                <span class="metric-label">Avg Heartrate</span>
+                <span class="metric-label">Average Heartrate</span>
                 <span>
                     <span class="metric-value" id="average-heartrate"></span>
+                    <span class="metric-unit">bpm</span>
+                </span>
+            </div>
+            <div class="overlay-text max-heartrate">
+                <span class="metric-label">Max Heartrate</span>
+                <span>
+                    <span class="metric-value" id="max-heartrate"></span>
                     <span class="metric-unit">bpm</span>
                 </span>
             </div>
@@ -237,9 +273,34 @@
         fetch('activities/response_13645563183.json')
             .then(response => response.json())
             .then(data => {
+                document.getElementById('activity-type').textContent = data.type || 'N/A';
+                document.getElementById('activity-name').textContent = data.name || 'N/A';
                 document.getElementById('distance').textContent = (data.distance / 1000).toFixed(2);
                 document.getElementById('moving-time').textContent = new Date(data.moving_time * 1000).toISOString().substr(11, 8);
-                document.getElementById('average-heartrate').textContent = data.average_heartrate || 'N/A';
+                document.getElementById('average-pace').textContent = (data.average_speed || 0).toFixed(2);
+                document.getElementById('elevation-gain').textContent = data.total_elevation_gain || 'N/A';
+
+                const hasHeartrate = data.has_heartrate === true; // Treat missing or false as false
+                const averageHeartrateOption = document.getElementById('toggle-average-heartrate');
+                const maxHeartrateOption = document.getElementById('toggle-max-heartrate');
+                const averageHeartrateMetric = document.querySelector('.overlay-text.average-heartrate');
+                const maxHeartrateMetric = document.querySelector('.overlay-text.max-heartrate');
+
+                if (hasHeartrate) {
+                    averageHeartrateOption.disabled = false;
+                    maxHeartrateOption.disabled = false;
+                    document.getElementById('average-heartrate').textContent = data.average_heartrate || 'N/A';
+                    document.getElementById('max-heartrate').textContent = data.max_heartrate || 'N/A';
+                } else {
+                    averageHeartrateOption.disabled = true;
+                    maxHeartrateOption.disabled = true;
+                    averageHeartrateOption.checked = false;
+                    maxHeartrateOption.checked = false;
+                    averageHeartrateMetric.style.display = 'none';
+                    maxHeartrateMetric.style.display = 'none';
+                    document.getElementById('average-heartrate').textContent = '';
+                    document.getElementById('max-heartrate').textContent = '';
+                }
             })
             .catch(error => console.error('Error loading activity data:', error));
 
@@ -307,21 +368,41 @@
         });
 
         // Fix enabling/disabling options for toggling visibility
+        document.getElementById('toggle-activity-type').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.activity-type').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-activity-name').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.activity-name').style.display = e.target.checked ? 'flex' : 'none';
+        });
         document.getElementById('toggle-distance').addEventListener('change', (e) => {
             document.querySelector('.overlay-text.distance').style.display = e.target.checked ? 'flex' : 'none';
         });
         document.getElementById('toggle-time').addEventListener('change', (e) => {
             document.querySelector('.overlay-text.moving-time').style.display = e.target.checked ? 'flex' : 'none';
         });
-        document.getElementById('toggle-heartrate').addEventListener('change', (e) => {
+        document.getElementById('toggle-average-pace').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.average-pace').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-elevation-gain').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.elevation-gain').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-average-heartrate').addEventListener('change', (e) => {
             document.querySelector('.overlay-text.average-heartrate').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-max-heartrate').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.max-heartrate').style.display = e.target.checked ? 'flex' : 'none';
         });
 
         // Initialize visibility based on default checkbox states
         document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('toggle-activity-type').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-activity-name').dispatchEvent(new Event('change'));
             document.getElementById('toggle-distance').dispatchEvent(new Event('change'));
             document.getElementById('toggle-time').dispatchEvent(new Event('change'));
-            document.getElementById('toggle-heartrate').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-average-pace').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-elevation-gain').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-average-heartrate').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-max-heartrate').dispatchEvent(new Event('change'));
         });
 
         // Initialize font sizes on page load
@@ -379,9 +460,14 @@
             const metricsBox = document.getElementById('metrics-box');
             const options = document.querySelectorAll('.options-container label');
             const metrics = {
+                'toggle-activity-type': document.querySelector('.overlay-text.activity-type'),
+                'toggle-activity-name': document.querySelector('.overlay-text.activity-name'),
                 'toggle-distance': document.querySelector('.overlay-text.distance'),
                 'toggle-time': document.querySelector('.overlay-text.moving-time'),
-                'toggle-heartrate': document.querySelector('.overlay-text.average-heartrate')
+                'toggle-average-pace': document.querySelector('.overlay-text.average-pace'),
+                'toggle-elevation-gain': document.querySelector('.overlay-text.elevation-gain'),
+                'toggle-average-heartrate': document.querySelector('.overlay-text.average-heartrate'),
+                'toggle-max-heartrate': document.querySelector('.overlay-text.max-heartrate')
             };
 
             // Clear and reorder metrics in the metrics-box
