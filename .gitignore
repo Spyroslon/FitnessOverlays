@@ -2,3 +2,5 @@
 venv
 .env
 .tokens*
+*jpg
+*png
