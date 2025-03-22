@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitOverlay</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+        }
+        body {
+            display: flex;
+            flex-direction: row; /* Ensure the layout flows left-to-right */
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .image-container {
+            flex: 2; /* Reduce the flex ratio to move it closer to the options panel */
+            margin-left: 20px; /* Add spacing between the options panel and the image container */
+            background: url('./overlays/resized_fitoverlay_background.png') no-repeat center center;
+            background-size: contain;
+            position: relative;
+            display: flex;
+            justify-content: flex-start; /* Align the background closer to the left */
+            align-items: center;
+            min-height: 80vh;
+            overflow: hidden;
+        }
+        .metrics-box {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            padding: 10px;
+            border: 1px solid transparent; /* Remove default outline */
+            border-radius: 5px;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
+        }
+        .metrics-box:hover {
+            border: 1px solid black; /* Show outline on hover */
+        }
+        .overlay-text {
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .options-panel {
+            order: 0; /* Ensure the options panel appears first */
+            width: 400px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            text-align: left;
+        }
+        .font-size-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .font-size-controls button {
+            padding: 5px 10px;
+            font-size: 1em;
+            border: none;
+            background: #007BFF;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .font-size-controls button:hover {
+            background: #0056b3;
+        }
+        .font-size-display {
+            min-width: 30px;
+            text-align: center;
+            font-size: 1.2em;
+        }
+        .alignment-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .alignment-controls button {
+            padding: 5px 10px;
+            font-size: 1em;
+            border: none;
+            background: #007BFF;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .alignment-controls button:hover {
+            background: #0056b3;
+        }
+        .metric-unit {
+            font-size: inherit; /* Inherit font size from the parent element */
+            font-weight: normal; /* Match the weight of the value */
+        }
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .image-container {
+                min-height: 60vh;
+            }
+            .options-panel {
+                width: 100%;
+                padding: 15px;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+        .options-panel label {
+            cursor: grab; /* Indicate draggable items */
+        }
+        .options-panel label.dragging {
+            opacity: 0.5; /* Visual feedback for dragging */
+        }
+        .options-container {
+            border: 1px solid #ddd; /* Add a clear boundary */
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            overflow: hidden; /* Prevent items from being dragged outside */
+        }
+        .options-container label {
+            display: flex; /* Use flexbox for alignment */
+            align-items: center; /* Vertically center the checkbox and text */
+            justify-content: flex-start; /* Left-align the content */
+            padding: 10px;
+            margin: 5px 0;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: grab;
+            text-align: left; /* Ensure text is left-aligned */
+            transition: background 0.3s ease;
+        }
+        .options-container label:hover {
+            background: #e0e0e0;
+        }
+        .options-container label.dragging {
+            opacity: 0.5;
+        }
+        .options-container input[type="checkbox"] {
+            width: 20px; /* Increase checkbox size */
+            height: 20px; /* Increase checkbox size */
+            margin-right: 10px; /* Add spacing between checkbox and label text */
+            cursor: pointer;
+        }
+        .section-container {
+            border: 1px solid #ddd; /* Add a clear border */
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            margin-bottom: 15px; /* Add spacing between sections */
+        }
+        .section-container h2, .section-container h3 {
+            margin-top: 0; /* Remove extra margin at the top of headings */
+        }
+    </style>
+</head>
+<body>
+    <div class="options-panel">
+        <div class="section-container">
+            <h2>Options</h2>
+            <div class="options-container">
+                <label><input type="checkbox" id="toggle-distance" checked> Show Distance</label>
+                <label><input type="checkbox" id="toggle-time" checked> Show Time</label>
+                <label><input type="checkbox" id="toggle-heartrate" checked> Show Avg Heartrate</label>
+            </div>
+        </div>
+        <div class="section-container">
+            <h3>Label Font Size</h3>
+            <div class="font-size-controls">
+                <button id="decrease-label-font">-</button>
+                <span class="font-size-display" id="label-font-size-display">14</span>
+                <button id="increase-label-font">+</button>
+            </div>
+        </div>
+        <div class="section-container">
+            <h3>Value Font Size</h3>
+            <div class="font-size-controls">
+                <button id="decrease-value-font">-</button>
+                <span class="font-size-display" id="value-font-size-display">24</span>
+                <button id="increase-value-font">+</button>
+            </div>
+        </div>
+        <div class="section-container">
+            <h3>Text Alignment</h3>
+            <div class="alignment-controls">
+                <button id="align-left">Left</button>
+                <button id="align-center">Center</button>
+                <button id="align-right">Right</button>
+            </div>
+        </div>
+    </div>
+    <div class="image-container">
+        <div class="metrics-box" id="metrics-box">
+            <div class="overlay-text distance">
+                <span class="metric-label">Distance</span>
+                <span>
+                    <span class="metric-value" id="distance"></span>
+                    <span class="metric-unit">km</span>
+                </span>
+            </div>
+            <div class="overlay-text moving-time">
+                <span class="metric-label">Time</span>
+                <span class="metric-value" id="moving-time"></span>
+            </div>
+            <div class="overlay-text average-heartrate">
+                <span class="metric-label">Avg Heartrate</span>
+                <span>
+                    <span class="metric-value" id="average-heartrate"></span>
+                    <span class="metric-unit">bpm</span>
+                </span>
+            </div>
+        </div>
+    </div>
+    <script>
+        fetch('activities/response_13645563183.json')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('distance').textContent = (data.distance / 1000).toFixed(2);
+                document.getElementById('moving-time').textContent = new Date(data.moving_time * 1000).toISOString().substr(11, 8);
+                document.getElementById('average-heartrate').textContent = data.average_heartrate || 'N/A';
+            })
+            .catch(error => console.error('Error loading activity data:', error));
+
+        let labelFontSize = 12; // Default label font size
+        let valueFontSize = 24; // Default value font size
+        let unitFontSize = valueFontSize - 2; // Unit font size is 2 values smaller than value font size
+
+        function updateFontSize() {
+            document.getElementById('label-font-size-display').textContent = labelFontSize;
+            document.getElementById('value-font-size-display').textContent = valueFontSize;
+            document.querySelectorAll('.metric-label').forEach(el => el.style.fontSize = labelFontSize + 'px');
+            document.querySelectorAll('.metric-value').forEach(el => el.style.fontSize = valueFontSize + 'px');
+            document.querySelectorAll('.metric-unit').forEach(el => el.style.fontSize = unitFontSize + 'px'); // Update unit font size
+        }
+        document.getElementById('increase-label-font').addEventListener('click', () => { labelFontSize = Math.min(50, labelFontSize + 2); updateFontSize(); });
+        document.getElementById('decrease-label-font').addEventListener('click', () => { labelFontSize = Math.max(10, labelFontSize - 2); updateFontSize(); });
+        document.getElementById('increase-value-font').addEventListener('click', () => { valueFontSize = Math.min(50, valueFontSize + 2); unitFontSize = valueFontSize - 2; updateFontSize(); });
+        document.getElementById('decrease-value-font').addEventListener('click', () => { valueFontSize = Math.max(10, valueFontSize - 2); unitFontSize = valueFontSize - 2; updateFontSize(); });
+
+        const metricsBox = document.getElementById('metrics-box');
+        let offsetX, offsetY, isDragging = false;
+        metricsBox.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - metricsBox.offsetLeft;
+            offsetY = e.clientY - metricsBox.offsetTop;
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            metricsBox.style.left = Math.min(window.innerWidth - metricsBox.clientWidth, Math.max(0, e.clientX - offsetX)) + 'px';
+            metricsBox.style.top = Math.min(window.innerHeight - metricsBox.clientHeight, Math.max(0, e.clientY - offsetY)) + 'px';
+        });
+        document.addEventListener('mouseup', () => { isDragging = false; });
+
+        // Text alignment functionality
+        document.getElementById('align-left').addEventListener('click', () => {
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'left');
+        });
+        document.getElementById('align-center').addEventListener('click', () => {
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'center');
+        });
+        document.getElementById('align-right').addEventListener('click', () => {
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'right');
+        });
+
+        // Text alignment functionality for the metrics-box
+        function alignMetricsBoxText(alignment) {
+            const metricsBox = document.getElementById('metrics-box');
+            metricsBox.style.alignItems = alignment; // Align child elements horizontally
+
+            // Update text alignment for each overlay-text element
+            document.querySelectorAll('.overlay-text').forEach(el => {
+                el.style.alignItems = alignment; // Align labels and values horizontally
+                el.style.textAlign = alignment === 'flex-start' ? 'left' : alignment === 'center' ? 'center' : 'right';
+            });
+        }
+
+        document.getElementById('align-left').addEventListener('click', () => {
+            alignMetricsBoxText('flex-start');
+        });
+        document.getElementById('align-center').addEventListener('click', () => {
+            alignMetricsBoxText('center');
+        });
+        document.getElementById('align-right').addEventListener('click', () => {
+            alignMetricsBoxText('flex-end');
+        });
+
+        // Fix enabling/disabling options for toggling visibility
+        document.getElementById('toggle-distance').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.distance').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-time').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.moving-time').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-heartrate').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.average-heartrate').style.display = e.target.checked ? 'flex' : 'none';
+        });
+
+        // Initialize visibility based on default checkbox states
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('toggle-distance').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-time').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-heartrate').dispatchEvent(new Event('change'));
+        });
+
+        // Initialize font sizes on page load
+        document.addEventListener('DOMContentLoaded', updateFontSize);
+
+        // Make labels draggable
+        document.querySelectorAll('.options-panel label').forEach(label => {
+            label.setAttribute('draggable', 'true');
+        });
+
+        // Drag-and-drop functionality for reordering options
+        const optionsContainer = document.querySelector('.options-container');
+        let draggedItem = null;
+
+        optionsContainer.addEventListener('dragstart', (e) => {
+            if (e.target.tagName === 'LABEL') {
+                draggedItem = e.target;
+                e.target.classList.add('dragging');
+            }
+        });
+
+        optionsContainer.addEventListener('dragend', (e) => {
+            if (e.target.tagName === 'LABEL') {
+                e.target.classList.remove('dragging');
+                draggedItem = null;
+                updateMetricsSequence(); // Update metrics sequence after drag-and-drop
+            }
+        });
+
+        optionsContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(optionsContainer, e.clientY);
+            if (draggedItem && afterElement) {
+                optionsContainer.insertBefore(draggedItem, afterElement);
+            } else if (draggedItem) {
+                optionsContainer.appendChild(draggedItem);
+            }
+        });
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('label:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // Synchronize the sequence of options with the metrics-box
+        function updateMetricsSequence() {
+            const metricsBox = document.getElementById('metrics-box');
+            const options = document.querySelectorAll('.options-container label');
+            const metrics = {
+                'toggle-distance': document.querySelector('.overlay-text.distance'),
+                'toggle-time': document.querySelector('.overlay-text.moving-time'),
+                'toggle-heartrate': document.querySelector('.overlay-text.average-heartrate')
+            };
+
+            // Clear and reorder metrics in the metrics-box
+            metricsBox.innerHTML = '';
+            options.forEach(option => {
+                const input = option.querySelector('input');
+                if (input && metrics[input.id]) {
+                    metricsBox.appendChild(metrics[input.id]);
+                }
+            });
+        }
+
+        // Initialize metrics sequence on page load
+        document.addEventListener('DOMContentLoaded', updateMetricsSequence);
+    </script>
+</body>
+</html>
