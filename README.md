@@ -1,18 +1,32 @@
-# FitOverlay
-A modern, easy-to-use web tool that lets you generate stylish overlays for your Strava activities. Simply paste your Strava activity link and choose from multiple overlay styles to share on Instagram or other social media platforms.
+# FitOverlay 🚴
 
-## Features
-- 🔗 **Easy Input** – Paste your Strava activity link to fetch data.
-- 🎨 **Multiple Overlay Styles** – Choose from different designs to match your vibe.
-- 📲 **Instagram-Optimized** – Overlays are transparent and perfectly sized for Instagram Stories.
-- ⚡ **Fast & Simple** – No signups, no downloads – just copy and share!
+### 📌 **Turn Your Strava Activities into Stunning Overlays**
+FitOverlay is a sleek and easy-to-use web tool that transforms your Strava activities into stylish, shareable overlays. Perfectly optimized for Instagram Stories, FitOverlay makes it effortless to showcase your runs, rides, and workouts with eye-catching designs.
 
-## How It Works
-1. Copy the link to your Strava activity.
-2. Paste it into FitOverlay.
-3. Pick a template and customize (if applicable).
-4. Copy the overlay to your clipboard and add it to your Instagram Story.
+---
 
+## 🌟 **Features**
+✅ **Instant Strava Integration** – Just paste your Strava activity link, and we handle the rest.  
+🎨 **Multiple Overlay Styles** – Choose from a variety of designs that match your personal aesthetic.  
+📏 **Instagram-Optimized** – Transparent, high-resolution overlays sized for Instagram Stories.  
+⚡ **No Hassle** – No sign-ups, no downloads. Simply copy your overlay and share.  
+🔄 **Customization Options** – Adjust colors, fonts, and layout for a personal touch.  
 
+---
 
-Powered by Strava
+## 🚀 **How It Works**
+1. **Copy** the link to your Strava activity.
+2. **Paste** it into FitOverlay.
+3. **Choose** your favorite overlay style.
+4. **Customize** (optional) to match your vibe.
+5. **Copy & Share** your overlay directly to Instagram or other social platforms.
+
+---
+
+### 💡 **Why FitOverlay?**
+- **Sleek & Modern**: Designed with aesthetics in mind.
+- **Fast & User-Friendly**: No complex setup—just instant results.
+- **Built for Athletes**: Whether you run, cycle, or swim, FitOverlay helps you flex your achievements in style.
+
+🏆 **Powered by Strava**  
+🔥 Start sharing your workouts with style—Try FitOverlay today! 🔥
