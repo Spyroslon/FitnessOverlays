@@ -12,6 +12,7 @@ REDIRECT_URL = os.getenv("REDIRECT_URL")
 AUTH_BASE_URL = 'https://www.strava.com/oauth/authorize'
 TOKEN_URL = 'https://www.strava.com/oauth/token'
 TOKENS_FILE = ".tokens.json"
+ACTIVITIES_PATH = 'activities'
 
 def save_tokens(tokens):
     """Save tokens to a file for persistence."""
@@ -90,7 +91,7 @@ def fetch_activity(activity_id):
     response_json = response.json()
     print(f"Response Text: \n{'-'*15}\n{json.dumps(response_json, indent=4)}")
 
-    with open("api_response.json", "w") as outfile:
+    with open(f"{ACTIVITIES_PATH}/response_{activity_id}.json", "w") as outfile:
         json.dump(response_json, outfile, indent=4)
 
 
