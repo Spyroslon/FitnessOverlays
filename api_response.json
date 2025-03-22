@@ -177,14 +177,7 @@
                 "starred": false
             },
             "pr_rank": null,
-            "achievements": [
-                {
-                    "type_id": 7,
-                    "type": "segment_effort_count_leader",
-                    "rank": 1,
-                    "effort_count": 47
-                }
-            ],
+            "achievements": [],
             "visibility": "everyone",
             "kom_rank": null,
             "hidden": false
@@ -469,14 +462,7 @@
                 "starred": false
             },
             "pr_rank": null,
-            "achievements": [
-                {
-                    "type_id": 7,
-                    "type": "segment_effort_count_leader",
-                    "rank": 1,
-                    "effort_count": 47
-                }
-            ],
+            "achievements": [],
             "visibility": "everyone",
             "kom_rank": null,
             "hidden": false
@@ -704,14 +690,7 @@
                 "starred": false
             },
             "pr_rank": null,
-            "achievements": [
-                {
-                    "type_id": 7,
-                    "type": "segment_effort_count_leader",
-                    "rank": 1,
-                    "effort_count": 47
-                }
-            ],
+            "achievements": [],
             "visibility": "everyone",
             "kom_rank": null,
             "hidden": false
