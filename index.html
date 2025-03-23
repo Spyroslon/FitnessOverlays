@@ -66,6 +66,7 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            margin-top: 10px;
             text-align: left;
         }
         .font-size-controls {
@@ -78,13 +79,16 @@
             padding: 5px 10px;
             font-size: 1em;
             border: none;
-            background: #007BFF;
+            background: grey; /* Default background for unselected buttons */
             color: white;
             cursor: pointer;
             border-radius: 5px;
         }
+        .font-size-controls button.selected {
+            background: #FC4C02; /* Strava orange for selected button */
+        }
         .font-size-controls button:hover {
-            background: #0056b3;
+            background: #d93f02; /* Darker orange on hover for selected button */
         }
         .font-size-display {
             min-width: 30px;
@@ -101,13 +105,16 @@
             padding: 5px 10px;
             font-size: 1em;
             border: none;
-            background: #007BFF;
+            background: grey; /* Default background for unselected buttons */
             color: white;
             cursor: pointer;
             border-radius: 5px;
         }
+        .alignment-controls button.selected {
+            background: #FC4C02; /* Strava orange for selected button */
+        }
         .alignment-controls button:hover {
-            background: #0056b3;
+            background: #d93f02; /* Darker orange on hover for selected button */
         }
         .metric-unit {
             font-size: inherit; /* Inherit font size from the parent element */
@@ -143,7 +150,7 @@
         .options-container label {
             display: flex; /* Use flexbox for alignment */
             align-items: center; /* Vertically center the checkbox and text */
-            justify-content: flex-start; /* Left-align the content */
+            justify-content: space-between; /* Space between text and drag handle */
             padding: 10px;
             margin: 5px 0;
             background: #f0f0f0;
@@ -152,6 +159,7 @@
             cursor: grab;
             text-align: left; /* Ensure text is left-aligned */
             transition: background 0.3s ease;
+            gap: 10px; /* Add spacing between elements */
         }
         .options-container label:hover {
             background: #e0e0e0;
@@ -164,6 +172,7 @@
             height: 20px; /* Increase checkbox size */
             margin-right: 10px; /* Add spacing between checkbox and label text */
             cursor: pointer;
+            accent-color: #FC4C02;
         }
         .section-container {
             border: 1px solid #ddd; /* Add a clear border */
@@ -175,6 +184,19 @@
         .section-container h2, .section-container h3 {
             margin-top: 0; /* Remove extra margin at the top of headings */
         }
+        .drag-handle {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: grab;
+        }
+        .drag-handle div {
+            height: 3px;
+            background: #888;
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body>
@@ -182,30 +204,86 @@
         <div class="section-container">
             <h2>Options</h2>
             <div class="options-container">
-                <label><input type="checkbox" id="toggle-activity-type" checked> Activity Type</label>
-                <label><input type="checkbox" id="toggle-activity-name" checked> Activity Name</label>
-                <label><input type="checkbox" id="toggle-distance" checked> Distance</label>
-                <label><input type="checkbox" id="toggle-time" checked> Time</label>
-                <label><input type="checkbox" id="toggle-average-pace" checked> Average Pace</label>
-                <label><input type="checkbox" id="toggle-elevation-gain" checked> Elevation Gain</label>
-                <label><input type="checkbox" id="toggle-average-heartrate" checked disabled> Average Heartrate</label>
-                <label><input type="checkbox" id="toggle-max-heartrate" checked disabled> Max Heartrate</label>
+                <label>
+                    <input type="checkbox" id="toggle-activity-type" checked> Activity Type
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-activity-name" checked> Activity Name
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-distance" checked> Distance
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-time" checked> Time
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-average-pace" checked> Average Pace
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-elevation-gain" checked> Elevation Gain
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-average-heartrate" checked disabled> Average Heartrate
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-max-heartrate" checked disabled> Max Heartrate
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
             </div>
         </div>
         <div class="section-container">
             <h3>Label Font Size</h3>
             <div class="font-size-controls">
-                <button id="decrease-label-font">-</button>
-                <span class="font-size-display" id="label-font-size-display">14</span>
-                <button id="increase-label-font">+</button>
+                <button id="label-font-small">Small</button>
+                <button id="label-font-medium">Medium</button>
+                <button id="label-font-large">Large</button>
             </div>
         </div>
         <div class="section-container">
             <h3>Value Font Size</h3>
             <div class="font-size-controls">
-                <button id="decrease-value-font">-</button>
-                <span class="font-size-display" id="value-font-size-display">24</span>
-                <button id="increase-value-font">+</button>
+                <button id="value-font-small">Small</button>
+                <button id="value-font-medium">Medium</button>
+                <button id="value-font-large">Large</button>
             </div>
         </div>
         <div class="section-container">
@@ -276,8 +354,17 @@
                 document.getElementById('activity-type').textContent = data.type || 'N/A';
                 document.getElementById('activity-name').textContent = data.name || 'N/A';
                 document.getElementById('distance').textContent = (data.distance / 1000).toFixed(2);
-                document.getElementById('moving-time').textContent = new Date(data.moving_time * 1000).toISOString().substr(11, 8);
-                document.getElementById('average-pace').textContent = (data.average_speed || 0).toFixed(2);
+                const movingTime = data.moving_time;
+                const hours = Math.floor(movingTime / 3600).toString().padStart(2, '0');
+                const minutes = Math.floor((movingTime % 3600) / 60).toString().padStart(2, '0');
+                const seconds = (movingTime % 60).toString().padStart(2, '0');
+                document.getElementById('moving-time').innerHTML = `
+                    ${hours}<span class="metric-unit">h</span> 
+                    ${minutes}<span class="metric-unit">m</span> 
+                    ${seconds}<span class="metric-unit">s</span>`;
+                document.getElementById('average-pace').innerHTML = `
+                    ${(data.average_speed || 0).toFixed(2)}
+                    <span class="metric-unit">/km</span>`;
                 document.getElementById('elevation-gain').textContent = data.total_elevation_gain || 'N/A';
 
                 const hasHeartrate = data.has_heartrate === true; // Treat missing or false as false
@@ -304,21 +391,53 @@
             })
             .catch(error => console.error('Error loading activity data:', error));
 
-        let labelFontSize = 12; // Default label font size
-        let valueFontSize = 24; // Default value font size
-        let unitFontSize = valueFontSize - 2; // Unit font size is 2 values smaller than value font size
+        let labelFontSize = 16; // Default label font size (Small)
+        let valueFontSize = 24; // Default value font size (Medium)
 
         function updateFontSize() {
-            document.getElementById('label-font-size-display').textContent = labelFontSize;
-            document.getElementById('value-font-size-display').textContent = valueFontSize;
             document.querySelectorAll('.metric-label').forEach(el => el.style.fontSize = labelFontSize + 'px');
             document.querySelectorAll('.metric-value').forEach(el => el.style.fontSize = valueFontSize + 'px');
-            document.querySelectorAll('.metric-unit').forEach(el => el.style.fontSize = unitFontSize + 'px'); // Update unit font size
+            document.querySelectorAll('.metric-unit').forEach(el => el.style.fontSize = (valueFontSize - 2) + 'px'); // Unit font size is 2px smaller
         }
-        document.getElementById('increase-label-font').addEventListener('click', () => { labelFontSize = Math.min(50, labelFontSize + 2); updateFontSize(); });
-        document.getElementById('decrease-label-font').addEventListener('click', () => { labelFontSize = Math.max(10, labelFontSize - 2); updateFontSize(); });
-        document.getElementById('increase-value-font').addEventListener('click', () => { valueFontSize = Math.min(50, valueFontSize + 2); unitFontSize = valueFontSize - 2; updateFontSize(); });
-        document.getElementById('decrease-value-font').addEventListener('click', () => { valueFontSize = Math.max(10, valueFontSize - 2); unitFontSize = valueFontSize - 2; updateFontSize(); });
+
+        function updateSelectedButton(group, selectedId) {
+            document.querySelectorAll(group).forEach(button => {
+                button.classList.remove('selected');
+            });
+            document.getElementById(selectedId).classList.add('selected');
+        }
+
+        document.getElementById('label-font-small').addEventListener('click', () => {
+            labelFontSize = 16;
+            updateFontSize();
+            updateSelectedButton('.font-size-controls button[id^="label-font"]', 'label-font-small');
+        });
+        document.getElementById('label-font-medium').addEventListener('click', () => {
+            labelFontSize = 24;
+            updateFontSize();
+            updateSelectedButton('.font-size-controls button[id^="label-font"]', 'label-font-medium');
+        });
+        document.getElementById('label-font-large').addEventListener('click', () => {
+            labelFontSize = 30;
+            updateFontSize();
+            updateSelectedButton('.font-size-controls button[id^="label-font"]', 'label-font-large');
+        });
+
+        document.getElementById('value-font-small').addEventListener('click', () => {
+            valueFontSize = 16;
+            updateFontSize();
+            updateSelectedButton('.font-size-controls button[id^="value-font"]', 'value-font-small');
+        });
+        document.getElementById('value-font-medium').addEventListener('click', () => {
+            valueFontSize = 24;
+            updateFontSize();
+            updateSelectedButton('.font-size-controls button[id^="value-font"]', 'value-font-medium');
+        });
+        document.getElementById('value-font-large').addEventListener('click', () => {
+            valueFontSize = 30;
+            updateFontSize();
+            updateSelectedButton('.font-size-controls button[id^="value-font"]', 'value-font-large');
+        });
 
         const metricsBox = document.getElementById('metrics-box');
         let offsetX, offsetY, isDragging = false;
@@ -337,12 +456,15 @@
         // Text alignment functionality
         document.getElementById('align-left').addEventListener('click', () => {
             document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'left');
+            updateSelectedAlignmentButton('align-left');
         });
         document.getElementById('align-center').addEventListener('click', () => {
             document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'center');
+            updateSelectedAlignmentButton('align-center');
         });
         document.getElementById('align-right').addEventListener('click', () => {
             document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'right');
+            updateSelectedAlignmentButton('align-right');
         });
 
         // Text alignment functionality for the metrics-box
@@ -406,7 +528,11 @@
         });
 
         // Initialize font sizes on page load
-        document.addEventListener('DOMContentLoaded', updateFontSize);
+        document.addEventListener('DOMContentLoaded', () => {
+            updateFontSize(); // Initialize font sizes on page load
+            updateSelectedButton('.font-size-controls button[id^="label-font"]', 'label-font-small'); // Default label font size
+            updateSelectedButton('.font-size-controls button[id^="value-font"]', 'value-font-medium'); // Default value font size
+        });
 
         // Make labels draggable
         document.querySelectorAll('.options-panel label').forEach(label => {
@@ -482,6 +608,31 @@
 
         // Initialize metrics sequence on page load
         document.addEventListener('DOMContentLoaded', updateMetricsSequence);
+
+        function updateSelectedAlignmentButton(selectedId) {
+            document.querySelectorAll('.alignment-controls button').forEach(button => {
+                button.classList.remove('selected');
+            });
+            document.getElementById(selectedId).classList.add('selected');
+        }
+
+        document.getElementById('align-left').addEventListener('click', () => {
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'left');
+            updateSelectedAlignmentButton('align-left');
+        });
+        document.getElementById('align-center').addEventListener('click', () => {
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'center');
+            updateSelectedAlignmentButton('align-center');
+        });
+        document.getElementById('align-right').addEventListener('click', () => {
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'right');
+            updateSelectedAlignmentButton('align-right');
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateSelectedAlignmentButton('align-center'); // Default alignment is center
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'center'); // Apply center alignment
+        });
     </script>
 </body>
 </html>
