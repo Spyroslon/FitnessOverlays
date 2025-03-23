@@ -10,7 +10,6 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Arial', sans-serif;
         }
         body {
             display: flex;
@@ -45,7 +44,7 @@
             user-select: none;
         }
         .metrics-box:hover {
-            border: 1px solid black; /* Show outline on hover */
+            border: 1px solid black transparent; /* Show outline on hover */
         }
         .overlay-text {
             color: white;
@@ -55,6 +54,7 @@
             flex-direction: column;
             align-items: center;
             margin: 5px 0;
+            font-family: Arial; /* Default font-family */
         }
         .options-panel {
             order: 0; /* Ensure the options panel appears first */
@@ -68,6 +68,7 @@
             gap: 15px;
             margin-top: 10px;
             text-align: left;
+            font-family: Arial; /* Apply Arial font-family to all text in the options-panel */
         }
         .font-size-controls {
             display: flex;
@@ -149,7 +150,7 @@
         }
         .options-container label {
             display: flex; /* Use flexbox for alignment */
-            align-items: center; /* Vertically center the checkbox and text */
+            align-items: left; /* Vertically center the checkbox and text */
             justify-content: space-between; /* Space between text and drag handle */
             padding: 10px;
             margin: 5px 0;
@@ -196,6 +197,36 @@
             height: 3px;
             background: #888;
             border-radius: 2px;
+        }
+        .color-controls button {
+            width: 30px;
+            height: 30px;
+            border: 2px solid black; /* Thin black outline */
+            border-radius: 50%;
+            cursor: pointer;
+            transition: border 0.3s ease;
+        }
+        .color-controls button.selected {
+            border-color: #FC4C02; /* Orange border for selected color */
+        }
+        .opacity-controls button,
+        .font-controls button {
+            padding: 5px 10px;
+            font-size: 1em;
+            border: none;
+            background: grey; /* Default background for unselected buttons */
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+        .opacity-controls button.selected,
+        .font-controls button.selected {
+            background: #FC4C02; /* Orange background for selected buttons */
+        }
+        .opacity-controls button:hover,
+        .font-controls button:hover {
+            background: #d93f02; /* Darker orange on hover */
         }
     </style>
 </head>
@@ -292,6 +323,39 @@
                 <button id="align-left">Left</button>
                 <button id="align-center">Center</button>
                 <button id="align-right">Right</button>
+            </div>
+        </div>
+        <div class="section-container">
+            <h3>Text Colour</h3>
+            <div class="color-controls">
+                <button class="color-button" style="background: black;" data-color="black"></button>
+                <button class="color-button" style="background: white;" data-color="white"></button>
+                <button class="color-button" style="background: red;" data-color="red"></button>
+                <button class="color-button" style="background: blue;" data-color="blue"></button>
+                <button class="color-button" style="background: green;" data-color="green"></button>
+                <button class="color-button" style="background: #FC4C02;" data-color="#FC4C02"></button> <!-- Orange -->
+                <button class="color-button" style="background: #888;" data-color="#888"></button> <!-- Light Gray -->
+                <button class="color-button" style="background: #555;" data-color="#555"></button> <!-- Medium Gray -->
+                <button class="color-button" style="background: #333;" data-color="#333"></button> <!-- Dark Gray -->
+            </div>
+        </div>
+        <div class="section-container">
+            <h3>Opacity</h3>
+            <div class="opacity-controls">
+                <button class="opacity-button" data-opacity="0.25">25%</button>
+                <button class="opacity-button" data-opacity="0.50">50%</button>
+                <button class="opacity-button" data-opacity="0.75">75%</button>
+                <button class="opacity-button" data-opacity="1.00">100%</button>
+            </div>
+        </div>
+        <div class="section-container">
+            <h3>Font Style</h3>
+            <div class="font-controls">
+                <button class="font-button" style="font-family: Arial;" data-font="Arial">Fitness</button>
+                <button class="font-button" style="font-family: 'Courier New';" data-font="'Courier New'">Fitness</button>
+                <button class="font-button" style="font-family: 'Times New Roman';" data-font="'Times New Roman'">Fitness</button>
+                <button class="font-button" style="font-family: Verdana;" data-font="Verdana">Fitness</button>
+                <button class="font-button" style="font-family: 'Georgia';" data-font="'Georgia'">Fitness</button>
             </div>
         </div>
     </div>
@@ -632,6 +696,50 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateSelectedAlignmentButton('align-center'); // Default alignment is center
             document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'center'); // Apply center alignment
+        });
+
+        // Text color functionality with selection indicator
+        document.querySelectorAll('.color-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const color = button.getAttribute('data-color');
+                document.querySelectorAll('.overlay-text').forEach(el => {
+                    el.style.color = color;
+                });
+                document.querySelectorAll('.color-button').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+            });
+        });
+
+        // Opacity functionality with selection indicator
+        document.querySelectorAll('.opacity-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const opacity = button.getAttribute('data-opacity');
+                document.querySelectorAll('.overlay-text').forEach(el => el.style.opacity = opacity);
+                document.querySelectorAll('.opacity-button').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+            });
+        });
+
+        // Font style functionality with selection indicator
+        document.querySelectorAll('.font-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const font = button.getAttribute('data-font');
+                document.querySelectorAll('.overlay-text').forEach(el => el.style.fontFamily = font); // Apply selected font
+                document.querySelectorAll('.font-button').forEach(btn => btn.classList.remove('selected')); // Remove previous selection
+                button.classList.add('selected'); // Highlight selected button
+            });
+        });
+
+        // Initialize default selections
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.font-button[data-font="Arial"]').classList.add('selected'); // Default font is Arial
+        });
+
+        // Initialize default selections
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.color-button[data-color="white"]').classList.add('selected'); // Default text color
+            document.querySelector('.opacity-button[data-opacity="1.00"]').classList.add('selected'); // Default opacity
+            document.querySelector('.font-button[data-font="Arial"]').classList.add('selected'); // Default font
         });
     </script>
 </body>
