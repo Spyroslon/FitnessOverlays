@@ -1,4 +1,5 @@
 flask
+flask-limiter
 requests
 requests-oauthlib
 pillow

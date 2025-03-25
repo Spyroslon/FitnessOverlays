@@ -223,6 +223,26 @@
         .toast.show {
             opacity: 1;
         }
+
+        .status-message {
+            margin-top: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .status-message.success {
+            display: block;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .status-message.error {
+            display: block;
+            background-color: #f44336;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -231,8 +251,12 @@
         
         <div class="input-group">
             <div class="strava-input">
-                <input type="text" id="activityId" placeholder="Enter your Strava Activity ID" required>
+                <input type="text" id="activityInput" placeholder="Enter Strava Activity URL or ID" required>
                 <button id="loadActivityBtn" class="load-btn">Load</button>
+            </div>
+            <div id="statusMessage" class="status-message"></div>
+            <div id="loadingIndicator" style="display: none; text-align: center; color: var(--strava-orange);">
+                Loading activity data...
             </div>
         </div>
 
@@ -275,7 +299,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const activityIdInput = document.getElementById('activityId');
+            const activityInput = document.getElementById('activityInput');
+            const loadingIndicator = document.getElementById('loadingIndicator');
             const loadActivityBtn = document.getElementById('loadActivityBtn');
             const overlayCanvas = document.getElementById('overlayCanvas');
             const colorWheel = document.getElementById('colorWheel');
@@ -317,10 +342,77 @@
             // Replace resizeCanvas with initCanvas
             initCanvas();
 
-            // Load Activity
-            loadActivityBtn.addEventListener('click', () => {
-                state.activityId = activityIdInput.value;
-                generateOverlay(mockStravaData);
+            function extractActivityId(input) {
+                // Handle full Strava URLs
+                const urlMatch = input.match(/activities\/(\d+)/);
+                if (urlMatch) return urlMatch[1];
+                
+                // Handle direct ID input
+                const idMatch = input.match(/^\d+$/);
+                if (idMatch) return input;
+                
+                return null;
+            }
+
+            async function fetchActivityData(activityId) {
+                try {
+                    const response = await fetch(`/activities/response_${activityId}.json`);
+                    if (!response.ok) {
+                        throw new Error('Activity data not found');
+                    }
+                    return await response.json();
+                } catch (error) {
+                    // Trigger Python script to fetch the activity
+                    const fetchResponse = await fetch(`/fetch_activity/${activityId}`);
+                    if (!fetchResponse.ok) {
+                        throw new Error('Failed to fetch activity data');
+                    }
+                    return await fetchResponse.json();
+                }
+            }
+
+            // Update the load activity button click handler
+            loadActivityBtn.addEventListener('click', async () => {
+                const input = activityInput.value.trim();
+                const activityId = extractActivityId(input);
+                const statusMessage = document.getElementById('statusMessage');
+                
+                statusMessage.className = 'status-message';
+                statusMessage.style.display = 'none';
+                
+                if (!activityId) {
+                    statusMessage.textContent = 'Please enter a valid Strava activity URL or ID';
+                    statusMessage.classList.add('error');
+                    return;
+                }
+
+                loadingIndicator.style.display = 'block';
+                loadActivityBtn.disabled = true;
+
+                try {
+                    const activityData = await fetchActivityData(activityId);
+                    state.activityId = activityId;
+                    
+                    // Update mockStravaData with real data
+                    mockStravaData.distance = (activityData.distance / 1000).toFixed(2);
+                    mockStravaData.time = new Date(activityData.moving_time * 1000).toISOString().substr(11, 8);
+                    mockStravaData.elevation = Math.round(activityData.total_elevation_gain);
+                    mockStravaData.pace = ((activityData.moving_time / 60) / (activityData.distance / 1000)).toFixed(2);
+                    mockStravaData.heartRate = activityData.average_heartrate ? Math.round(activityData.average_heartrate) : 0;
+
+                    generateOverlay(mockStravaData);
+                    
+                    statusMessage.textContent = `Activity "${activityData.name}" loaded successfully`;
+                    statusMessage.classList.add('success');
+                } catch (error) {
+                    console.error('Error loading activity:', error);
+                    statusMessage.textContent = 'Failed to load activity. Please check the activity ID and try again.';
+                    statusMessage.classList.add('error');
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                    loadActivityBtn.disabled = false;
+                    statusMessage.style.display = 'block';
+                }
             });
 
             // Overlay Option Selection
