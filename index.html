@@ -27,15 +27,15 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px; /* Reduced padding */
         }
 
         .container {
-            max-width: 600px;
+            max-width: 600px; /* Increased to accommodate square canvas */
             width: 100%;
             margin: 0 auto;
             background-color: white;
-            padding: 30px;
+            padding: 15px; /* Reduced padding */
             border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
@@ -43,17 +43,24 @@
         h1 {
             color: var(--strava-orange);
             text-align: center;
-            margin-bottom: 20px;
-            font-size: 2rem;
+            margin-bottom: 10px; /* Reduced margin */
+            font-size: 1.5rem; /* Smaller font size */
         }
 
         .input-group {
-            margin-bottom: 10px;
+            margin-bottom: 8px; /* Reduced margin */
         }
 
         .strava-input {
             display: flex;
             gap: 10px;
+        }
+
+        @media (max-width: 400px) {
+            .strava-input {
+                flex-direction: column;
+                gap: 5px;
+            }
         }
 
         input, button {
@@ -94,11 +101,12 @@
             justify-content: center;
             background-color: var(--strava-gray);
             color: white;
-            padding: 15px;
+            padding: 8px; /* Reduced padding */
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: center;
+            font-size: 0.9rem; /* Smaller font size */
         }
 
         .overlay-option.active {
@@ -125,36 +133,41 @@
             appearance: none;
             width: 40px;
             height: 40px;
-            border: none;
+            border: 3px solid var(--strava-orange);
             cursor: pointer;
-            border-radius: 50%;
+            border-radius: 12px;
             padding: 0;
-            background-color: #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: var(--strava-text);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .color-picker:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
 
         .color-picker::-webkit-color-swatch-wrapper {
             padding: 0;
         }
         .color-picker::-webkit-color-swatch {
-            border-radius: 50%;
-            border: 2px solid #e2e8f0;
+            border: none;
+            border-radius: 8px;
         }
         .color-picker::-moz-color-swatch {
-            border-radius: 50%;
-            border: 2px solid #e2e8f0;
+            border: none;
+            border-radius: 8px;
         }
-        .color-picker::-ms-value {
-            border-radius: 50%;
-            border: 2px solid #e2e8f0;
+        .color-picker::-ms-color-swatch {
+            border: none;
+            border-radius: 8px;
         }
 
         .canvas-container {
+            display: block;
             position: relative;
             width: 100%;
-            max-width: 1080px;
-            margin: 20px auto;
-            aspect-ratio: 9/16;
+            aspect-ratio: 1/1;
         }
 
         #overlayCanvas {
@@ -165,7 +178,13 @@
             height: 100%;
             border: 2px dashed var(--strava-orange);
             border-radius: 8px;
-            object-fit: contain;
+        }
+
+        @media (max-width: 840px) { /* 800px + 40px padding */
+            .canvas-container {
+                min-width: unset;
+                width: calc(100vw - 50px);
+            }
         }
 
         .action-buttons {
@@ -211,7 +230,6 @@
         <h1>Strava Overlay Generator</h1>
         
         <div class="input-group">
-            <label for="activityId" class="option-label">Strava Activity ID</label>
             <div class="strava-input">
                 <input type="text" id="activityId" placeholder="Enter your Strava Activity ID" required>
                 <button id="loadActivityBtn" class="load-btn">Load</button>
@@ -219,10 +237,11 @@
         </div>
 
         <div class="canvas-container">
-          <canvas id="overlayCanvas"></canvas>
-      </div>
+            <canvas id="overlayCanvas"></canvas>
+        </div>
+
         <div class="input-group">
-            <label class="option-label">Select Overlay Options</label>
+            <label class="option-label">Overlay Options</label>
             <div id="overlayOptions">
                 <div class="overlay-option" data-metric="distance">
                     Distance
@@ -242,11 +261,9 @@
             </div>
         </div>
 
-
-
         <div class="color-picker-container">
-          <label for="colorWheel" class="option-label">Text Color</label>
-          <input type="color" id="colorWheel" value="#ffffff" class="color-picker">
+            <label for="colorWheel" class="option-label">Text Color</label>
+            <input type="color" id="colorWheel" value="#ffffff" class="color-picker">
         </div>
 
         <div class="action-buttons">
@@ -265,14 +282,21 @@
             const exportTextBtn = document.getElementById('exportTextBtn');
             const copyImageBtn = document.getElementById('copyImageBtn');
             const ctx = overlayCanvas.getContext('2d');
-            let backgroundImage = new Image();
-            backgroundImage.src = 'overlays/resized_fitoverlay_background.png';
+            
+            // Set fixed canvas dimensions for high quality
+            overlayCanvas.width = 1500; // Square dimensions, high resolution
+            overlayCanvas.height = 1500;
+
+            // Enable image smoothing
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
 
             // State management
             const state = {
                 activityId: null,
                 selectedMetrics: [],
                 textColor: '#ffffff',
+                backgroundColor: '#2c3e50', // Default background color (accessible dark blue)
                 template: 'minimal'
             };
 
@@ -287,8 +311,6 @@
 
             // Set fixed canvas dimensions
             function initCanvas() {
-                overlayCanvas.width = 1080;
-                overlayCanvas.height = 1920;
                 generateOverlay(mockStravaData);
             }
 
@@ -332,32 +354,22 @@
                 // Clear the entire canvas
                 ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
-                // Draw background
-                if (backgroundImage.complete) {
-                    // Draw image to fill entire canvas
-                    console.log('Here if')
-                    ctx.drawImage(backgroundImage, 0, 0, overlayCanvas.width, overlayCanvas.height);
-                    drawMetrics(data);
-                } else {
-                    backgroundImage.onload = () => {
-                        console.log('Here else')
-                        ctx.drawImage(backgroundImage, 0, 0, overlayCanvas.width, overlayCanvas.height);
-                        drawMetrics(data);
-                    };
-                }
+                // Draw background color
+                ctx.fillStyle = state.backgroundColor;
+                ctx.fillRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                drawMetrics(data);
             }
 
             function drawMetrics(data, context = ctx) {
-                // Don't clear the canvas here, as it removes the background
-                
                 // Calculate center position
                 const centerX = overlayCanvas.width / 2;
                 const centerY = overlayCanvas.height / 2;
 
-                // Adjust font sizes for 1080 x 1920
+                // Adjust font sizes for square canvas
                 const metricsCount = Math.max(1, state.selectedMetrics.length);
                 const titleFontSize = Math.min(80, 160 * (5 / metricsCount));
                 const valueFontSize = Math.min(100, 200 * (5 / metricsCount));
+                const spacing = Math.min(60, 120 * (5 / metricsCount));
 
                 const metrics = [
                     { name: 'Distance', value: `${data.distance} km`, key: 'distance' },
@@ -371,7 +383,6 @@
                     state.selectedMetrics.includes(metric.key)
                 );
 
-                const spacing = 60;
                 const totalHeight = selectedMetrics.length * (titleFontSize + valueFontSize + spacing);
                 let yOffset = centerY - (totalHeight / 2);
 
@@ -424,7 +435,7 @@
                 const metricsCount = Math.max(1, state.selectedMetrics.length);
                 const titleFontSize = Math.min(80, 160 * (5 / metricsCount));
                 const valueFontSize = Math.min(100, 200 * (5 / metricsCount));
-                const spacing = 60;
+                const spacing = Math.min(60, 120 * (5 / metricsCount));
 
                 const metrics = [
                     { name: 'Distance', value: `${data.distance} km`, key: 'distance' },
@@ -498,10 +509,7 @@
                 tempCanvas.height = dimensions.height;
                 const tempCtx = tempCanvas.getContext('2d');
 
-                // Create a completely transparent canvas
                 tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-                
-                // Draw the metrics with offset to account for cropping
                 tempCtx.save();
                 tempCtx.translate(-dimensions.x, -dimensions.y);
                 drawMetrics(mockStravaData, tempCtx);
@@ -509,11 +517,54 @@
 
                 try {
                     const blob = await new Promise(resolve => tempCanvas.toBlob(resolve));
-                    const item = new ClipboardItem({ 'image/png': blob });
-                    await navigator.clipboard.write([item]);
-                    showToast();
+                    
+                    // For iOS devices
+                    if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+                        tempCanvas.toBlob(async (blob) => {
+                            try {
+                                const item = new ClipboardItem({ 'image/png': blob });
+                                await navigator.clipboard.write([item]);
+                                showToast();
+                                return;
+                            } catch (err) {
+                                console.error('iOS clipboard write failed:', err);
+                            }
+                        }, 'image/png');
+                        return;
+                    }
+
+                    // For other mobile devices
+                    if (/Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                        try {
+                            const item = new ClipboardItem({ 'image/png': blob });
+                            await navigator.clipboard.write([item]);
+                            showToast();
+                            return;
+                        } catch (err) {
+                            console.error('Mobile clipboard write failed:', err);
+                        }
+                    }
+
+                    // Desktop fallback
+                    try {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        await navigator.clipboard.write([item]);
+                        showToast();
+                    } catch (err) {
+                        console.error('Clipboard write failed:', err);
+                        // Only download as absolute last resort
+                        const shouldDownload = confirm('Unable to copy to clipboard. Download image instead?');
+                        if (shouldDownload) {
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.download = 'strava-overlay.png';
+                            link.href = url;
+                            link.click();
+                            URL.revokeObjectURL(url);
+                        }
+                    }
                 } catch (err) {
-                    console.error('Unable to copy image to clipboard. Make sure you granted clipboard permission.');
+                    console.error('Unable to process image:', err);
                 }
             });
         });
