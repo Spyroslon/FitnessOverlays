@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<!-- python -m http.server 8000 -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitOverlay</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: row; /* Ensure the layout flows left-to-right */
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .image-container {
+            flex: 2; /* Reduce the flex ratio to move it closer to the options panel */
+            margin-left: 20px; /* Add spacing between the options panel and the image container */
+            background: url('./overlays/resized_fitoverlay_background.png') no-repeat center center;
+            background-size: contain;
+            position: relative;
+            display: flex;
+            justify-content: flex-start; /* Align the background closer to the left */
+            align-items: center;
+            min-height: 80vh;
+            overflow: hidden;
+        }
+        .metrics-box {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            padding: 10px;
+            border: 1px solid transparent; /* Remove default outline */
+            border-radius: 5px;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
+        }
+        .metrics-box:hover {
+            border: 1px solid black transparent; /* Show outline on hover */
+        }
+        .overlay-text {
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 5px 0;
+            font-family: Arial; /* Default font-family */
+        }
+        .options-panel {
+            order: 0; /* Ensure the options panel appears first */
+            width: 400px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 10px;
+            text-align: left;
+            font-family: Arial; /* Apply Arial font-family to all text in the options-panel */
+        }
+        .font-size-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .font-size-controls button {
+            padding: 5px 10px;
+            font-size: 1em;
+            border: none;
+            background: grey; /* Default background for unselected buttons */
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .font-size-controls button.selected {
+            background: #FC4C02; /* Strava orange for selected button */
+        }
+        .font-size-controls button:hover {
+            background: #d93f02; /* Darker orange on hover for selected button */
+        }
+        .font-size-display {
+            min-width: 30px;
+            text-align: center;
+            font-size: 1.2em;
+        }
+        .alignment-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .alignment-controls button {
+            padding: 5px 10px;
+            font-size: 1em;
+            border: none;
+            background: grey; /* Default background for unselected buttons */
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .alignment-controls button.selected {
+            background: #FC4C02; /* Strava orange for selected button */
+        }
+        .alignment-controls button:hover {
+            background: #d93f02; /* Darker orange on hover for selected button */
+        }
+        .metric-unit {
+            font-size: inherit; /* Inherit font size from the parent element */
+            font-weight: normal; /* Match the weight of the value */
+        }
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .image-container {
+                min-height: 60vh;
+            }
+            .options-panel {
+                width: 100%;
+                padding: 15px;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+        .options-panel label {
+            cursor: grab; /* Indicate draggable items */
+        }
+        .options-panel label.dragging {
+            opacity: 0.5; /* Visual feedback for dragging */
+        }
+        .options-container {
+            border: 1px solid #ddd; /* Add a clear boundary */
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            overflow: hidden; /* Prevent items from being dragged outside */
+        }
+        .options-container label {
+            display: flex; /* Use flexbox for alignment */
+            align-items: left; /* Vertically center the checkbox and text */
+            justify-content: space-between; /* Space between text and drag handle */
+            padding: 10px;
+            margin: 5px 0;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: grab;
+            text-align: left; /* Ensure text is left-aligned */
+            transition: background 0.3s ease;
+            gap: 10px; /* Add spacing between elements */
+        }
+        .options-container label:hover {
+            background: #e0e0e0;
+        }
+        .options-container label.dragging {
+            opacity: 0.5;
+        }
+        .options-container input[type="checkbox"] {
+            width: 20px; /* Increase checkbox size */
+            height: 20px; /* Increase checkbox size */
+            margin-right: 10px; /* Add spacing between checkbox and label text */
+            cursor: pointer;
+            accent-color: #FC4C02;
+        }
+        .section-container {
+            border: 1px solid #ddd; /* Add a clear border */
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            margin-bottom: 15px; /* Add spacing between sections */
+        }
+        .section-container h2, .section-container h3 {
+            margin-top: 0; /* Remove extra margin at the top of headings */
+        }
+        .drag-handle {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: grab;
+        }
+        .drag-handle div {
+            height: 3px;
+            background: #888;
+            border-radius: 2px;
+        }
+        .color-controls button {
+            width: 30px;
+            height: 30px;
+            border: 2px solid black; /* Thin black outline */
+            border-radius: 50%;
+            cursor: pointer;
+            transition: border 0.3s ease;
+        }
+        .color-controls button.selected {
+            border-color: #FC4C02; /* Orange border for selected color */
+        }
+        .opacity-controls button,
+        .font-controls button {
+            padding: 5px 10px;
+            font-size: 1em;
+            border: none;
+            background: grey; /* Default background for unselected buttons */
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+        .opacity-controls button.selected,
+        .font-controls button.selected {
+            background: #FC4C02; /* Orange background for selected buttons */
+        }
+        .opacity-controls button:hover,
+        .font-controls button:hover {
+            background: #d93f02; /* Darker orange on hover */
+        }
+    </style>
+</head>
+<body>
+    <div class="options-panel">
+        <div class="section-container">
+            <h2>Options</h2>
+            <div class="options-container">
+                <label>
+                    <input type="checkbox" id="toggle-activity-type" checked> Activity Type
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-activity-name" checked> Activity Name
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-distance" checked> Distance
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-time" checked> Time
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-average-pace" checked> Average Pace
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-elevation-gain" checked> Elevation Gain
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-average-heartrate" checked disabled> Average Heartrate
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+                <label>
+                    <input type="checkbox" id="toggle-max-heartrate" checked disabled> Max Heartrate
+                    <div class="drag-handle">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </label>
+            </div>
+        </div>
+        <div class="section-container">
+            <h3>Label Font Size</h3>
+            <div class="font-size-controls">
+                <button id="label-font-small">Small</button>
+                <button id="label-font-medium">Medium</button>
+                <button id="label-font-large">Large</button>
+            </div>
+        </div>
+        <div class="section-container">
+            <h3>Value Font Size</h3>
+            <div class="font-size-controls">
+                <button id="value-font-small">Small</button>
+                <button id="value-font-medium">Medium</button>
+                <button id="value-font-large">Large</button>
+            </div>
+        </div>
+        <div class="section-container">
+            <h3>Text Alignment</h3>
+            <div class="alignment-controls">
+                <button id="align-left">Left</button>
+                <button id="align-center">Center</button>
+                <button id="align-right">Right</button>
+            </div>
+        </div>
+        <div class="section-container">
+            <h3>Text Colour</h3>
+            <div class="color-controls">
+                <button class="color-button" style="background: black;" data-color="black"></button>
+                <button class="color-button" style="background: white;" data-color="white"></button>
+                <button class="color-button" style="background: red;" data-color="red"></button>
+                <button class="color-button" style="background: blue;" data-color="blue"></button>
+                <button class="color-button" style="background: green;" data-color="green"></button>
+                <button class="color-button" style="background: #FC4C02;" data-color="#FC4C02"></button> <!-- Orange -->
+                <button class="color-button" style="background: #888;" data-color="#888"></button> <!-- Light Gray -->
+                <button class="color-button" style="background: #555;" data-color="#555"></button> <!-- Medium Gray -->
+                <button class="color-button" style="background: #333;" data-color="#333"></button> <!-- Dark Gray -->
+            </div>
+        </div>
+        <div class="section-container">
+            <h3>Opacity</h3>
+            <div class="opacity-controls">
+                <button class="opacity-button" data-opacity="0.25">25%</button>
+                <button class="opacity-button" data-opacity="0.50">50%</button>
+                <button class="opacity-button" data-opacity="0.75">75%</button>
+                <button class="opacity-button" data-opacity="1.00">100%</button>
+            </div>
+        </div>
+        <div class="section-container">
+            <h3>Font Style</h3>
+            <div class="font-controls">
+                <button class="font-button" style="font-family: Arial;" data-font="Arial">Fitness</button>
+                <button class="font-button" style="font-family: 'Courier New';" data-font="'Courier New'">Fitness</button>
+                <button class="font-button" style="font-family: 'Times New Roman';" data-font="'Times New Roman'">Fitness</button>
+                <button class="font-button" style="font-family: Verdana;" data-font="Verdana">Fitness</button>
+                <button class="font-button" style="font-family: 'Georgia';" data-font="'Georgia'">Fitness</button>
+            </div>
+        </div>
+    </div>
+    <div class="image-container">
+        <div class="metrics-box" id="metrics-box">
+            <div class="overlay-text activity-type">
+                <span class="metric-label">Activity Type</span>
+                <span class="metric-value" id="activity-type"></span>
+            </div>
+            <div class="overlay-text activity-name">
+                <span class="metric-label">Activity Name</span>
+                <span class="metric-value" id="activity-name"></span>
+            </div>
+            <div class="overlay-text distance">
+                <span class="metric-label">Distance</span>
+                <span>
+                    <span class="metric-value" id="distance"></span>
+                    <span class="metric-unit">km</span>
+                </span>
+            </div>
+            <div class="overlay-text moving-time">
+                <span class="metric-label">Time</span>
+                <span class="metric-value" id="moving-time"></span>
+            </div>
+            <div class="overlay-text average-pace">
+                <span class="metric-label">Average Pace</span>
+                <span class="metric-value" id="average-pace"></span>
+            </div>
+            <div class="overlay-text elevation-gain">
+                <span class="metric-label">Elevation Gain</span>
+                <span>
+                    <span class="metric-value" id="elevation-gain"></span>
+                    <span class="metric-unit">m</span>
+                </span>
+            </div>
+            <div class="overlay-text has-heartrate">
+                <span class="metric-label">Has Heartrate</span>
+                <span class="metric-value" id="has-heartrate"></span>
+            </div>
+            <div class="overlay-text average-heartrate">
+                <span class="metric-label">Average Heartrate</span>
+                <span>
+                    <span class="metric-value" id="average-heartrate"></span>
+                    <span class="metric-unit">bpm</span>
+                </span>
+            </div>
+            <div class="overlay-text max-heartrate">
+                <span class="metric-label">Max Heartrate</span>
+                <span>
+                    <span class="metric-value" id="max-heartrate"></span>
+                    <span class="metric-unit">bpm</span>
+                </span>
+            </div>
+        </div>
+    </div>
+    <script>
+        fetch('activities/response_13645563183.json')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('activity-type').textContent = data.type || 'N/A';
+                document.getElementById('activity-name').textContent = data.name || 'N/A';
+                document.getElementById('distance').textContent = (data.distance / 1000).toFixed(2);
+                const movingTime = data.moving_time;
+                const hours = Math.floor(movingTime / 3600).toString().padStart(2, '0');
+                const minutes = Math.floor((movingTime % 3600) / 60).toString().padStart(2, '0');
+                const seconds = (movingTime % 60).toString().padStart(2, '0');
+                document.getElementById('moving-time').innerHTML = `
+                    ${hours}<span class="metric-unit">h</span> 
+                    ${minutes}<span class="metric-unit">m</span> 
+                    ${seconds}<span class="metric-unit">s</span>`;
+                document.getElementById('average-pace').innerHTML = `
+                    ${(data.average_speed || 0).toFixed(2)}
+                    <span class="metric-unit">/km</span>`;
+                document.getElementById('elevation-gain').textContent = data.total_elevation_gain || 'N/A';
+
+                const hasHeartrate = data.has_heartrate === true; // Treat missing or false as false
+                const averageHeartrateOption = document.getElementById('toggle-average-heartrate');
+                const maxHeartrateOption = document.getElementById('toggle-max-heartrate');
+                const averageHeartrateMetric = document.querySelector('.overlay-text.average-heartrate');
+                const maxHeartrateMetric = document.querySelector('.overlay-text.max-heartrate');
+
+                if (hasHeartrate) {
+                    averageHeartrateOption.disabled = false;
+                    maxHeartrateOption.disabled = false;
+                    document.getElementById('average-heartrate').textContent = data.average_heartrate || 'N/A';
+                    document.getElementById('max-heartrate').textContent = data.max_heartrate || 'N/A';
+                } else {
+                    averageHeartrateOption.disabled = true;
+                    maxHeartrateOption.disabled = true;
+                    averageHeartrateOption.checked = false;
+                    maxHeartrateOption.checked = false;
+                    averageHeartrateMetric.style.display = 'none';
+                    maxHeartrateMetric.style.display = 'none';
+                    document.getElementById('average-heartrate').textContent = '';
+                    document.getElementById('max-heartrate').textContent = '';
+                }
+            })
+            .catch(error => console.error('Error loading activity data:', error));
+
+        let labelFontSize = 16; // Default label font size (Small)
+        let valueFontSize = 24; // Default value font size (Medium)
+
+        function updateFontSize() {
+            document.querySelectorAll('.metric-label').forEach(el => el.style.fontSize = labelFontSize + 'px');
+            document.querySelectorAll('.metric-value').forEach(el => el.style.fontSize = valueFontSize + 'px');
+            document.querySelectorAll('.metric-unit').forEach(el => el.style.fontSize = (valueFontSize - 2) + 'px'); // Unit font size is 2px smaller
+        }
+
+        function updateSelectedButton(group, selectedId) {
+            document.querySelectorAll(group).forEach(button => {
+                button.classList.remove('selected');
+            });
+            document.getElementById(selectedId).classList.add('selected');
+        }
+
+        document.getElementById('label-font-small').addEventListener('click', () => {
+            labelFontSize = 16;
+            updateFontSize();
+            updateSelectedButton('.font-size-controls button[id^="label-font"]', 'label-font-small');
+        });
+        document.getElementById('label-font-medium').addEventListener('click', () => {
+            labelFontSize = 24;
+            updateFontSize();
+            updateSelectedButton('.font-size-controls button[id^="label-font"]', 'label-font-medium');
+        });
+        document.getElementById('label-font-large').addEventListener('click', () => {
+            labelFontSize = 30;
+            updateFontSize();
+            updateSelectedButton('.font-size-controls button[id^="label-font"]', 'label-font-large');
+        });
+
+        document.getElementById('value-font-small').addEventListener('click', () => {
+            valueFontSize = 16;
+            updateFontSize();
+            updateSelectedButton('.font-size-controls button[id^="value-font"]', 'value-font-small');
+        });
+        document.getElementById('value-font-medium').addEventListener('click', () => {
+            valueFontSize = 24;
+            updateFontSize();
+            updateSelectedButton('.font-size-controls button[id^="value-font"]', 'value-font-medium');
+        });
+        document.getElementById('value-font-large').addEventListener('click', () => {
+            valueFontSize = 30;
+            updateFontSize();
+            updateSelectedButton('.font-size-controls button[id^="value-font"]', 'value-font-large');
+        });
+
+        const metricsBox = document.getElementById('metrics-box');
+        let offsetX, offsetY, isDragging = false;
+        metricsBox.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - metricsBox.offsetLeft;
+            offsetY = e.clientY - metricsBox.offsetTop;
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            metricsBox.style.left = Math.min(window.innerWidth - metricsBox.clientWidth, Math.max(0, e.clientX - offsetX)) + 'px';
+            metricsBox.style.top = Math.min(window.innerHeight - metricsBox.clientHeight, Math.max(0, e.clientY - offsetY)) + 'px';
+        });
+        document.addEventListener('mouseup', () => { isDragging = false; });
+
+        // Text alignment functionality
+        document.getElementById('align-left').addEventListener('click', () => {
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'left');
+            updateSelectedAlignmentButton('align-left');
+        });
+        document.getElementById('align-center').addEventListener('click', () => {
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'center');
+            updateSelectedAlignmentButton('align-center');
+        });
+        document.getElementById('align-right').addEventListener('click', () => {
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'right');
+            updateSelectedAlignmentButton('align-right');
+        });
+
+        // Text alignment functionality for the metrics-box
+        function alignMetricsBoxText(alignment) {
+            const metricsBox = document.getElementById('metrics-box');
+            metricsBox.style.alignItems = alignment; // Align child elements horizontally
+
+            // Update text alignment for each overlay-text element
+            document.querySelectorAll('.overlay-text').forEach(el => {
+                el.style.alignItems = alignment; // Align labels and values horizontally
+                el.style.textAlign = alignment === 'flex-start' ? 'left' : alignment === 'center' ? 'center' : 'right';
+            });
+        }
+
+        document.getElementById('align-left').addEventListener('click', () => {
+            alignMetricsBoxText('flex-start');
+        });
+        document.getElementById('align-center').addEventListener('click', () => {
+            alignMetricsBoxText('center');
+        });
+        document.getElementById('align-right').addEventListener('click', () => {
+            alignMetricsBoxText('flex-end');
+        });
+
+        // Fix enabling/disabling options for toggling visibility
+        document.getElementById('toggle-activity-type').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.activity-type').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-activity-name').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.activity-name').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-distance').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.distance').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-time').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.moving-time').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-average-pace').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.average-pace').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-elevation-gain').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.elevation-gain').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-average-heartrate').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.average-heartrate').style.display = e.target.checked ? 'flex' : 'none';
+        });
+        document.getElementById('toggle-max-heartrate').addEventListener('change', (e) => {
+            document.querySelector('.overlay-text.max-heartrate').style.display = e.target.checked ? 'flex' : 'none';
+        });
+
+        // Initialize visibility based on default checkbox states
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('toggle-activity-type').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-activity-name').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-distance').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-time').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-average-pace').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-elevation-gain').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-average-heartrate').dispatchEvent(new Event('change'));
+            document.getElementById('toggle-max-heartrate').dispatchEvent(new Event('change'));
+        });
+
+        // Initialize font sizes on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateFontSize(); // Initialize font sizes on page load
+            updateSelectedButton('.font-size-controls button[id^="label-font"]', 'label-font-small'); // Default label font size
+            updateSelectedButton('.font-size-controls button[id^="value-font"]', 'value-font-medium'); // Default value font size
+        });
+
+        // Make labels draggable
+        document.querySelectorAll('.options-panel label').forEach(label => {
+            label.setAttribute('draggable', 'true');
+        });
+
+        // Drag-and-drop functionality for reordering options
+        const optionsContainer = document.querySelector('.options-container');
+        let draggedItem = null;
+
+        optionsContainer.addEventListener('dragstart', (e) => {
+            if (e.target.tagName === 'LABEL') {
+                draggedItem = e.target;
+                e.target.classList.add('dragging');
+            }
+        });
+
+        optionsContainer.addEventListener('dragend', (e) => {
+            if (e.target.tagName === 'LABEL') {
+                e.target.classList.remove('dragging');
+                draggedItem = null;
+                updateMetricsSequence(); // Update metrics sequence after drag-and-drop
+            }
+        });
+
+        optionsContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(optionsContainer, e.clientY);
+            if (draggedItem && afterElement) {
+                optionsContainer.insertBefore(draggedItem, afterElement);
+            } else if (draggedItem) {
+                optionsContainer.appendChild(draggedItem);
+            }
+        });
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('label:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // Synchronize the sequence of options with the metrics-box
+        function updateMetricsSequence() {
+            const metricsBox = document.getElementById('metrics-box');
+            const options = document.querySelectorAll('.options-container label');
+            const metrics = {
+                'toggle-activity-type': document.querySelector('.overlay-text.activity-type'),
+                'toggle-activity-name': document.querySelector('.overlay-text.activity-name'),
+                'toggle-distance': document.querySelector('.overlay-text.distance'),
+                'toggle-time': document.querySelector('.overlay-text.moving-time'),
+                'toggle-average-pace': document.querySelector('.overlay-text.average-pace'),
+                'toggle-elevation-gain': document.querySelector('.overlay-text.elevation-gain'),
+                'toggle-average-heartrate': document.querySelector('.overlay-text.average-heartrate'),
+                'toggle-max-heartrate': document.querySelector('.overlay-text.max-heartrate')
+            };
+
+            // Clear and reorder metrics in the metrics-box
+            metricsBox.innerHTML = '';
+            options.forEach(option => {
+                const input = option.querySelector('input');
+                if (input && metrics[input.id]) {
+                    metricsBox.appendChild(metrics[input.id]);
+                }
+            });
+        }
+
+        // Initialize metrics sequence on page load
+        document.addEventListener('DOMContentLoaded', updateMetricsSequence);
+
+        function updateSelectedAlignmentButton(selectedId) {
+            document.querySelectorAll('.alignment-controls button').forEach(button => {
+                button.classList.remove('selected');
+            });
+            document.getElementById(selectedId).classList.add('selected');
+        }
+
+        document.getElementById('align-left').addEventListener('click', () => {
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'left');
+            updateSelectedAlignmentButton('align-left');
+        });
+        document.getElementById('align-center').addEventListener('click', () => {
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'center');
+            updateSelectedAlignmentButton('align-center');
+        });
+        document.getElementById('align-right').addEventListener('click', () => {
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'right');
+            updateSelectedAlignmentButton('align-right');
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateSelectedAlignmentButton('align-center'); // Default alignment is center
+            document.querySelectorAll('.overlay-text').forEach(el => el.style.textAlign = 'center'); // Apply center alignment
+        });
+
+        // Text color functionality with selection indicator
+        document.querySelectorAll('.color-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const color = button.getAttribute('data-color');
+                document.querySelectorAll('.overlay-text').forEach(el => {
+                    el.style.color = color;
+                });
+                document.querySelectorAll('.color-button').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+            });
+        });
+
+        // Opacity functionality with selection indicator
+        document.querySelectorAll('.opacity-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const opacity = button.getAttribute('data-opacity');
+                document.querySelectorAll('.overlay-text').forEach(el => el.style.opacity = opacity);
+                document.querySelectorAll('.opacity-button').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+            });
+        });
+
+        // Font style functionality with selection indicator
+        document.querySelectorAll('.font-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const font = button.getAttribute('data-font');
+                document.querySelectorAll('.overlay-text').forEach(el => el.style.fontFamily = font); // Apply selected font
+                document.querySelectorAll('.font-button').forEach(btn => btn.classList.remove('selected')); // Remove previous selection
+                button.classList.add('selected'); // Highlight selected button
+            });
+        });
+
+        // Initialize default selections
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.font-button[data-font="Arial"]').classList.add('selected'); // Default font is Arial
+        });
+
+        // Initialize default selections
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.color-button[data-color="white"]').classList.add('selected'); // Default text color
+            document.querySelector('.opacity-button[data-opacity="1.00"]').classList.add('selected'); // Default opacity
+            document.querySelector('.font-button[data-font="Arial"]').classList.add('selected'); // Default font
+        });
+    </script>
+</body>
+</html>
