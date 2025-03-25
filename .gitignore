@@ -4,3 +4,6 @@ venv
 .tokens*
 *jpg
 *png
+__pycache__/
+*.py[cod]
+*.pyc
