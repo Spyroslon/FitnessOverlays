@@ -475,7 +475,10 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Update checkAuth function
+            // Add CSRF token management
+            let csrfToken = '';
+
+            // Update checkAuth function to store CSRF token
             async function checkAuth() {
                 try {
                     const response = await fetch("/status", {
@@ -485,6 +488,7 @@
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     const data = await response.json();
+                    csrfToken = data.csrf_token;  // Store CSRF token
                     
                     const button = document.getElementById("auth-button");
                     if (data.authenticated) {
@@ -512,14 +516,45 @@
                 }
             }
 
-            // Update auth button click handler
+            // Helper function to add CSRF token to fetch options
+            function addCSRFToken(options = {}) {
+                return {
+                    ...options,
+                    headers: {
+                        ...options.headers,
+                        'X-CSRF-Token': csrfToken
+                    }
+                };
+            }
+
+            // Update fetchActivityData function
+            async function fetchActivityData(activityId) {
+                const fetchResponse = await fetch(`/fetch_activity/${activityId}`, 
+                    addCSRFToken({ credentials: "include" })
+                );
+                
+                if (!fetchResponse.ok) {
+                    const error = new Error('Failed to fetch activity data');
+                    error.status = fetchResponse.status;
+                    // Get the error details from response
+                    const errorData = await fetchResponse.json();
+                    error.message = errorData.error || error.message;
+                    throw error;
+                }
+                
+                return await fetchResponse.json();
+            }
+
+            // Update auth button click handler to include CSRF token for logout
             document.getElementById("auth-button").addEventListener("click", function() {
                 if (this.classList.contains("logged-out")) {
-                    // User is logged out, redirect to login
                     window.location.href = "/login";
                 } else {
-                    // User is logged in, redirect to logout
-                    window.location.href = "/logout";
+                    fetch("/logout", addCSRFToken({
+                        credentials: "include"
+                    })).then(() => {
+                        window.location.href = "/";
+                    });
                 }
             });
 

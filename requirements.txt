@@ -1,6 +1,7 @@
 flask
 flask-limiter
 flask-cors
+Flask-WTF
 requests
 requests-oauthlib
 pillow
