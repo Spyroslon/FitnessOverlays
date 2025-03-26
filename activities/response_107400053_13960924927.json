@@ -23,7 +23,7 @@
     "achievement_count": 0,
     "kudos_count": 12,
     "comment_count": 1,
-    "athlete_count": 33,
+    "athlete_count": 34,
     "photo_count": 0,
     "map": {
         "id": "a13960924927",
@@ -895,8 +895,8 @@
         "nickname": null,
         "resource_state": 2,
         "retired": false,
-        "distance": 487252,
-        "converted_distance": 487.3
+        "distance": 498264,
+        "converted_distance": 498.3
     },
     "photos": {
         "primary": {

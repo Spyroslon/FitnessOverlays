@@ -38,13 +38,26 @@
             padding: 15px; /* Reduced padding */
             border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative; /* Added to position auth-status */
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
         }
 
         h1 {
             color: var(--strava-orange);
             text-align: center;
-            margin-bottom: 10px; /* Reduced margin */
+            margin-bottom: 0;
+            margin-right: 10px;
             font-size: 1.5rem; /* Smaller font size */
+        }
+
+        h1 span {
+            color: var(--strava-text);
         }
 
         .input-group {
@@ -54,6 +67,7 @@
         .strava-input {
             display: flex;
             gap: 10px;
+            align-items: center;
         }
 
         @media (max-width: 400px) {
@@ -133,6 +147,8 @@
             appearance: none;
             width: 40px;
             height: 40px;
+            min-width: 40px;
+            max-width: 40px;
             border: 3px solid var(--strava-orange);
             cursor: pointer;
             border-radius: 12px;
@@ -140,6 +156,7 @@
             background-color: var(--strava-text);
             box-shadow: 0 2px 6px rgba(0,0,0,0.2);
             transition: all 0.3s ease;
+            flex-shrink: 0;
         }
 
         .color-picker:hover {
@@ -168,6 +185,9 @@
             position: relative;
             width: 100%;
             aspect-ratio: 1/1;
+            margin: 15px 0;
+            max-width: 100%;
+            overflow: hidden;
         }
 
         #overlayCanvas {
@@ -178,12 +198,13 @@
             height: 100%;
             border: 2px dashed var(--strava-orange);
             border-radius: 8px;
+            max-width: 100%;
         }
 
         @media (max-width: 840px) { /* 800px + 40px padding */
             .canvas-container {
-                min-width: unset;
-                width: calc(100vw - 50px);
+                width: 100%;
+                margin: 15px 0;
             }
         }
 
@@ -206,9 +227,9 @@
 
         .toast {
             position: fixed;
-            bottom: 20px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translate(-50%, -50%);
             background-color: var(--strava-orange);
             color: white;
             padding: 12px 24px;
@@ -225,39 +246,194 @@
         }
 
         .status-message {
-            margin-top: 8px;
-            padding: 8px 12px;
+            margin: 0;
+            padding: 0;
             border-radius: 6px;
             font-size: 0.9rem;
-            display: none;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .status-message.show {
+            opacity: 1;
+            max-height: 60px;
+            margin-top: 8px;
+            padding: 8px 12px;
         }
 
         .status-message.success {
-            display: block;
             background-color: #4CAF50;
             color: white;
         }
 
         .status-message.error {
-            display: block;
             background-color: #f44336;
             color: white;
+        }
+
+        .auth-status {
+            position: static;
+            margin-left: auto;
+        }
+
+        .auth-button {
+            padding: 12px;
+            border: 2px solid;
+            background: transparent;
+            font-weight: 600;
+            min-width: 100px;
+            transition: all 0.3s ease;
+        }
+
+        .auth-button.logged-out {
+            color: #ff4444;
+            border-color: #ff4444;
+            background-color: rgba(255, 68, 68, 0.05);
+        }
+
+        .auth-button.logged-in {
+            color: #4CAF50;
+            border-color: #4CAF50;
+            background-color: rgba(74, 175, 80, 0.05);
+        }
+
+        .auth-button:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        @media (max-width: 500px) {
+            .strava-input {
+                flex-direction: column;
+            }
+            
+            .auth-status {
+                margin-left: 0;
+                margin-top: 10px;
+                align-self: flex-end;
+            }
+        }
+
+        @media (max-width: 840px) {
+            body {
+                padding: 5px;
+            }
+
+            .container {
+                padding: 15px;
+                border-radius: 8px;
+            }
+
+            .strava-input {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .auth-status {
+                flex: 0 0 auto;
+                margin: 0;
+                min-width: 100px;
+            }
+
+            .auth-button {
+                width: auto;
+                min-width: 100px;
+            }
+
+            input {
+                min-width: 200px;
+                flex: 1;
+            }
+
+            .load-btn {
+                width: auto;
+                min-width: 100px;
+            }
+
+            #overlayOptions {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .canvas-container {
+                margin: 15px 0;
+            }
+
+            .color-picker-container {
+                flex-direction: row;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .action-buttons {
+                gap: 10px;
+                flex-direction: row;
+            }
+
+            .action-buttons button {
+                width: auto;
+                flex: 1;
+            }
+
+            .header-container {
+                flex-wrap: nowrap;
+                gap: 10px;
+            }
+
+            h1 {
+                font-size: 1.25rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .strava-input {
+                flex-direction: column;
+            }
+
+            input, .load-btn, .auth-button {
+                width: 100%;
+            }
+
+            #overlayOptions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 360px) {
+            #overlayOptions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            h1 {
+                font-size: 1.25rem;
+            }
         }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <h1>Strava Overlay Generator</h1>
-        
+        <div class="header-container">
+            <h1><span>FitOverlay</span> a Strava Overlay Generator</h1>
+            <div class="auth-status">
+                <button id="auth-button" class="auth-button logged-out">
+                    Login
+                </button>
+            </div>
+        </div>
+
         <div class="input-group">
             <div class="strava-input">
                 <input type="text" id="activityInput" placeholder="Enter Strava Activity URL or ID" required>
                 <button id="loadActivityBtn" class="load-btn">Load</button>
             </div>
             <div id="statusMessage" class="status-message"></div>
-            <div id="loadingIndicator" style="display: none; text-align: center; color: var(--strava-orange);">
-                Loading activity data...
-            </div>
         </div>
 
         <div class="canvas-container">
@@ -299,8 +475,59 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Update checkAuth function
+            async function checkAuth() {
+                try {
+                    const response = await fetch("/status", {
+                        credentials: "include"
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    
+                    const button = document.getElementById("auth-button");
+                    if (data.authenticated) {
+                        button.textContent = "Logout";
+                        button.classList.remove("logged-out");
+                        button.classList.add("logged-in");
+                        state.isAuthenticated = true;
+                        enableActivityInput();
+                    } else {
+                        button.textContent = "Login";
+                        button.classList.remove("logged-in");
+                        button.classList.add("logged-out");
+                        state.isAuthenticated = false;
+                        disableActivityInput();
+                    }
+                } catch (error) {
+                    console.error("Auth check failed:", error);
+                    const button = document.getElementById("auth-button");
+                    button.textContent = "Login";
+                    button.classList.remove("logged-in");
+                    button.classList.add("logged-out");
+                    state.isAuthenticated = false;
+                    disableActivityInput();
+                    showStatusMessage('Error checking authentication status'); // Add error message
+                }
+            }
+
+            // Update auth button click handler
+            document.getElementById("auth-button").addEventListener("click", function() {
+                if (this.classList.contains("logged-out")) {
+                    // User is logged out, redirect to login
+                    window.location.href = "/login";
+                } else {
+                    // User is logged in, redirect to logout
+                    window.location.href = "/logout";
+                }
+            });
+
+            // Check auth status on load
+            checkAuth();
+
+            // Existing code
             const activityInput = document.getElementById('activityInput');
-            const loadingIndicator = document.getElementById('loadingIndicator');
             const loadActivityBtn = document.getElementById('loadActivityBtn');
             const overlayCanvas = document.getElementById('overlayCanvas');
             const colorWheel = document.getElementById('colorWheel');
@@ -322,8 +549,48 @@
                 selectedMetrics: [],
                 textColor: '#ffffff',
                 backgroundColor: '#2c3e50', // Default background color (accessible dark blue)
-                template: 'minimal'
+                template: 'minimal',
+                isAuthenticated: false, // Add authentication state
             };
+            
+            // Message handling system
+            const messageQueue = {
+                timer: null,
+                currentMessage: null,
+                clear() {
+                    if (this.timer) {
+                        clearTimeout(this.timer);
+                        this.timer = null;
+                    }
+                }
+            };
+
+            // Single implementation of message handling
+            function showStatusMessage(message, type = 'error') {
+                const statusMessage = document.getElementById('statusMessage');
+                messageQueue.clear();
+                
+                statusMessage.textContent = message;
+                statusMessage.className = `status-message ${type} show`;
+                
+                messageQueue.timer = setTimeout(() => {
+                    statusMessage.classList.remove('show');
+                    messageQueue.timer = null;
+                    messageQueue.currentMessage = null;
+                }, 3000);
+                
+                messageQueue.currentMessage = message;
+            }
+
+            function showLoginRequired(action) {
+                showStatusMessage(`Please login to ${action}`);
+            }
+
+            function hideStatusMessage() {
+                messageQueue.clear();
+                const statusMessage = document.getElementById('statusMessage');
+                statusMessage.classList.remove('show');
+            }
 
             // Mock Strava API data (replace with actual API call)
             const mockStravaData = {
@@ -355,69 +622,34 @@
             }
 
             async function fetchActivityData(activityId) {
-                try {
-                    const response = await fetch(`/activities/response_${activityId}.json`);
-                    if (!response.ok) {
-                        throw new Error('Activity data not found');
-                    }
-                    return await response.json();
-                } catch (error) {
-                    // Trigger Python script to fetch the activity
-                    const fetchResponse = await fetch(`/fetch_activity/${activityId}`);
-                    if (!fetchResponse.ok) {
-                        throw new Error('Failed to fetch activity data');
-                    }
-                    return await fetchResponse.json();
+                const fetchResponse = await fetch(`/fetch_activity/${activityId}`, {
+                    credentials: "include"  // Include credentials for authentication
+                });
+                
+                if (!fetchResponse.ok) {
+                    const error = new Error('Failed to fetch activity data');
+                    error.status = fetchResponse.status;
+                    // Get the error details from response
+                    const errorData = await fetchResponse.json();
+                    error.message = errorData.error || error.message;
+                    throw error;
                 }
+                
+                return await fetchResponse.json();
             }
 
-            // Update the load activity button click handler
-            loadActivityBtn.addEventListener('click', async () => {
-                const input = activityInput.value.trim();
-                const activityId = extractActivityId(input);
-                const statusMessage = document.getElementById('statusMessage');
-                
-                statusMessage.className = 'status-message';
-                statusMessage.style.display = 'none';
-                
-                if (!activityId) {
-                    statusMessage.textContent = 'Please enter a valid Strava activity URL or ID';
-                    statusMessage.classList.add('error');
-                    return;
-                }
-
-                loadingIndicator.style.display = 'block';
-                loadActivityBtn.disabled = true;
-
-                try {
-                    const activityData = await fetchActivityData(activityId);
-                    state.activityId = activityId;
-                    
-                    // Update mockStravaData with real data
-                    mockStravaData.distance = (activityData.distance / 1000).toFixed(2);
-                    mockStravaData.time = new Date(activityData.moving_time * 1000).toISOString().substr(11, 8);
-                    mockStravaData.elevation = Math.round(activityData.total_elevation_gain);
-                    mockStravaData.pace = ((activityData.moving_time / 60) / (activityData.distance / 1000)).toFixed(2);
-                    mockStravaData.heartRate = activityData.average_heartrate ? Math.round(activityData.average_heartrate) : 0;
-
-                    generateOverlay(mockStravaData);
-                    
-                    statusMessage.textContent = `Activity "${activityData.name}" loaded successfully`;
-                    statusMessage.classList.add('success');
-                } catch (error) {
-                    console.error('Error loading activity:', error);
-                    statusMessage.textContent = 'Failed to load activity. Please check the activity ID and try again.';
-                    statusMessage.classList.add('error');
-                } finally {
-                    loadingIndicator.style.display = 'none';
-                    loadActivityBtn.disabled = false;
-                    statusMessage.style.display = 'block';
-                }
-            });
-
-            // Overlay Option Selection
+            // Update overlay option handler
             document.querySelectorAll('.overlay-option').forEach(option => {
                 option.addEventListener('click', () => {
+                    if (!state.isAuthenticated) {
+                        showLoginRequired('customize overlays');
+                        return;
+                    }
+                    if (!state.activityId) {
+                        showStatusMessage('Please load an activity first to customize overlays');
+                        return;
+                    }
+
                     option.classList.toggle('active');
                     const metric = option.dataset.metric;
                     
@@ -433,12 +665,19 @@
                 });
             });
 
-            // Color Wheel
+            // Update color wheel handler
             colorWheel.addEventListener('input', (e) => {
-                state.textColor = e.target.value;
-                if (state.activityId) {
-                    generateOverlay(mockStravaData);
+                if (!state.isAuthenticated) {
+                    showLoginRequired('customize colors');
+                    return;
                 }
+                if (!state.activityId) {
+                    showStatusMessage('Please load an activity first to customize colors');
+                    return;
+                }
+
+                state.textColor = e.target.value;
+                generateOverlay(mockStravaData);
             });
 
             // Generate Overlay
@@ -556,13 +795,26 @@
                 }, 2000);
             }
 
-            // Export Text
+            function showActionRequired(action) {
+                if (!state.isAuthenticated) {
+                    showLoginRequired(action);
+                    return true;
+                }
+                if (!state.activityId) {
+                    showStatusMessage('Please load an activity first before exporting');
+                    return true;
+                }
+                return false;
+            }
+
+            // Update export button handlers
             exportTextBtn.addEventListener('click', async () => {
+                if (showActionRequired('export activities')) return;
                 const metrics = [
                     { name: 'Distance', value: `${mockStravaData.distance} km`, key: 'distance' },
                     { name: 'Pace', value: `${mockStravaData.pace} min/km`, key: 'pace' },
                     { name: 'Elevation', value: `${mockStravaData.elevation} m`, key: 'elevation' },
-                    { name: 'Time', value: mockStravaData.time, key: 'time' },
+                    { name: 'Time', value: `${mockStravaData.time}`, key: 'time' },
                     { name: 'Heart Rate', value: `${mockStravaData.heartRate} bpm`, key: 'heartRate' }
                 ];
 
@@ -592,8 +844,8 @@
                 }
             });
 
-            // Copy Image
             copyImageBtn.addEventListener('click', async () => {
+                if (showActionRequired('export activities')) return;
                 const dimensions = getCroppedDimensions(mockStravaData, ctx);
                 
                 const tempCanvas = document.createElement('canvas');
@@ -659,6 +911,75 @@
                     console.error('Unable to process image:', err);
                 }
             });
+
+            // Update load activity button click handler
+            loadActivityBtn.addEventListener('click', async () => {
+                if (!state.isAuthenticated) {
+                    showLoginRequired('load activities');
+                    return;
+                }
+
+                const input = activityInput.value.trim();
+                const activityId = extractActivityId(input);
+                
+                if (!activityId) {
+                    showStatusMessage('Please enter a valid Strava activity URL or ID', 'error');
+                    return;
+                }
+
+                loadActivityBtn.disabled = true;
+
+                try {
+                    const activityData = await fetchActivityData(activityId);
+                    state.activityId = activityId;
+                    
+                    // Update mockStravaData with real data
+                    mockStravaData.distance = (activityData.distance / 1000).toFixed(2);
+                    mockStravaData.time = new Date(activityData.moving_time * 1000).toISOString().substr(11, 8);
+                    mockStravaData.elevation = Math.round(activityData.total_elevation_gain);
+                    mockStravaData.pace = ((activityData.moving_time / 60) / (activityData.distance / 1000)).toFixed(2);
+                    mockStravaData.heartRate = activityData.average_heartrate ? Math.round(activityData.average_heartrate) : 0;
+
+                    generateOverlay(mockStravaData);
+                    exportTextBtn.disabled = false;
+                    copyImageBtn.disabled = false;
+                    
+                    showStatusMessage(`Activity "${activityData.name}" loaded successfully`, 'success');
+                } catch (error) {
+                    console.error('Error loading activity:', error);
+                    if (error.status === 401) {
+                        showStatusMessage('Please login to access activities', 'error');
+                    } else if (error.status === 403) {
+                        showStatusMessage('You do not have permission to access this activity', 'error');
+                    } else if (error.status === 429) {
+                        showStatusMessage('Too many requests. Please wait a minute before trying again.', 'error');
+                    } else {
+                        // Always show this generic message for other errors
+                        showStatusMessage('Failed to load activity. Please check the activity ID and try again.', 'error');
+                    }
+                } finally {
+                    loadActivityBtn.disabled = false;
+                }
+            });
+
+            // Add functions to enable/disable activity input
+            function enableActivityInput() {
+                activityInput.disabled = false;
+                loadActivityBtn.disabled = false;
+                activityInput.placeholder = "Enter Strava Activity URL or ID";
+            }
+
+            function disableActivityInput() {
+                activityInput.disabled = true;
+                // Don't disable load button to allow error message trigger
+                loadActivityBtn.disabled = false;
+                activityInput.placeholder = "Please login to load activities";
+                // Clear any existing activity data
+                state.activityId = null;
+                generateOverlay(mockStravaData);
+                // Don't show message immediately, wait for user interaction
+            }
+
         });
     </script>
 </body>
