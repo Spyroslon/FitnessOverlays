@@ -1,7 +1,7 @@
-# FitOverlay 🚴
+# FitOverlays 🚴
 
 ### 📌 **Turn Your Strava Activities into Stunning Overlays**
-FitOverlay is a sleek and easy-to-use web tool that transforms your Strava activities into stylish, shareable overlays. Perfectly optimized for Instagram Stories, FitOverlay makes it effortless to showcase your runs, rides, and workouts with eye-catching designs.
+FitOverlays is a sleek and easy-to-use web tool that transforms your Strava activities into stylish, shareable overlays. Perfectly optimized for Instagram Stories, FitOverlays makes it effortless to showcase your runs, rides, and workouts with eye-catching designs.
 
 ---
 
@@ -16,17 +16,17 @@ FitOverlay is a sleek and easy-to-use web tool that transforms your Strava activ
 
 ## 🚀 **How It Works**
 1. **Copy** the link to your Strava activity.
-2. **Paste** it into FitOverlay.
+2. **Paste** it into FitOverlays.
 3. **Choose** your favorite overlay style.
 4. **Customize** (optional) to match your vibe.
 5. **Copy & Share** your overlay directly to Instagram or other social platforms.
 
 ---
 
-### 💡 **Why FitOverlay?**
+### 💡 **Why FitOverlays?**
 - **Sleek & Modern**: Designed with aesthetics in mind.
 - **Fast & User-Friendly**: No complex setup—just instant results.
-- **Built for Athletes**: Whether you run, cycle, or swim, FitOverlay helps you flex your achievements in style.
+- **Built for Athletes**: Whether you run, cycle, or swim, FitOverlays helps you flex your achievements in style.
 
 🏆 **Powered by Strava**  
-🔥 Start sharing your workouts with style—Try FitOverlay today! 🔥
+🔥 Start sharing your workouts with style—Try FitOverlays today! 🔥

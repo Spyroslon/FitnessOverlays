@@ -84,6 +84,16 @@ def logout():
 def home():
     return send_from_directory('.', 'index.html')
 
+@app.route('/static/<path:path>')
+def serve_static(path):
+    """Serve static files from the static directory"""
+    return send_from_directory('static', path)
+
+# Remove or comment out this route since it's now covered by the general static route
+# @app.route('/static/images/<path:filename>')
+# def static_files(filename):
+#     return send_from_directory('static/images', filename)
+
 @app.route('/activities/<path:filename>')
 def serve_activity(filename):
     """Securely serve activity files only to authorized users"""

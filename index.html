@@ -41,6 +41,24 @@
             position: relative; /* Added to position auth-status */
         }
 
+        /* Add styles for strava container */
+        .strava-container {
+            max-width: 600px;
+            width: 100%;
+            margin: 10px auto 0;
+            background-color: white;
+            padding: 10px 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .strava-container img {
+            height: 15px;
+            width: auto;
+        }
+
         .header-container {
             display: flex;
             justify-content: space-between;
@@ -279,29 +297,23 @@
         }
 
         .auth-button {
-            padding: 12px;
-            border: 2px solid;
-            background: transparent;
-            font-weight: 600;
-            min-width: 100px;
-            transition: all 0.3s ease;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .auth-button.logged-out {
-            color: #ff4444;
-            border-color: #ff4444;
-            background-color: rgba(255, 68, 68, 0.05);
+        .auth-button img {
+            height: 48px;
+            display: block;
+            transition: transform 0.3s ease;
         }
 
-        .auth-button.logged-in {
-            color: #4CAF50;
-            border-color: #4CAF50;
-            background-color: rgba(74, 175, 80, 0.05);
-        }
-
-        .auth-button:hover {
+        .auth-button:hover img {
             transform: scale(1.05);
-            opacity: 0.9;
         }
 
         @media (max-width: 500px) {
@@ -334,11 +346,6 @@
             .auth-status {
                 flex: 0 0 auto;
                 margin: 0;
-                min-width: 100px;
-            }
-
-            .auth-button {
-                width: auto;
                 min-width: 100px;
             }
 
@@ -392,10 +399,6 @@
                 flex-direction: column;
             }
 
-            input, .load-btn, .auth-button {
-                width: 100%;
-            }
-
             #overlayOptions {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -414,16 +417,17 @@
                 font-size: 1.25rem;
             }
         }
+
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="header-container">
-            <h1><span>FitOverlay</span> a Strava Overlay Generator</h1>
+            <h1><span>FitOverlays</span> a Strava Overlay Generator</h1>
             <div class="auth-status">
-                <button id="auth-button" class="auth-button logged-out">
-                    Login
+                <button id="auth-button" class="auth-button">
+                    <img src="static/images/btn_strava_connect_with_orange.svg" alt="Connect with Strava" id="auth-button-img">
                 </button>
             </div>
         </div>
@@ -472,6 +476,11 @@
         </div>
     </div>
     <div class="toast" id="toast">Copied to clipboard!</div>
+    
+    <!-- Replace footer with strava container -->
+    <div class="strava-container">
+        <img src="static/images/api_logo_pwrdBy_strava_horiz_black.svg" alt="Powered by Strava">
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -490,26 +499,32 @@
                     const data = await response.json();
                     csrfToken = data.csrf_token;  // Store CSRF token
                     
-                    const button = document.getElementById("auth-button");
+                    const button = document.getElementById('auth-button');
+                    const buttonImg = document.getElementById('auth-button-img');
+                    
                     if (data.authenticated) {
-                        button.textContent = "Logout";
-                        button.classList.remove("logged-out");
-                        button.classList.add("logged-in");
+                        buttonImg.src = 'static/images/btn_strava_connected_with_orange.svg';
+                        buttonImg.alt = 'Connected with Strava';
+                        button.classList.remove('logged-out');
+                        button.classList.add('logged-in');
                         state.isAuthenticated = true;
                         enableActivityInput();
                     } else {
-                        button.textContent = "Login";
-                        button.classList.remove("logged-in");
-                        button.classList.add("logged-out");
+                        buttonImg.src = 'static/images/btn_strava_connect_with_orange.svg';
+                        buttonImg.alt = 'Connect with Strava';
+                        button.classList.remove('logged-in');
+                        button.classList.add('logged-out');
                         state.isAuthenticated = false;
                         disableActivityInput();
                     }
                 } catch (error) {
                     console.error("Auth check failed:", error);
-                    const button = document.getElementById("auth-button");
-                    button.textContent = "Login";
-                    button.classList.remove("logged-in");
-                    button.classList.add("logged-out");
+                    const button = document.getElementById('auth-button');
+                    const buttonImg = document.getElementById('auth-button-img');
+                    buttonImg.src = 'static/images/btn_strava_connect_with_orange.svg';
+                    buttonImg.alt = 'Connect with Strava';
+                    button.classList.remove('logged-in');
+                    button.classList.add('logged-out');
                     state.isAuthenticated = false;
                     disableActivityInput();
                     showStatusMessage('Error checking authentication status'); // Add error message
