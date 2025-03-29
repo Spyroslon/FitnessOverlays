@@ -1,3 +1,6 @@
+# FitOverlays - Copyright (c) 2025 Spyros Lontos
+# Licensed under AGPL-3.0
+
 from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response
 import os
 import json

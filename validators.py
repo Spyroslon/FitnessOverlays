@@ -1,3 +1,6 @@
+# FitOverlays - Copyright (c) 2025 Spyros Lontos
+# Licensed under AGPL-3.0
+
 import re
 
 def validate_activity_id(activity_id):

@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="copyright" content="FitOverlays - Copyright (c) 2025 Spyros Lontos">
+        <meta name="license" content="AGPL-3.0">
     <title>Strava Overlay Generator</title>
     <style>
         :root {
@@ -51,12 +53,25 @@
             border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--strava-gray);
         }
 
         .strava-container img {
             height: 15px;
             width: auto;
+        }
+
+        .strava-container a {
+            color: var(--strava-gray);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .strava-container a:hover {
+            color: var(--strava-orange);
         }
 
         .header-container {
@@ -515,6 +530,7 @@
     
     <!-- Replace footer with strava container -->
     <div class="strava-container">
+        <div>&copy; 2025 FitOverlays - Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank">AGPL-3.0</a></div>
         <img src="static/images/api_logo_pwrdBy_strava_horiz_black.svg" alt="Powered by Strava">
     </div>
 
