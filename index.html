@@ -550,6 +550,7 @@
                         button.classList.remove('logged-out');
                         button.classList.add('logged-in');
                         state.isAuthenticated = true;
+                        state.athleteId = data.athlete_id;  // Store athlete_id in state
                         enableActivityInput();
 
                         // Start token expiry check timer
@@ -597,9 +598,15 @@
                 };
             }
 
-            // Update fetchActivityData function
+            // Update fetchActivityData function to include athlete_id
             async function fetchActivityData(activityId) {
-                const fetchResponse = await fetch(`/fetch_activity/${activityId}`, 
+                const athleteId = state.athleteId; // We'll get this from the status check
+                if (!athleteId) {
+                    throw new Error('No athlete ID available');
+                }
+                
+                const fetchResponse = await fetch(
+                    `/fetch_activity/${athleteId}/${activityId}`, 
                     addCSRFToken({ credentials: "include" })
                 );
                 
@@ -608,7 +615,6 @@
                     error.status = fetchResponse.status;
                     const errorData = await fetchResponse.json();
                     
-                    // Handle token expiry
                     if (errorData.require_login) {
                         window.location.href = "/login";
                         return;
@@ -657,6 +663,7 @@
             // State management
             const state = {
                 activityId: null,
+                athleteId: null,  // Add athleteId to state
                 selectedMetrics: [],
                 textColor: '#ffffff',
                 backgroundColor: '#2c3e50', // Default background color (accessible dark blue)

@@ -3,6 +3,8 @@ import os
 import json
 import time
 import requests
+import logging
+from logging.handlers import RotatingFileHandler
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_cors import CORS
@@ -25,6 +27,25 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.secret_key = os.urandom(24)
 
+# Configure logging
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+logging.basicConfig(
+    handlers=[
+        RotatingFileHandler(
+            'logs/security.log',
+            maxBytes=10000000,  # 10MB
+            backupCount=5
+        ),
+        logging.StreamHandler()
+    ],
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+logger = logging.getLogger(__name__)
+
 # Add CSP configuration function
 def add_security_headers(response: Response) -> Response:
     """Add security headers including Content Security Policy"""
@@ -46,10 +67,13 @@ def add_security_headers(response: Response) -> Response:
     
     # Add security headers
     response.headers['Content-Security-Policy'] = csp_string
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Cache-Control'] = 'no-store, max-age=0'
     return response
 
 # Apply security headers to all responses
@@ -70,14 +94,18 @@ if not os.path.exists(ACTIVITIES_DIR):
 @app.route('/login')
 def login():
     """Handle the login process using Strava OAuth"""
-    oauth = OAuth2Session(
-        CLIENT_ID,
-        redirect_uri="http://127.0.0.1:5000/callback",  # Update to match exact local URL
-        scope=["activity:read_all"]
-    )
-    authorization_url, state = oauth.authorization_url(AUTH_BASE_URL)
-    session['oauth_state'] = state
-    return redirect(authorization_url)
+    try:
+        oauth = OAuth2Session(
+            CLIENT_ID,
+            redirect_uri="http://127.0.0.1:5000/callback",  # Update to match exact local URL
+            scope=["activity:read_all"]
+        )
+        authorization_url, state = oauth.authorization_url(AUTH_BASE_URL)
+        session['oauth_state'] = state
+        return redirect(authorization_url)
+    except Exception as e:
+        logger.warning(f'Failed login attempt: {str(e)} - IP: {get_remote_address()}')
+        return jsonify({"error": "Authentication failed"}), 401
 
 @app.route('/callback')
 def callback():
@@ -104,7 +132,8 @@ def callback():
         
         return redirect('/')
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        logger.warning(f'OAuth callback failed: {str(e)} - IP: {get_remote_address()}')
+        return jsonify({"error": "Authentication failed"}), 400
 
 @app.route('/logout')
 def logout():
@@ -166,22 +195,32 @@ def save_activity_response(athlete_id, activity_id, data, status_code=200):
         json.dump(data, outfile, indent=4)
     return jsonify(data), status_code
 
-@app.route('/fetch_activity/<activity_id>')
+@app.route('/fetch_activity/<athlete_id>/<activity_id>')
 @limiter.limit("5 per minute")
-def get_activity(activity_id):
-    """Fetch activity with input validation"""
+def get_activity(athlete_id, activity_id):
+    """Fetch activity with input validation for both athlete and activity IDs"""
     if 'athlete_id' not in session:
+        logger.warning(f'Unauthenticated access attempt - IP: {get_remote_address()}')
         return jsonify({"error": "Not authenticated"}), 401
+
+    # Verify athlete_id matches session
+    try:
+        if int(athlete_id) != session['athlete_id']:
+            logger.warning(f'Unauthorized athlete access attempt - IP: {get_remote_address()} - ' \
+                         f'Requested Athlete: {athlete_id}, Session Athlete: {session["athlete_id"]}')
+            return jsonify({"error": "Unauthorized access"}), 403
+    except ValueError:
+        return jsonify({"error": "Invalid athlete ID"}), 400
 
     # Validate activity_id
     is_valid, error = validate_activity_id(activity_id)
     if not is_valid:
         return jsonify({"error": error}), 400
 
-    filename = f'response_{session["athlete_id"]}_{activity_id}.json'
+    filename = f'response_{athlete_id}_{activity_id}.json'
     
     # Validate generated filename
-    is_valid, error = validate_filename(filename, session.get('athlete_id'))
+    is_valid, error = validate_filename(filename, athlete_id)
     if not is_valid:
         return jsonify({"error": error}), 400
 
@@ -203,7 +242,7 @@ def get_activity(activity_id):
         return fetch_activity(activity_id)
             
     except Exception as e:
-        print(f"Error processing activity request: {e}")
+        logger.error(f'Error processing activity request: {e} - IP: {get_remote_address()}')
         return jsonify({"error": "Error processing activity request"}), 500
 
 @app.route("/status")
@@ -244,6 +283,7 @@ def status():
 
 @app.errorhandler(RateLimitExceeded)
 def handle_ratelimit_error(e):
+    logger.warning(f'Rate limit exceeded - IP: {get_remote_address()} - Endpoint: {request.path}')
     return jsonify({
         "error": "Rate limit exceeded. Please wait before trying again.",
         "status": 429
@@ -272,10 +312,12 @@ def refresh_access_token(refresh_token):
 def fetch_activity(activity_id):
     """Fetch Strava activity data with validation"""
     if 'access_token' not in session or 'athlete_id' not in session:
+        logger.warning(f'Unauthenticated activity access attempt - IP: {get_remote_address()} - Activity: {activity_id}')
         return jsonify({"error": "Not authenticated"}), 401
 
     # Check token expiry before making request
     if "expires_at" in session and time.time() > session["expires_at"]:
+        logger.info(f'Session expired - Athlete ID: {session.get("athlete_id")} - IP: {get_remote_address()}')
         session.clear()
         return jsonify({
             "error": "Session expired. Please log in again.",
@@ -302,13 +344,15 @@ def fetch_activity(activity_id):
         
         # Verify activity belongs to authenticated user
         if response_json.get('athlete', {}).get('id') != session['athlete_id']:
+            logger.warning(f'Unauthorized activity access attempt - IP: {get_remote_address()} - ' \
+                         f'Athlete: {session["athlete_id"]} - Activity: {activity_id}')
             return jsonify({"error": "Unauthorized access"}), 403
         
         # Store and return successful activity data
         return save_activity_response(session['athlete_id'], activity_id, response_json)
             
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching activity: {e}")
+        logger.error(f'Activity fetch error - IP: {get_remote_address()} - Activity: {activity_id} - Error: {str(e)}')
         return jsonify({"error": "Failed to fetch activity data"}), 500
 
 if __name__ == '__main__':
