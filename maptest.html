@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polyline Map Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@mapbox/polyline"></script> <!-- Polyline decoding library -->
+</head>
+<body>
+    <h1>Test Polyline on Map</h1>
+    <div id="map" style="width: 600px; height: 400px;"></div>
+
+    <script>
+        // Example polyline string
+        const encodedPolyline = "aupwHg{mh@LHvA{@FDd@UHBXZXJl@BhASzBVr@U`@m@Vs@DwAEgATuA\\aA@QHMN}@AsBDyBIq@E{AHYZ_@@MKiB?}AXeBAu@IqAV}BEgAP{EKiBFwACGDgCFk@@eDHc@nEDvD`@LIDq@B{DFM^IZ]z@E`Bv@tAArAf@b@EdAiAd@UXCHBl@jBRXxAbA`BdDv@rE`@jDJZNDRIrBuBz@OXJfA`Ar@|@p@Pf@U^m@Ty@XmBZw@Va@f@[Hk@Xc@DqAIy@Mg@e@w@?IBMLILc@v@kAPu@D}@M{AQeAyAiDS@sAw@}AH_@Qy@C]SsABYy@IC_@BGHQhAWbAQXq@j@e@v@g@b@InAApBGJeDESHw@~@qBn@c@t@[Lg@@w@e@{@Hi@IqAo@[G_@Bi@\\gEE{Ae@[_@Yd@_@PYSQsBMKcBv@_A@cAn@YjACXQf@kBtAETLp@MtANpAWh@s@x@Yv@c@f@Or@?\\Q|@E|@BfBO~@?fBKd@?fAQtA?~CMnAA`CQrBBb@Gx@AbBUhFBt@Nb@VT`AVRx@P^DdAWdAa@z@CNDPf@JvAYn@A`BVj@YTYVc@H]Fs@H_D`@qBXq@Dy@BwACUDoBImBIk@BUOiCBULSb@oAJ}@@m@GeBTuBCeCRiDMiBDgAEi@Fw@H}GJW|FJZNfBLRQFiFNMN?dAe@\\?bBp@nAA|@h@d@Db@Qv@aA`@Q`@AHDv@vBd@b@j@VNN^p@z@hBL`@h@|Cf@tEFPJDh@[r@{@p@m@R[F_@f@iAlAk@V[r@wBj@mANMnAKn@i@Zq@NaAx@m@Xe@PgA@m@OwB]_Aq@mAS}@GGW@s@e@YGyA@IOQGw@?q@QgA?IGQq@IGe@JQpAW`AWd@u@p@_@p@_@NKVAjDERe@FQEEMsBHSH}@lAyA`@_A`Ag@@iAi@q@F{@EeAu@c@A[F_@ZmAHeCOaBm@oAZUOMWAaBMKkBfAs@CkAl@W`BSl@a@ReA|@H~@MrALrAOb@_AfAUr@c@f@e@~BB`EQr@AtAKlABv@Mx@CbBBRO|FKx@GjCe@nI@vAJd@TTfANj@nABZMzAe@hAg@TS?GNq@`@a@HkBAm@[QY";
+
+        // Decode the polyline into an array of lat/lng pairs
+        const decodedPolyline = polyline.decode(encodedPolyline);
+
+        // Create the map
+        const map = L.map('map').setView([decodedPolyline[0][0], decodedPolyline[0][1]], 13); // Center on the first point
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Convert array to Leaflet LatLng format
+        const latLngs = decodedPolyline.map(point => L.latLng(point[0], point[1]));
+
+        // Create the polyline and add it to the map
+        L.polyline(latLngs, { color: 'blue' }).addTo(map);
+    </script>
+</body>
+</html>
