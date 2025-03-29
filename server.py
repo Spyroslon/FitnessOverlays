@@ -156,8 +156,8 @@ def callback():
         
         return redirect('/')
     except Exception as e:
-        logger.warning(f'OAuth callback failed: {str(e)} - IP: {get_remote_address()}')
-        return jsonify({"error": "Authentication failed"}), 400
+        logger.error(f'OAuth callback error details: {str(e)} - IP: {get_remote_address()}')
+        return jsonify({"error": "Authentication failed. Please try again."}), 400
 
 @app.route('/logout', methods=['POST'])  # Add POST method
 def logout():
@@ -193,18 +193,26 @@ def serve_activity(filename):
             
         # Use safe_join to prevent directory traversal
         file_path = safe_join(ACTIVITIES_DIR, safe_filename)
-        if not file_path or not os.path.exists(file_path):
-            return jsonify({"error": "Activity not found"}), 404
+        if not file_path:
+            return jsonify({"error": "Invalid file path"}), 400
 
-        # Verify the final path is still within ACTIVITIES_DIR
+        # Get absolute paths for comparison
         activities_abs_path = os.path.abspath(ACTIVITIES_DIR)
         file_abs_path = os.path.abspath(file_path)
+        
+        # Additional check: Ensure file path starts with activities directory
+        # This prevents symbolic link attacks and ensures we stay within ACTIVITIES_DIR
         if not file_abs_path.startswith(activities_abs_path):
+            logger.warning(f'Directory traversal attempt detected - IP: {get_remote_address()} - Path: {filename}')
             return jsonify({"error": "Invalid file path"}), 403
+
+        # Check if file exists after all validations
+        if not os.path.exists(file_abs_path):
+            return jsonify({"error": "Activity not found"}), 404
 
         return send_from_directory(ACTIVITIES_DIR, safe_filename)
     except Exception as e:
-        print(f"Error serving activity: {e}")
+        logger.error(f'Error serving activity: {str(e)} - IP: {get_remote_address()} - File: {filename}')
         return jsonify({"error": "Error accessing activity data"}), 500
 
 def save_activity_response(athlete_id, activity_id, data, status_code=200):
@@ -261,8 +269,8 @@ def get_activity(athlete_id, activity_id):
         return fetch_activity(activity_id)
             
     except Exception as e:
-        logger.error(f'Error processing activity request: {e} - IP: {get_remote_address()}')
-        return jsonify({"error": "Error processing activity request"}), 500
+        logger.error(f'Activity fetch error details: {str(e)} - IP: {get_remote_address()} - Activity: {activity_id}')
+        return jsonify({"error": "Unable to process request. Please try again later."}), 500
 
 @app.route("/status")
 @limiter.limit("30 per minute")  # Add specific limit for status endpoint
@@ -380,8 +388,8 @@ def fetch_activity(activity_id):
         return save_activity_response(session['athlete_id'], activity_id, response_json)
             
     except requests.exceptions.RequestException as e:
-        logger.error(f'Activity fetch error - IP: {get_remote_address()} - Activity: {activity_id} - Error: {str(e)}')
-        return jsonify({"error": "Failed to fetch activity data"}), 500
+        logger.error(f'Strava API error details: {str(e)} - IP: {get_remote_address()} - Activity: {activity_id}')
+        return jsonify({"error": "Unable to fetch activity data. Please try again later."}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
