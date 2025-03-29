@@ -4,6 +4,7 @@ import json
 import time
 import requests
 import logging
+import secrets
 from logging.handlers import RotatingFileHandler
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -83,7 +84,7 @@ app.after_request(add_security_headers)
 limiter = Limiter(
     get_remote_address,  # Uses IP address for limiting
     app=app,
-    default_limits=["10 per minute"]  # Adjust as needed
+    default_limits=["100 per day", "30 per hour"]  # More restrictive default limits
 )
 
 ACTIVITIES_DIR = "activities"
@@ -91,7 +92,29 @@ ACTIVITIES_DIR = "activities"
 if not os.path.exists(ACTIVITIES_DIR):
     os.makedirs(ACTIVITIES_DIR)
 
+def generate_csrf_token():
+    """Generate a new CSRF token"""
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_hex(32)
+    return session['csrf_token']
+
+def validate_csrf_token():
+    """Validate CSRF token from request header against session token"""
+    if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
+        token = request.headers.get('X-CSRF-Token')
+        if not token or token != session.get('csrf_token'):
+            logger.warning(f'CSRF validation failed - IP: {get_remote_address()}')
+            return False
+    return True
+
+@app.before_request
+def csrf_protect():
+    """Protect all state-changing requests with CSRF validation"""
+    if not validate_csrf_token():
+        return jsonify({"error": "Invalid CSRF token"}), 403
+
 @app.route('/login')
+@limiter.limit("10 per minute")  # Add rate limit for login to prevent OAuth abuse
 def login():
     """Handle the login process using Strava OAuth"""
     try:
@@ -108,6 +131,7 @@ def login():
         return jsonify({"error": "Authentication failed"}), 401
 
 @app.route('/callback')
+@limiter.limit("10 per minute")  # Add rate limit for callback to prevent OAuth abuse
 def callback():
     """Handle the OAuth callback from Strava"""
     try:
@@ -135,7 +159,7 @@ def callback():
         logger.warning(f'OAuth callback failed: {str(e)} - IP: {get_remote_address()}')
         return jsonify({"error": "Authentication failed"}), 400
 
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])  # Add POST method
 def logout():
     """Clear the session data"""
     session.clear()
@@ -149,11 +173,6 @@ def home():
 def serve_static(path):
     """Serve static files from the static directory"""
     return send_from_directory('static', path)
-
-# Remove or comment out this route since it's now covered by the general static route
-# @app.route('/static/images/<path:filename>')
-# def static_files(filename):
-#     return send_from_directory('static/images', filename)
 
 @app.route('/activities/<path:filename>')
 def serve_activity(filename):
@@ -195,8 +214,8 @@ def save_activity_response(athlete_id, activity_id, data, status_code=200):
         json.dump(data, outfile, indent=4)
     return jsonify(data), status_code
 
-@app.route('/fetch_activity/<athlete_id>/<activity_id>')
-@limiter.limit("5 per minute")
+@app.route('/fetch_activity/<athlete_id>/<activity_id>', methods=['POST'])
+@limiter.limit("5 per minute;20 per hour;100 per day")  # Stricter limits for fetch endpoint
 def get_activity(athlete_id, activity_id):
     """Fetch activity with input validation for both athlete and activity IDs"""
     if 'athlete_id' not in session:
@@ -246,10 +265,13 @@ def get_activity(athlete_id, activity_id):
         return jsonify({"error": "Error processing activity request"}), 500
 
 @app.route("/status")
+@limiter.limit("30 per minute")  # Add specific limit for status endpoint
 def status():
-    """Check if user is authenticated"""
+    """Check if user is authenticated and provide CSRF token"""
     try:
         if "access_token" in session:
+            # Generate new CSRF token if needed
+            csrf_token = generate_csrf_token()
             # Check if token needs refresh
             if "expires_at" in session:
                 current_time = time.time()
@@ -266,19 +288,25 @@ def status():
                         return jsonify({
                             "authenticated": False,
                             "error": "Session expired. Please log in again.",
-                            "require_login": True
+                            "require_login": True,
+                            "csrf_token": csrf_token
                         })
             return jsonify({
                 "authenticated": True,
                 "athlete_id": session.get("athlete_id"),
-                "expires_at": session.get("expires_at")
+                "expires_at": session.get("expires_at"),
+                "csrf_token": csrf_token
             })
-        return jsonify({"authenticated": False})
+        return jsonify({
+            "authenticated": False,
+            "csrf_token": generate_csrf_token()
+        })
     except Exception as e:
         return jsonify({
             "authenticated": False,
             "error": str(e),
-            "require_login": True
+            "require_login": True,
+            "csrf_token": generate_csrf_token()
         }), 500
 
 @app.errorhandler(RateLimitExceeded)

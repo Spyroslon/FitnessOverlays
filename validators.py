@@ -25,6 +25,26 @@ def validate_activity_id(activity_id):
     except (ValueError, TypeError):
         return False, "Activity ID must be a number"
 
+def validate_activity_data(data):
+    """
+    Validate stored activity data structure.
+    Returns (is_valid: bool, error_message: str)
+    """
+    if not isinstance(data, dict):
+        return False, "Invalid activity data format"
+    
+    # Check for error flag in stored data
+    if 'error' in data:
+        return False, data.get('error', 'Invalid activity data')
+    
+    # Check required fields
+    required_fields = ['id', 'name', 'distance', 'moving_time', 'total_elevation_gain']
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
+        return False, f"Missing required activity data: {', '.join(missing_fields)}"
+        
+    return True, None
+
 def validate_filename(filename, athlete_id=None):
     """
     Validate activity filename format and optionally check athlete_id.

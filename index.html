@@ -607,7 +607,10 @@
                 
                 const fetchResponse = await fetch(
                     `/fetch_activity/${athleteId}/${activityId}`, 
-                    addCSRFToken({ credentials: "include" })
+                    addCSRFToken({
+                        method: 'POST',  // Change to POST to trigger CSRF protection
+                        credentials: "include"
+                    })
                 );
                 
                 if (!fetchResponse.ok) {
@@ -633,6 +636,7 @@
                     window.location.href = "/login";
                 } else {
                     fetch("/logout", addCSRFToken({
+                        method: 'POST',  // Change to POST to trigger CSRF protection
                         credentials: "include"
                     })).then(() => {
                         window.location.href = "/";
