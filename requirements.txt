@@ -1,9 +1,12 @@
+# Core dependencies
 flask
-flask-limiter
-flask-cors
-Flask-WTF
+flask-limiter # Rate limiting for security
+flask-cors # Secure cross-origin handling
+Flask-WTF # Form handling and CSRF protection
+
+# API and OAuth dependencies
 requests
-requests-oauthlib
-pillow
-stravalib
-python-dotenv
+requests-oauthlib  # OAuth handling
+
+# Environment and config
+python-dotenv # Secure environment variable handling

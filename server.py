@@ -80,8 +80,31 @@ def add_security_headers(response: Response) -> Response:
     response.headers['Cache-Control'] = 'no-store, max-age=0'
     return response
 
-# Apply security headers to all responses
-app.after_request(add_security_headers)
+def add_cache_control_headers(response):
+    """Add cache control headers to prevent caching of sensitive data"""
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+# Update app.after_request to include cache control
+@app.after_request
+def after_request(response):
+    """Apply security and cache control headers to all responses"""
+    response = add_security_headers(response)
+    
+    # Add cache control headers to sensitive endpoints
+    sensitive_endpoints = {'/status', '/fetch_activity', '/activities', '/callback', '/login'}
+    if any(request.path.startswith(endpoint) for endpoint in sensitive_endpoints):
+        response = add_cache_control_headers(response)
+    elif request.path.startswith('/static/'):
+        # Allow caching for static assets with 1 hour max age
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+    else:
+        # Default no-cache policy for other endpoints
+        response.headers['Cache-Control'] = 'no-store, max-age=0'
+    
+    return response
 
 # Setup rate limiter (stores limits in memory by default)
 limiter = Limiter(
@@ -402,6 +425,7 @@ def refresh_access_token(refresh_token):
         return None
 
     try:
+        # Add timeout to prevent hanging
         response = requests.post(
             "https://www.strava.com/oauth/token",
             data={
@@ -410,28 +434,55 @@ def refresh_access_token(refresh_token):
                 "grant_type": "refresh_token",
                 "refresh_token": refresh_token
             },
-            timeout=10  # Add timeout
+            timeout=10
         )
         
-        # Check specific error responses
+        # Handle specific error cases
         if response.status_code == 400:
             logger.error('Invalid refresh token detected')
             return None
         elif response.status_code == 401:
             logger.error('Refresh token expired or revoked')
             return None
-        
-        response.raise_for_status()
-        return response.json()
-        
+        elif response.status_code == 429:
+            logger.error('Rate limit exceeded during token refresh')
+            return None
+        elif not response.ok:
+            logger.error(f'Token refresh failed with status code: {response.status_code}')
+            return None
+
+        try:
+            token_data = response.json()
+            
+            # Validate token response structure
+            required_fields = ['access_token', 'refresh_token', 'expires_at']
+            if not all(field in token_data for field in required_fields):
+                logger.error('Invalid token response structure')
+                return None
+                
+            # Validate token values
+            if not all(isinstance(token_data[field], str) for field in ['access_token', 'refresh_token']):
+                logger.error('Invalid token format received')
+                return None
+                
+            if not isinstance(token_data['expires_at'], (int, float)):
+                logger.error('Invalid expiry timestamp received')
+                return None
+                
+            return token_data
+            
+        except (ValueError, TypeError, KeyError) as e:
+            logger.error(f'Invalid token response format: {str(e)}')
+            return None
+            
     except requests.exceptions.Timeout:
         logger.error('Token refresh request timed out')
         return None
     except requests.exceptions.RequestException as e:
-        logger.error(f'Token refresh failed: {str(e)}')
+        logger.error(f'Token refresh network error: {str(e)}')
         return None
-    except ValueError as e:
-        logger.error(f'Invalid token refresh response: {str(e)}')
+    except Exception as e:
+        logger.error(f'Unexpected error during token refresh: {str(e)}')
         return None
 
 def fetch_activity(activity_id):
