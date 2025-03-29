@@ -91,6 +91,7 @@
 
         h1 span {
             color: var(--strava-text);
+            font-size: 2rem; /* Smaller font size */
         }
 
         .input-group {
@@ -1034,32 +1035,28 @@
             }
 
             async function requestClipboardPermission(type) {
-                try {
-                    // Check if we need to request permission
-                    const result = await navigator.permissions.query({ name: 'clipboard-write' });
-                    if (result.state === 'granted') {
+                // Only check permissions for image copying
+                if (type === 'copy image') {
+                    try {
+                        const result = await navigator.permissions.query({ name: 'clipboard-write' });
+                        if (result.state === 'denied') {
+                            showStatusMessage('Please allow clipboard access in your browser settings to copy images');
+                            return false;
+                        }
+                    } catch (err) {
+                        // If permissions API isn't supported, proceed anyway
                         return true;
                     }
-                    if (result.state === 'denied') {
-                        showStatusMessage(`Please allow clipboard access in your browser settings to ${type} data`);
-                        return false;
-                    }
-                    // Ask user for confirmation on first use
-                    return confirm(`Allow FitOverlays to ${type} data to your clipboard?\n\nYou can manage this permission in your browser settings.`);
-                } catch (err) {
-                    // Fallback for browsers that don't support permission API
-                    return confirm(`Allow FitOverlays to ${type} data to your clipboard?`);
                 }
+                // Always allow text copying
+                return true;
             }
 
-            // Update export button handlers
+            // Update export text button handler
             exportTextBtn.addEventListener('click', async () => {
                 if (showActionRequired('export activities')) return;
 
-                if (!await requestClipboardPermission('copy text')) {
-                    return;
-                }
-
+                // Remove permission check for text
                 const metrics = [
                     { name: 'Distance', value: `${mockStravaData.distance} km`, key: 'distance' },
                     { name: 'Pace', value: `${mockStravaData.pace} min/km`, key: 'pace' },
@@ -1085,15 +1082,13 @@
                     document.body.appendChild(textarea);
                     textarea.select();
                     
-                    const copied = confirm('Tap OK to copy the activity data to clipboard');
-                    if (copied) {
-                        try {
-                            document.execCommand('copy');
-                            showToast();
-                        } catch (err) {
-                            showStatusMessage('Unable to copy text to clipboard');
-                        }
+                    try {
+                        document.execCommand('copy');
+                        showToast();
+                    } catch (err) {
+                        showStatusMessage('Unable to copy text to clipboard');
                     }
+
                     document.body.removeChild(textarea);
                 }
             });
@@ -1101,12 +1096,12 @@
             copyImageBtn.addEventListener('click', async () => {
                 if (showActionRequired('export activities')) return;
 
-                if (!await requestClipboardPermission('copy image')) {
-                    return;
-                }
+                // if (!await requestClipboardPermission('copy image')) {
+                //     return;
+                // }
 
                 const dimensions = getCroppedDimensions(mockStravaData, ctx);
-                
+
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = dimensions.width;
                 tempCanvas.height = dimensions.height;
@@ -1119,50 +1114,39 @@
                 tempCtx.restore();
 
                 try {
-                    const blob = await new Promise(resolve => tempCanvas.toBlob(resolve));
-                    
-                    // For iOS devices
-                    if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
-                        tempCanvas.toBlob(async (blob) => {
-                            try {
-                                const item = new ClipboardItem({ 'image/png': blob });
-                                const copied = confirm('Tap OK to copy the image to clipboard');
-                                if (copied) {
-                                    await navigator.clipboard.write([item]);
-                                    showToast();
-                                }
-                                return;
-                            } catch (err) {
-                                console.error('iOS clipboard write failed:', err);
-                                showStatusMessage('Unable to copy image to clipboard');
-                            }
-                        }, 'image/png');
-                        return;
+                    const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/png'));
+
+                    // Check for ClipboardItem support
+                    if (window.ClipboardItem) {
+                        try {
+                            const item = new ClipboardItem({ 'image/png': blob });
+                            await navigator.clipboard.write([item]);
+                            showToast();
+                        } catch (err) {
+                            console.error('Clipboard write (ClipboardItem) failed:', err);
+                            fallbackDownload(blob);
+                        }
+                    } else {
+                        // ClipboardItem not supported, use fallback
+                        console.log('Falling back to download');
+                        fallbackDownload(blob);
                     }
 
-                    // For other devices
-                    try {
-                        const item = new ClipboardItem({ 'image/png': blob });
-                        await navigator.clipboard.write([item]);
-                        showToast();
-                    } catch (err) {
-                        console.error('Clipboard write failed:', err);
-                        // Only download as absolute last resort with user confirmation
-                        const shouldDownload = confirm('Unable to copy to clipboard. Download image instead?');
-                        if (shouldDownload) {
-                            const url = URL.createObjectURL(blob);
-                            const link = document.createElement('a');
-                            link.download = 'strava-overlay.png';
-                            link.href = url;
-                            link.click();
-                            URL.revokeObjectURL(url);
-                        }
-                    }
                 } catch (err) {
                     console.error('Unable to process image:', err);
                     showStatusMessage('Unable to process image');
                 }
             });
+
+            function fallbackDownload(blob) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = 'strava-overlay.png';
+                link.href = url;
+                link.click();
+                URL.revokeObjectURL(url);
+                showStatusMessage('Image downloaded (clipboard access not fully supported)');
+            }
 
             // Update validation in activity input handler
             activityInput.addEventListener('input', (e) => {

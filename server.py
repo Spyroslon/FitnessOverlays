@@ -168,7 +168,7 @@ def login():
     try:
         oauth = OAuth2Session(
             CLIENT_ID,
-            redirect_uri="http://192.168.0.14:5000/callback",  # Update to match exact local URL
+            redirect_uri="http://127.0.0.1:5000/callback",  # Update to match exact local URL
             scope=["activity:read_all"]
         )
         authorization_url, state = oauth.authorization_url(AUTH_BASE_URL)
@@ -186,7 +186,7 @@ def callback():
         oauth = OAuth2Session(
             CLIENT_ID,
             state=session.get('oauth_state'),
-            redirect_uri="http://192.168.0.14:5000/callback"  # Update to match exact local URL
+            redirect_uri="http://127.0.0.1:5000/callback"  # Update to match exact local URL
         )
         token = oauth.fetch_token(
             TOKEN_URL,
@@ -624,4 +624,5 @@ def fetch_activity(activity_id):
         return jsonify({"error": "Unable to fetch activity data. Please try again later."}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=5000)
+    app.run(debug=True, port=5000)
+    # app.run(host='0.0.0.0', debug=True, port=5000)
