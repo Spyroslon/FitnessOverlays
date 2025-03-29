@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request
+from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response
 import os
 import json
 import time
@@ -9,6 +9,8 @@ from flask_cors import CORS
 from requests_oauthlib import OAuth2Session
 from dotenv import load_dotenv
 from flask_limiter.errors import RateLimitExceeded
+from validators import validate_activity_id, validate_filename
+from werkzeug.utils import secure_filename, safe_join
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,6 +24,36 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Allow OAuth without HTTPS in 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.secret_key = os.urandom(24)
+
+# Add CSP configuration function
+def add_security_headers(response: Response) -> Response:
+    """Add security headers including Content Security Policy"""
+    csp = {
+        'default-src': ["'self'"],
+        'script-src': ["'self'", "'unsafe-inline'"],  # Required for inline scripts
+        'style-src': ["'self'", "'unsafe-inline'"],   # Required for inline styles
+        'img-src': ["'self'", "*.strava.com", "data:"],
+        'connect-src': ["'self'", "www.strava.com", "strava.com"],
+        'frame-ancestors': ["'none'"],
+        'form-action': ["'self'"],
+        'base-uri': ["'self'"]
+    }
+    
+    csp_string = '; '.join([
+        f"{key} {' '.join(value)}" 
+        for key, value in csp.items()
+    ])
+    
+    # Add security headers
+    response.headers['Content-Security-Policy'] = csp_string
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    return response
+
+# Apply security headers to all responses
+app.after_request(add_security_headers)
 
 # Setup rate limiter (stores limits in memory by default)
 limiter = Limiter(
@@ -100,28 +132,31 @@ def serve_activity(filename):
     if 'athlete_id' not in session:
         return jsonify({"error": "Not authenticated"}), 401
 
-    # Validate filename format - now includes athlete_id
-    if not filename.startswith('response_') or not filename.endswith('.json'):
-        return jsonify({"error": "Invalid filename"}), 400
+    # Validate filename with athlete_id check
+    is_valid, error = validate_filename(filename, session.get('athlete_id'))
+    if not is_valid:
+        return jsonify({"error": error}), 400
     
     try:
-        # Parse athlete_id and activity_id from filename
-        parts = filename.replace('response_', '').replace('.json', '').split('_')
-        if len(parts) != 2:
-            return jsonify({"error": "Invalid filename format"}), 400
-        
-        file_athlete_id, activity_id = map(int, parts)
-        
-        # Verify athlete_id matches session
-        if file_athlete_id != session['athlete_id']:
-            return jsonify({"error": "Unauthorized access"}), 403
-
-        file_path = os.path.join(ACTIVITIES_DIR, filename)
-        if not os.path.exists(file_path):
+        # Sanitize filename and ensure it's within ACTIVITIES_DIR
+        safe_filename = secure_filename(filename)
+        if safe_filename != filename:
+            return jsonify({"error": "Invalid filename"}), 400
+            
+        # Use safe_join to prevent directory traversal
+        file_path = safe_join(ACTIVITIES_DIR, safe_filename)
+        if not file_path or not os.path.exists(file_path):
             return jsonify({"error": "Activity not found"}), 404
 
-        return send_from_directory(ACTIVITIES_DIR, filename)
+        # Verify the final path is still within ACTIVITIES_DIR
+        activities_abs_path = os.path.abspath(ACTIVITIES_DIR)
+        file_abs_path = os.path.abspath(file_path)
+        if not file_abs_path.startswith(activities_abs_path):
+            return jsonify({"error": "Invalid file path"}), 403
+
+        return send_from_directory(ACTIVITIES_DIR, safe_filename)
     except Exception as e:
+        print(f"Error serving activity: {e}")
         return jsonify({"error": "Error accessing activity data"}), 500
 
 def save_activity_response(athlete_id, activity_id, data, status_code=200):
@@ -134,10 +169,22 @@ def save_activity_response(athlete_id, activity_id, data, status_code=200):
 @app.route('/fetch_activity/<activity_id>')
 @limiter.limit("5 per minute")
 def get_activity(activity_id):
+    """Fetch activity with input validation"""
     if 'athlete_id' not in session:
         return jsonify({"error": "Not authenticated"}), 401
 
+    # Validate activity_id
+    is_valid, error = validate_activity_id(activity_id)
+    if not is_valid:
+        return jsonify({"error": error}), 400
+
     filename = f'response_{session["athlete_id"]}_{activity_id}.json'
+    
+    # Validate generated filename
+    is_valid, error = validate_filename(filename, session.get('athlete_id'))
+    if not is_valid:
+        return jsonify({"error": error}), 400
+
     json_path = os.path.join(ACTIVITIES_DIR, filename)
     
     try:
@@ -147,6 +194,7 @@ def get_activity(activity_id):
                 data = json.load(f)
                 if 'error' in data:
                     return jsonify(data), data.get('status', 500)
+                # Verify athlete_id in data matches session
                 if data.get('athlete', {}).get('id') == session['athlete_id']:
                     return jsonify(data)
                 return jsonify({"error": "Unauthorized access"}), 403
@@ -164,21 +212,35 @@ def status():
     try:
         if "access_token" in session:
             # Check if token needs refresh
-            if "expires_at" in session and session["expires_at"] < time.time():
-                new_token = refresh_access_token(session.get("refresh_token"))
-                if new_token:
-                    session["access_token"] = new_token["access_token"]
-                    session["refresh_token"] = new_token["refresh_token"]
-                    session["expires_at"] = new_token["expires_at"]
-                else:
-                    return jsonify({"authenticated": False, "error": "Token refresh failed"})
+            if "expires_at" in session:
+                current_time = time.time()
+                # Add 5 minute buffer to token expiry
+                if session["expires_at"] - current_time < 300:  # 5 minutes
+                    new_token = refresh_access_token(session.get("refresh_token"))
+                    if new_token:
+                        session["access_token"] = new_token["access_token"]
+                        session["refresh_token"] = new_token["refresh_token"]
+                        session["expires_at"] = new_token["expires_at"]
+                    else:
+                        # Clear session if refresh fails
+                        session.clear()
+                        return jsonify({
+                            "authenticated": False,
+                            "error": "Session expired. Please log in again.",
+                            "require_login": True
+                        })
             return jsonify({
                 "authenticated": True,
-                "athlete_id": session.get("athlete_id")  # Include athlete_id in response
+                "athlete_id": session.get("athlete_id"),
+                "expires_at": session.get("expires_at")
             })
         return jsonify({"authenticated": False})
     except Exception as e:
-        return jsonify({"authenticated": False, "error": str(e)}), 500
+        return jsonify({
+            "authenticated": False,
+            "error": str(e),
+            "require_login": True
+        }), 500
 
 @app.errorhandler(RateLimitExceeded)
 def handle_ratelimit_error(e):
@@ -208,9 +270,22 @@ def refresh_access_token(refresh_token):
         return None
 
 def fetch_activity(activity_id):
-    """Fetch Strava activity data using session access token."""
+    """Fetch Strava activity data with validation"""
     if 'access_token' not in session or 'athlete_id' not in session:
         return jsonify({"error": "Not authenticated"}), 401
+
+    # Check token expiry before making request
+    if "expires_at" in session and time.time() > session["expires_at"]:
+        session.clear()
+        return jsonify({
+            "error": "Session expired. Please log in again.",
+            "require_login": True
+        }), 401
+
+    # Validate activity_id
+    is_valid, error = validate_activity_id(activity_id)
+    if not is_valid:
+        return jsonify({"error": error}), 400
 
     try:
         response = requests.get(

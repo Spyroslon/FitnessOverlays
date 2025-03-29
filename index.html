@@ -418,6 +418,38 @@
             }
         }
 
+        /* Add styles for strava link */
+        .strava-link-container {
+            text-align: center;
+            margin: 10px 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            height: 0;
+            overflow: hidden;
+        }
+
+        .strava-link-container.show {
+            opacity: 1;
+            height: auto;
+        }
+
+        .strava-link {
+            color: #FC5200;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .strava-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Add styles for invalid input */
+        input.invalid {
+            border-color: #ff4444 !important;
+            background-color: #fff8f8;
+        }
     </style>
 </head>
 <body>
@@ -438,6 +470,10 @@
                 <button id="loadActivityBtn" class="load-btn">Load</button>
             </div>
             <div id="statusMessage" class="status-message"></div>
+            <!-- Add link container after status message -->
+            <div id="stravaLinkContainer" class="strava-link-container">
+                <a href="#" target="_blank" id="stravaLink" class="strava-link">View Activity on Strava</a>
+            </div>
         </div>
 
         <div class="canvas-container">
@@ -499,6 +535,12 @@
                     const data = await response.json();
                     csrfToken = data.csrf_token;  // Store CSRF token
                     
+                    // Handle require_login flag
+                    if (data.require_login) {
+                        window.location.href = "/login";
+                        return;
+                    }
+
                     const button = document.getElementById('auth-button');
                     const buttonImg = document.getElementById('auth-button-img');
                     
@@ -509,6 +551,15 @@
                         button.classList.add('logged-in');
                         state.isAuthenticated = true;
                         enableActivityInput();
+
+                        // Start token expiry check timer
+                        if (data.expires_at) {
+                            const timeToExpiry = data.expires_at - (Date.now() / 1000);
+                            if (timeToExpiry > 0) {
+                                // Check auth status 5 minutes before expiry
+                                setTimeout(checkAuth, (timeToExpiry - 300) * 1000);
+                            }
+                        }
                     } else {
                         buttonImg.src = 'static/images/btn_strava_connect_with_orange.svg';
                         buttonImg.alt = 'Connect with Strava';
@@ -516,6 +567,10 @@
                         button.classList.add('logged-out');
                         state.isAuthenticated = false;
                         disableActivityInput();
+
+                        if (data.error) {
+                            showStatusMessage(data.error);
+                        }
                     }
                 } catch (error) {
                     console.error("Auth check failed:", error);
@@ -551,8 +606,14 @@
                 if (!fetchResponse.ok) {
                     const error = new Error('Failed to fetch activity data');
                     error.status = fetchResponse.status;
-                    // Get the error details from response
                     const errorData = await fetchResponse.json();
+                    
+                    // Handle token expiry
+                    if (errorData.require_login) {
+                        window.location.href = "/login";
+                        return;
+                    }
+                    
                     error.message = errorData.error || error.message;
                     throw error;
                 }
@@ -660,35 +721,122 @@
             initCanvas();
 
             function extractActivityId(input) {
-                // Handle full Strava URLs
-                const urlMatch = input.match(/activities\/(\d+)/);
-                if (urlMatch) return urlMatch[1];
+                // Remove any whitespace from input
+                input = input.trim();
                 
-                // Handle direct ID input
-                const idMatch = input.match(/^\d+$/);
-                if (idMatch) return input;
+                // Pattern for full Strava URLs
+                // Matches both old and new Strava URL formats:
+                // https://www.strava.com/activities/123456789
+                // https://strava.com/activities/123456789
+                const urlPattern = /^(?:https?:\/\/)?(?:www\.)?strava\.com\/activities\/(\d+)(?:[?#].*)?$/i;
+                const urlMatch = input.match(urlPattern);
+                if (urlMatch) {
+                    // Validate length of extracted ID
+                    if (urlMatch[1].length >= 21) {
+                        return null;
+                    }
+                    return urlMatch[1];
+                }
+                
+                // Handle direct ID input - accept any number with length < 21
+                const idPattern = /^\d+$/;
+                if (idPattern.test(input) && input.length < 21) {
+                    return input;
+                }
                 
                 return null;
             }
 
-            async function fetchActivityData(activityId) {
-                const fetchResponse = await fetch(`/fetch_activity/${activityId}`, {
-                    credentials: "include"  // Include credentials for authentication
-                });
-                
-                if (!fetchResponse.ok) {
-                    const error = new Error('Failed to fetch activity data');
-                    error.status = fetchResponse.status;
-                    // Get the error details from response
-                    const errorData = await fetchResponse.json();
-                    error.message = errorData.error || error.message;
-                    throw error;
+            // Remove validateActivityId function as validation will be handled server-side
+            
+            // Update load activity button click handler
+            loadActivityBtn.addEventListener('click', async () => {
+                if (!state.isAuthenticated) {
+                    showLoginRequired('load activities');
+                    return;
                 }
+
+                const input = activityInput.value.trim();
+                const activityId = extractActivityId(input);
                 
-                return await fetchResponse.json();
+                if (!activityId) {
+                    showStatusMessage('Please enter a valid Strava activity URL or ID. Example: https://www.strava.com/activities/123456789 or 123456789', 'error');
+                    return;
+                }
+
+                loadActivityBtn.disabled = true;
+
+                try {
+                    const activityData = await fetchActivityData(activityId);
+                    state.activityId = activityId;
+                    
+                    // Update mockStravaData with real data
+                    mockStravaData.distance = (activityData.distance / 1000).toFixed(2);
+                    mockStravaData.time = new Date(activityData.moving_time * 1000).toISOString().substr(11, 8);
+                    mockStravaData.elevation = Math.round(activityData.total_elevation_gain);
+                    mockStravaData.pace = ((activityData.moving_time / 60) / (activityData.distance / 1000)).toFixed(2);
+                    mockStravaData.heartRate = activityData.average_heartrate ? Math.round(activityData.average_heartrate) : 0;
+
+                    // Update Strava link
+                    const linkContainer = document.getElementById('stravaLinkContainer');
+                    const stravaLink = document.getElementById('stravaLink');
+                    stravaLink.href = `https://www.strava.com/activities/${activityId}`;
+                    linkContainer.classList.add('show');
+
+                    generateOverlay(mockStravaData);
+                    exportTextBtn.disabled = false;
+                    copyImageBtn.disabled = false;
+                    
+                    showStatusMessage(`Activity "${activityData.name}" loaded successfully`, 'success');
+                } catch (error) {
+                    console.error('Error loading activity:', error);
+                    if (error.status === 401) {
+                        showStatusMessage('Please login to access activities', 'error');
+                    } else if (error.status === 403) {
+                        showStatusMessage('You do not have permission to access this activity', 'error');
+                    } else if (error.status === 429) {
+                        showStatusMessage('Too many requests. Please wait a minute before trying again.', 'error');
+                    } else {
+                        // Always show this generic message for other errors
+                        showStatusMessage('Failed to load activity. Please check the activity ID and try again.', 'error');
+                    }
+                    // Hide Strava link on error
+                    document.getElementById('stravaLinkContainer').classList.remove('show');
+                } finally {
+                    loadActivityBtn.disabled = false;
+                }
+            });
+
+            // Update activityInput validation to be less strict
+            activityInput.addEventListener('input', (e) => {
+                const input = e.target.value.trim();
+                if (input && !extractActivityId(input)) {
+                    activityInput.classList.add('invalid');
+                } else {
+                    activityInput.classList.remove('invalid');
+                }
+            });
+
+            // Add functions to enable/disable activity input
+            function enableActivityInput() {
+                activityInput.disabled = false;
+                loadActivityBtn.disabled = false;
+                activityInput.placeholder = "Enter Strava Activity URL or ID";
             }
 
-            // Update overlay option handler
+            function disableActivityInput() {
+                activityInput.disabled = true;
+                // Don't disable load button to allow error message trigger
+                loadActivityBtn.disabled = false;
+                activityInput.placeholder = "Please login to load activities";
+                // Clear any existing activity data
+                state.activityId = null;
+                generateOverlay(mockStravaData);
+                // Don't show message immediately, wait for user interaction
+                document.getElementById('stravaLinkContainer').classList.remove('show');
+            }
+
+            // Existing code
             document.querySelectorAll('.overlay-option').forEach(option => {
                 option.addEventListener('click', () => {
                     if (!state.isAuthenticated) {
@@ -961,74 +1109,6 @@
                     console.error('Unable to process image:', err);
                 }
             });
-
-            // Update load activity button click handler
-            loadActivityBtn.addEventListener('click', async () => {
-                if (!state.isAuthenticated) {
-                    showLoginRequired('load activities');
-                    return;
-                }
-
-                const input = activityInput.value.trim();
-                const activityId = extractActivityId(input);
-                
-                if (!activityId) {
-                    showStatusMessage('Please enter a valid Strava activity URL or ID', 'error');
-                    return;
-                }
-
-                loadActivityBtn.disabled = true;
-
-                try {
-                    const activityData = await fetchActivityData(activityId);
-                    state.activityId = activityId;
-                    
-                    // Update mockStravaData with real data
-                    mockStravaData.distance = (activityData.distance / 1000).toFixed(2);
-                    mockStravaData.time = new Date(activityData.moving_time * 1000).toISOString().substr(11, 8);
-                    mockStravaData.elevation = Math.round(activityData.total_elevation_gain);
-                    mockStravaData.pace = ((activityData.moving_time / 60) / (activityData.distance / 1000)).toFixed(2);
-                    mockStravaData.heartRate = activityData.average_heartrate ? Math.round(activityData.average_heartrate) : 0;
-
-                    generateOverlay(mockStravaData);
-                    exportTextBtn.disabled = false;
-                    copyImageBtn.disabled = false;
-                    
-                    showStatusMessage(`Activity "${activityData.name}" loaded successfully`, 'success');
-                } catch (error) {
-                    console.error('Error loading activity:', error);
-                    if (error.status === 401) {
-                        showStatusMessage('Please login to access activities', 'error');
-                    } else if (error.status === 403) {
-                        showStatusMessage('You do not have permission to access this activity', 'error');
-                    } else if (error.status === 429) {
-                        showStatusMessage('Too many requests. Please wait a minute before trying again.', 'error');
-                    } else {
-                        // Always show this generic message for other errors
-                        showStatusMessage('Failed to load activity. Please check the activity ID and try again.', 'error');
-                    }
-                } finally {
-                    loadActivityBtn.disabled = false;
-                }
-            });
-
-            // Add functions to enable/disable activity input
-            function enableActivityInput() {
-                activityInput.disabled = false;
-                loadActivityBtn.disabled = false;
-                activityInput.placeholder = "Enter Strava Activity URL or ID";
-            }
-
-            function disableActivityInput() {
-                activityInput.disabled = true;
-                // Don't disable load button to allow error message trigger
-                loadActivityBtn.disabled = false;
-                activityInput.placeholder = "Please login to load activities";
-                // Clear any existing activity data
-                state.activityId = null;
-                generateOverlay(mockStravaData);
-                // Don't show message immediately, wait for user interaction
-            }
 
         });
     </script>
