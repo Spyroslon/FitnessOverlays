@@ -58,7 +58,7 @@ def add_security_headers(response: Response) -> Response:
         'default-src': ["'self'"],
         'script-src': ["'self'", "'unsafe-inline'"],  # Required for inline scripts
         'style-src': ["'self'", "'unsafe-inline'"],   # Required for inline styles
-        'img-src': ["'self'", "*.strava.com", "data:"],
+        'img-src': ["'self'", "*.strava.com", "dgalywyr863hv.cloudfront.net", "data:"],  # Added Strava CDN
         'connect-src': ["'self'", "www.strava.com", "strava.com"],
         'frame-ancestors': ["'none'"],
         'form-action': ["'self'"],
@@ -81,7 +81,6 @@ def add_security_headers(response: Response) -> Response:
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
-    # Modern replacement for deprecated Expect-CT and Feature-Policy
     response.headers['Permissions-Policy'] = (
         'accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), '
         'camera=(), cross-origin-isolated=(), display-capture=(), '
@@ -92,7 +91,6 @@ def add_security_headers(response: Response) -> Response:
         'publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), '
         'usb=(), web-share=(), xr-spatial-tracking=()'
     )
-    response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
     response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
@@ -198,6 +196,7 @@ def callback():
         # Store athlete info in session
         athlete = token.get('athlete', {})
         session['athlete_id'] = athlete.get('id')
+        session['athlete_profile'] = athlete.get('profile_medium')  # Store profile picture URL
         session['access_token'] = token['access_token']
         session['refresh_token'] = token['refresh_token']
         session['expires_at'] = token['expires_at']
@@ -480,10 +479,11 @@ def status():
                         "csrf_token": csrf_token
                     })
             
-            # Return successful status
+            # Return successful status with profile picture
             return jsonify({
                 "authenticated": True,
                 "athlete_id": session.get("athlete_id"),
+                "athlete_profile": session.get("athlete_profile"),  # Include profile picture URL
                 "expires_at": session.get("expires_at"),
                 "csrf_token": csrf_token
             })

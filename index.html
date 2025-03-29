@@ -324,12 +324,25 @@
 
         .auth-button img {
             height: 48px;
+            width: 200px; /* Same width as connect button */
             display: block;
             transition: transform 0.3s ease;
+            border-radius: 50%;
+            object-fit: cover;
         }
 
-        .auth-button:hover img {
-            transform: scale(1.05);
+        .auth-button img.connect-btn {
+            border-radius: 0;
+            width: 200px; /* Set fixed width */
+            height: 48px; /* Set fixed height */
+            object-fit: contain; /* Keep aspect ratio of connect button */
+        }
+
+        /* Add logged-in profile picture style */
+        .auth-button.logged-in img {
+            width: 48px; /* Make it square for profile picture */
+            border: 3px solid #4CAF50; /* Green border */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         @media (max-width: 500px) {
@@ -562,8 +575,14 @@
                     const buttonImg = document.getElementById('auth-button-img');
                     
                     if (data.authenticated) {
-                        buttonImg.src = 'static/images/btn_strava_connected_with_orange.svg';
-                        buttonImg.alt = 'Connected with Strava';
+                        if (data.athlete_profile) {
+                            buttonImg.src = data.athlete_profile;
+                            buttonImg.alt = 'Profile Picture';
+                            buttonImg.classList.remove('connect-btn');
+                        } else {
+                            // Hide the button if no profile picture
+                            button.style.display = 'none';
+                        }
                         button.classList.remove('logged-out');
                         button.classList.add('logged-in');
                         state.isAuthenticated = true;
@@ -581,6 +600,7 @@
                     } else {
                         buttonImg.src = 'static/images/btn_strava_connect_with_orange.svg';
                         buttonImg.alt = 'Connect with Strava';
+                        buttonImg.classList.add('connect-btn');
                         button.classList.remove('logged-in');
                         button.classList.add('logged-out');
                         state.isAuthenticated = false;
@@ -596,6 +616,7 @@
                     const buttonImg = document.getElementById('auth-button-img');
                     buttonImg.src = 'static/images/btn_strava_connect_with_orange.svg';
                     buttonImg.alt = 'Connect with Strava';
+                    buttonImg.classList.add('connect-btn');
                     button.classList.remove('logged-in');
                     button.classList.add('logged-out');
                     state.isAuthenticated = false;
