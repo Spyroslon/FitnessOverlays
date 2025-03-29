@@ -172,10 +172,44 @@ def logout():
 def home():
     return send_from_directory('.', 'index.html')
 
+ALLOWED_EXTENSIONS = {
+    '.css', '.js', '.png', '.jpg', '.jpeg', '.gif', 
+    '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot'
+}
+
 @app.route('/static/<path:path>')
 def serve_static(path):
-    """Serve static files from the static directory"""
-    return send_from_directory('static', path)
+    """Serve static files with strict validation"""
+    try:
+        # Validate file extension
+        _, ext = os.path.splitext(path.lower())
+        if ext not in ALLOWED_EXTENSIONS:
+            logger.warning(f'Attempted to access unauthorized file type: {path} - IP: {get_remote_address()}')
+            return jsonify({"error": "File type not allowed"}), 403
+
+        # Use safe_join to prevent directory traversal
+        safe_path = safe_join('static', path)
+        if not safe_path:
+            logger.warning(f'Directory traversal attempt detected - IP: {get_remote_address()} - Path: {path}')
+            return jsonify({"error": "Invalid file path"}), 403
+
+        # Get absolute paths for comparison
+        static_abs_path = os.path.abspath('static')
+        file_abs_path = os.path.abspath(safe_path)
+        
+        # Ensure file path starts with static directory
+        if not file_abs_path.startswith(static_abs_path):
+            logger.warning(f'Path traversal attempt detected - IP: {get_remote_address()} - Path: {path}')
+            return jsonify({"error": "Invalid file path"}), 403
+
+        # Check if file exists after all validations
+        if not os.path.exists(file_abs_path):
+            return jsonify({"error": "File not found"}), 404
+
+        return send_from_directory('static', path)
+    except Exception as e:
+        logger.error(f'Error serving static file: {str(e)} - IP: {get_remote_address()} - Path: {path}')
+        return jsonify({"error": "Error accessing file"}), 500
 
 @app.route('/activities/<path:filename>')
 def serve_activity(filename):
@@ -278,11 +312,11 @@ def get_activity(athlete_id, activity_id):
 @app.route("/status")
 @limiter.limit("30 per minute")  # Add specific limit for status endpoint
 def status():
-    """Check if user is authenticated and provide CSRF token"""
+    """Check if user is authenticated, provide CSRF token and handle token refresh"""
     try:
         if "access_token" in session:
-            # Generate new CSRF token if needed
             csrf_token = generate_csrf_token()
+            
             # Check if token needs refresh
             if "expires_at" in session:
                 current_time = time.time()
@@ -290,11 +324,30 @@ def status():
                 if session["expires_at"] - current_time < 300:  # 5 minutes
                     new_token = refresh_access_token(session.get("refresh_token"))
                     if new_token:
-                        session["access_token"] = new_token["access_token"]
-                        session["refresh_token"] = new_token["refresh_token"]
-                        session["expires_at"] = new_token["expires_at"]
+                        try:
+                            # Validate token response
+                            required_fields = ['access_token', 'refresh_token', 'expires_at']
+                            if not all(field in new_token for field in required_fields):
+                                raise ValueError('Invalid token response structure')
+                            
+                            session["access_token"] = new_token["access_token"]
+                            session["refresh_token"] = new_token["refresh_token"]
+                            session["expires_at"] = new_token["expires_at"]
+                            
+                            # Log successful token refresh
+                            logger.info(f'Token refreshed successfully for athlete: {session.get("athlete_id")}')
+                        except (KeyError, ValueError) as e:
+                            logger.error(f'Invalid token response format: {str(e)}')
+                            session.clear()
+                            return jsonify({
+                                "authenticated": False,
+                                "error": "Authentication error. Please log in again.",
+                                "require_login": True,
+                                "csrf_token": csrf_token
+                            })
                     else:
                         # Clear session if refresh fails
+                        logger.warning(f'Token refresh failed for athlete: {session.get("athlete_id")}')
                         session.clear()
                         return jsonify({
                             "authenticated": False,
@@ -302,20 +355,34 @@ def status():
                             "require_login": True,
                             "csrf_token": csrf_token
                         })
+                elif session["expires_at"] < current_time:  # Token already expired
+                    logger.warning(f'Token expired for athlete: {session.get("athlete_id")}')
+                    session.clear()
+                    return jsonify({
+                        "authenticated": False,
+                        "error": "Session expired. Please log in again.",
+                        "require_login": True,
+                        "csrf_token": csrf_token
+                    })
+            
+            # Return successful status
             return jsonify({
                 "authenticated": True,
                 "athlete_id": session.get("athlete_id"),
                 "expires_at": session.get("expires_at"),
                 "csrf_token": csrf_token
             })
+            
         return jsonify({
             "authenticated": False,
             "csrf_token": generate_csrf_token()
         })
     except Exception as e:
+        logger.error(f'Status check error: {str(e)}')
+        session.clear()  # Clear session on unexpected errors
         return jsonify({
             "authenticated": False,
-            "error": str(e),
+            "error": "Authentication error. Please try again.",
             "require_login": True,
             "csrf_token": generate_csrf_token()
         }), 500
@@ -329,8 +396,9 @@ def handle_ratelimit_error(e):
     }), 429
 
 def refresh_access_token(refresh_token):
-    """Refresh the access token if expired"""
+    """Refresh the access token with robust error handling"""
     if not refresh_token:
+        logger.warning('Refresh token missing during token refresh attempt')
         return None
 
     try:
@@ -341,11 +409,29 @@ def refresh_access_token(refresh_token):
                 "client_secret": CLIENT_SECRET,
                 "grant_type": "refresh_token",
                 "refresh_token": refresh_token
-            }
+            },
+            timeout=10  # Add timeout
         )
+        
+        # Check specific error responses
+        if response.status_code == 400:
+            logger.error('Invalid refresh token detected')
+            return None
+        elif response.status_code == 401:
+            logger.error('Refresh token expired or revoked')
+            return None
+        
         response.raise_for_status()
         return response.json()
-    except requests.exceptions.RequestException:
+        
+    except requests.exceptions.Timeout:
+        logger.error('Token refresh request timed out')
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f'Token refresh failed: {str(e)}')
+        return None
+    except ValueError as e:
+        logger.error(f'Invalid token refresh response: {str(e)}')
         return None
 
 def fetch_activity(activity_id):
