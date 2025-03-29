@@ -2,6 +2,7 @@
 # Licensed under AGPL-3.0
 
 import re
+import requests
 
 def validate_activity_id(activity_id):
     """
@@ -29,6 +30,79 @@ def validate_activity_id(activity_id):
         
     except (ValueError, TypeError):
         return False, "Activity ID must be a number"
+
+def validate_strava_link(link):
+    """
+    Validate and extract activity ID from Strava links.
+    Returns (is_valid: bool, activity_id: str|None, error_message: str|None)
+    """
+    if not isinstance(link, str):
+        return False, None, "Invalid link format"
+
+    # Clean input
+    link = link.strip()
+    
+    # Direct activity link pattern
+    direct_pattern = r'^(?:https?:\/\/)?(?:www\.)?strava\.com\/activities\/(\d+)(?:\/.*)?$'
+    direct_match = re.match(direct_pattern, link)
+    if direct_match:
+        activity_id = direct_match.group(1)
+        is_valid, error = validate_activity_id(activity_id)
+        return is_valid, activity_id if is_valid else None, error
+
+    # Strava app deep link pattern
+    deep_link_pattern = r'^(?:https?:\/\/)?strava\.app\.link\/[A-Za-z0-9_-]+$'
+    if re.match(deep_link_pattern, link):
+        try:
+            # Follow the redirect with timeout and limited redirects
+            response = requests.head(
+                link, 
+                allow_redirects=True,
+                timeout=5,
+                headers={'User-Agent': 'FitOverlays/1.0'},
+                verify=True
+            )
+            
+            # Get the final URL after redirects
+            final_url = response.url
+            direct_match = re.match(direct_pattern, final_url)
+            
+            if direct_match:
+                activity_id = direct_match.group(1)
+                is_valid, error = validate_activity_id(activity_id)
+                return is_valid, activity_id if is_valid else None, error
+                
+            return False, None, "Invalid Strava deep link destination"
+            
+        except requests.RequestException:
+            return False, None, "Could not resolve Strava deep link"
+            
+    # If no patterns match
+    return False, None, "Invalid Strava link format"
+
+def validate_activity_input(input_str):
+    """
+    Validate activity input - could be an ID or a Strava link.
+    Returns (is_valid: bool, activity_id: str|None, error_message: str|None)
+    """
+    if not input_str:
+        return False, None, "Input is required"
+        
+    input_str = str(input_str).strip()
+    
+    # Handle direct activity ID
+    if input_str.isdigit():
+        is_valid, error = validate_activity_id(input_str)
+        return is_valid, input_str if is_valid else None, error
+
+    # Pass through URLs for server-side handling
+    direct_pattern = r'^(?:https?:\/\/)?(?:www\.)?strava\.com\/activities\/\d+(?:\/.*)?$'
+    deep_link_pattern = r'^(?:https?:\/\/)?strava\.app\.link\/[A-Za-z0-9_-]+$'
+    
+    if re.match(direct_pattern, input_str) or re.match(deep_link_pattern, input_str):
+        return True, input_str, None
+    
+    return False, None, "Invalid Strava activity URL or ID format"
 
 def validate_activity_data(data):
     """

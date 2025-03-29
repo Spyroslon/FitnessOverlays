@@ -15,8 +15,9 @@ from flask_cors import CORS
 from requests_oauthlib import OAuth2Session
 from dotenv import load_dotenv
 from flask_limiter.errors import RateLimitExceeded
-from validators import validate_activity_id, validate_filename
+from validators import validate_activity_input, validate_activity_id, validate_filename
 from werkzeug.utils import secure_filename, safe_join
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -61,7 +62,12 @@ def add_security_headers(response: Response) -> Response:
         'connect-src': ["'self'", "www.strava.com", "strava.com"],
         'frame-ancestors': ["'none'"],
         'form-action': ["'self'"],
-        'base-uri': ["'self'"]
+        'base-uri': ["'self'"],
+        'font-src': ["'self'"],
+        'manifest-src': ["'self'"],
+        'media-src': ["'self'"],
+        'object-src': ["'none'"],  # Prevent object injection attacks
+        'worker-src': ["'self'"]
     }
     
     csp_string = '; '.join([
@@ -71,13 +77,29 @@ def add_security_headers(response: Response) -> Response:
     
     # Add security headers
     response.headers['Content-Security-Policy'] = csp_string
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+    # Modern replacement for deprecated Expect-CT and Feature-Policy
+    response.headers['Permissions-Policy'] = (
+        'accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), '
+        'camera=(), cross-origin-isolated=(), display-capture=(), '
+        'document-domain=(), encrypted-media=(), execution-while-not-rendered=(), '
+        'execution-while-out-of-viewport=(), fullscreen=(), geolocation=(), '
+        'gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), '
+        'navigation-override=(), payment=(), picture-in-picture=(), '
+        'publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), '
+        'usb=(), web-share=(), xr-spatial-tracking=()'
+    )
+    response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+    response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+    response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     response.headers['Cache-Control'] = 'no-store, max-age=0'
+    # Remove X-Powered-By header if present
+    response.headers.pop('X-Powered-By', None)
+    response.headers.pop('Server', None)
     return response
 
 def add_cache_control_headers(response):
@@ -146,7 +168,7 @@ def login():
     try:
         oauth = OAuth2Session(
             CLIENT_ID,
-            redirect_uri="http://127.0.0.1:5000/callback",  # Update to match exact local URL
+            redirect_uri="http://192.168.0.14:5000/callback",  # Update to match exact local URL
             scope=["activity:read_all"]
         )
         authorization_url, state = oauth.authorization_url(AUTH_BASE_URL)
@@ -164,7 +186,7 @@ def callback():
         oauth = OAuth2Session(
             CLIENT_ID,
             state=session.get('oauth_state'),
-            redirect_uri="http://127.0.0.1:5000/callback"  # Update to match exact local URL
+            redirect_uri="http://192.168.0.14:5000/callback"  # Update to match exact local URL
         )
         token = oauth.fetch_token(
             TOKEN_URL,
@@ -282,29 +304,99 @@ def save_activity_response(athlete_id, activity_id, data, status_code=200):
         json.dump(data, outfile, indent=4)
     return jsonify(data), status_code
 
-@app.route('/fetch_activity/<athlete_id>/<activity_id>', methods=['POST'])
-@limiter.limit("5 per minute;20 per hour;100 per day")  # Stricter limits for fetch endpoint
-def get_activity(athlete_id, activity_id):
-    """Fetch activity with input validation for both athlete and activity IDs"""
+def resolve_strava_link(link):
+    """Resolve a Strava deep link to get the actual activity ID"""
+    try:
+        # Clean the input
+        link = link.strip()
+        
+        # First check if it's already a direct link
+        direct_pattern = r'^(?:https?:\/\/)?(?:www\.)?strava\.com\/activities\/(\d+)(?:\/.*)?$'
+        direct_match = re.match(direct_pattern, link)
+        if direct_match:
+            return direct_match.group(1)
+        
+        # Check if it's a deep link
+        deep_link_pattern = r'^(?:https?:\/\/)?strava\.app\.link\/[A-Za-z0-9_-]+$'
+        if not re.match(deep_link_pattern, link):
+            return None
+
+        # First request with mobile User-Agent to get redirect
+        mobile_headers = {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1'
+        }
+            
+        response = requests.head(
+            link,
+            allow_redirects=True,
+            timeout=10,
+            headers=mobile_headers,
+            verify=True
+        )
+        
+        # Get the final URL after redirects
+        final_url = response.url
+        logger.info(f'Resolved deep link to: {final_url}')
+        
+        # Try to match activity ID from various URL patterns
+        patterns = [
+            r'activities/(\d+)',
+            r'activity/(\d+)',
+            r'workout/(\d+)'
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, final_url)
+            if match:
+                activity_id = match.group(1)
+                is_valid, error = validate_activity_id(activity_id)
+                if is_valid:
+                    return activity_id
+        
+        return None
+        
+    except requests.RequestException as e:
+        logger.error(f'Failed to resolve deep link: {str(e)}')
+        return None
+    except Exception as e:
+        logger.error(f'Unexpected error resolving deep link: {str(e)}')
+        return None
+
+@app.route('/fetch_activity/<athlete_id>/<path:activity_input>', methods=['POST'])
+@limiter.limit("5 per minute;20 per hour;100 per day")
+def get_activity(athlete_id, activity_input):
+    """Fetch activity with input validation for both athlete and activity IDs/links"""
     if 'athlete_id' not in session:
         logger.warning(f'Unauthenticated access attempt - IP: {get_remote_address()}')
         return jsonify({"error": "Not authenticated"}), 401
 
-    # Verify athlete_id matches session
     try:
         if int(athlete_id) != session['athlete_id']:
-            logger.warning(f'Unauthorized athlete access attempt - IP: {get_remote_address()} - ' \
-                         f'Requested Athlete: {athlete_id}, Session Athlete: {session["athlete_id"]}')
+            logger.warning(f'Unauthorized athlete access attempt - IP: {get_remote_address()}')
             return jsonify({"error": "Unauthorized access"}), 403
     except ValueError:
         return jsonify({"error": "Invalid athlete ID"}), 400
 
-    # Validate activity_id
-    is_valid, error = validate_activity_id(activity_id)
+    # First check if input is a URL or ID
+    deep_link_pattern = r'^(?:https?:\/\/)?strava\.app\.link\/[A-Za-z0-9_-]+$'
+    if re.match(deep_link_pattern, activity_input):
+        resolved_id = resolve_strava_link(activity_input)
+        if not resolved_id:
+            logger.warning(f'Could not resolve Strava deep link: {activity_input}')
+            return jsonify({"error": "Could not resolve Strava deep link"}), 400
+        activity_input = resolved_id
+        logger.info(f'Resolved deep link to activity ID: {activity_input}')
+
+    # Now validate the activity ID (either direct or resolved from deep link)
+    is_valid, error = validate_activity_id(activity_input)
     if not is_valid:
         return jsonify({"error": error}), 400
 
-    filename = f'response_{athlete_id}_{activity_id}.json'
+    filename = f'response_{athlete_id}_{activity_input}.json'
     
     # Validate generated filename
     is_valid, error = validate_filename(filename, athlete_id)
@@ -326,10 +418,10 @@ def get_activity(athlete_id, activity_id):
                 return jsonify({"error": "Unauthorized access"}), 403
 
         # Fetch new activity data
-        return fetch_activity(activity_id)
+        return fetch_activity(activity_input)
             
     except Exception as e:
-        logger.error(f'Activity fetch error details: {str(e)} - IP: {get_remote_address()} - Activity: {activity_id}')
+        logger.error(f'Activity fetch error details: {str(e)} - IP: {get_remote_address()} - Activity: {activity_input}')
         return jsonify({"error": "Unable to process request. Please try again later."}), 500
 
 @app.route("/status")
@@ -532,4 +624,4 @@ def fetch_activity(activity_id):
         return jsonify({"error": "Unable to fetch activity data. Please try again later."}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', debug=True, port=5000)

@@ -751,10 +751,13 @@
                 // Remove any whitespace from input
                 input = input.trim();
                 
+                // Deep link pattern - pass through for server-side resolution
+                const deepLinkPattern = /^(?:https?:\/\/)?strava\.app\.link\/[A-Za-z0-9_-]+$/;
+                if (deepLinkPattern.test(input)) {
+                    return input; // Return the full deep link for server processing
+                }
+                
                 // Pattern for full Strava URLs
-                // Matches both old and new Strava URL formats:
-                // https://www.strava.com/activities/123456789
-                // https://strava.com/activities/123456789
                 const urlPattern = /^(?:https?:\/\/)?(?:www\.)?strava\.com\/activities\/(\d+)(?:[?#].*)?$/i;
                 const urlMatch = input.match(urlPattern);
                 if (urlMatch) {
@@ -774,8 +777,6 @@
                 return null;
             }
 
-            // Remove validateActivityId function as validation will be handled server-side
-            
             // Update load activity button click handler
             loadActivityBtn.addEventListener('click', async () => {
                 if (!state.isAuthenticated) {
@@ -784,18 +785,18 @@
                 }
 
                 const input = activityInput.value.trim();
-                const activityId = extractActivityId(input);
+                const activityIdentifier = extractActivityId(input);
                 
-                if (!activityId) {
-                    showStatusMessage('Please enter a valid Strava activity URL or ID. Example: https://www.strava.com/activities/123456789 or 123456789', 'error');
+                if (!activityIdentifier) {
+                    showStatusMessage('Please enter a valid Strava activity URL or ID. Example:  https://strava.app.link/ab12cd34ef or https://www.strava.com/activities/123456789 or 123456789', 'error');
                     return;
                 }
 
                 loadActivityBtn.disabled = true;
 
                 try {
-                    const activityData = await fetchActivityData(activityId);
-                    state.activityId = activityId;
+                    const activityData = await fetchActivityData(activityIdentifier);
+                    state.activityId = activityData.id; // Use the resolved activity ID from server
                     
                     // Update mockStravaData with real data
                     mockStravaData.distance = (activityData.distance / 1000).toFixed(2);
@@ -807,7 +808,7 @@
                     // Update Strava link
                     const linkContainer = document.getElementById('stravaLinkContainer');
                     const stravaLink = document.getElementById('stravaLink');
-                    stravaLink.href = `https://www.strava.com/activities/${activityId}`;
+                    stravaLink.href = `https://www.strava.com/activities/${activityData.id}`;
                     linkContainer.classList.add('show');
 
                     generateOverlay(mockStravaData);
@@ -1032,9 +1033,33 @@
                 return false;
             }
 
+            async function requestClipboardPermission(type) {
+                try {
+                    // Check if we need to request permission
+                    const result = await navigator.permissions.query({ name: 'clipboard-write' });
+                    if (result.state === 'granted') {
+                        return true;
+                    }
+                    if (result.state === 'denied') {
+                        showStatusMessage(`Please allow clipboard access in your browser settings to ${type} data`);
+                        return false;
+                    }
+                    // Ask user for confirmation on first use
+                    return confirm(`Allow FitOverlays to ${type} data to your clipboard?\n\nYou can manage this permission in your browser settings.`);
+                } catch (err) {
+                    // Fallback for browsers that don't support permission API
+                    return confirm(`Allow FitOverlays to ${type} data to your clipboard?`);
+                }
+            }
+
             // Update export button handlers
             exportTextBtn.addEventListener('click', async () => {
                 if (showActionRequired('export activities')) return;
+
+                if (!await requestClipboardPermission('copy text')) {
+                    return;
+                }
+
                 const metrics = [
                     { name: 'Distance', value: `${mockStravaData.distance} km`, key: 'distance' },
                     { name: 'Pace', value: `${mockStravaData.pace} min/km`, key: 'pace' },
@@ -1052,18 +1077,22 @@
                     await navigator.clipboard.writeText(exportText);
                     showToast();
                 } catch (err) {
-                    // Create temporary textarea element for iOS
+                    // iOS fallback with explicit user action required
                     const textarea = document.createElement('textarea');
                     textarea.value = exportText;
                     textarea.style.position = 'fixed';
                     textarea.style.opacity = '0';
                     document.body.appendChild(textarea);
                     textarea.select();
-                    try {
-                        document.execCommand('copy');
-                        showToast();
-                    } catch (err) {
-                        console.error('Unable to copy text to clipboard');
+                    
+                    const copied = confirm('Tap OK to copy the activity data to clipboard');
+                    if (copied) {
+                        try {
+                            document.execCommand('copy');
+                            showToast();
+                        } catch (err) {
+                            showStatusMessage('Unable to copy text to clipboard');
+                        }
                     }
                     document.body.removeChild(textarea);
                 }
@@ -1071,6 +1100,11 @@
 
             copyImageBtn.addEventListener('click', async () => {
                 if (showActionRequired('export activities')) return;
+
+                if (!await requestClipboardPermission('copy image')) {
+                    return;
+                }
+
                 const dimensions = getCroppedDimensions(mockStravaData, ctx);
                 
                 const tempCanvas = document.createElement('canvas');
@@ -1092,36 +1126,28 @@
                         tempCanvas.toBlob(async (blob) => {
                             try {
                                 const item = new ClipboardItem({ 'image/png': blob });
-                                await navigator.clipboard.write([item]);
-                                showToast();
+                                const copied = confirm('Tap OK to copy the image to clipboard');
+                                if (copied) {
+                                    await navigator.clipboard.write([item]);
+                                    showToast();
+                                }
                                 return;
                             } catch (err) {
                                 console.error('iOS clipboard write failed:', err);
+                                showStatusMessage('Unable to copy image to clipboard');
                             }
                         }, 'image/png');
                         return;
                     }
 
-                    // For other mobile devices
-                    if (/Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                        try {
-                            const item = new ClipboardItem({ 'image/png': blob });
-                            await navigator.clipboard.write([item]);
-                            showToast();
-                            return;
-                        } catch (err) {
-                            console.error('Mobile clipboard write failed:', err);
-                        }
-                    }
-
-                    // Desktop fallback
+                    // For other devices
                     try {
                         const item = new ClipboardItem({ 'image/png': blob });
                         await navigator.clipboard.write([item]);
                         showToast();
                     } catch (err) {
                         console.error('Clipboard write failed:', err);
-                        // Only download as absolute last resort
+                        // Only download as absolute last resort with user confirmation
                         const shouldDownload = confirm('Unable to copy to clipboard. Download image instead?');
                         if (shouldDownload) {
                             const url = URL.createObjectURL(blob);
@@ -1134,6 +1160,26 @@
                     }
                 } catch (err) {
                     console.error('Unable to process image:', err);
+                    showStatusMessage('Unable to process image');
+                }
+            });
+
+            // Update validation in activity input handler
+            activityInput.addEventListener('input', (e) => {
+                const input = e.target.value.trim();
+                if (input) {
+                    // Simple client-side validation for immediate feedback
+                    const directPattern = /^(?:https?:\/\/)?(?:www\.)?strava\.com\/activities\/\d+(?:\/.*)?$/;
+                    const deepLinkPattern = /^(?:https?:\/\/)?strava\.app\.link\/[A-Za-z0-9_-]+$/;
+                    const idPattern = /^\d+$/;
+                    
+                    if (!directPattern.test(input) && !deepLinkPattern.test(input) && !idPattern.test(input)) {
+                        activityInput.classList.add('invalid');
+                    } else {
+                        activityInput.classList.remove('invalid');
+                    }
+                } else {
+                    activityInput.classList.remove('invalid');
                 }
             });
 
