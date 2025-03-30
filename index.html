@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> <title>FitOverlays - Connect Strava & Create Stunning Overlays</title>
+    <meta name="viewport" content="width=device-width, initial-scale=no"> <title>FitOverlays - Connect Strava & Create Stunning Overlays</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Style for the scrollbar */
@@ -66,10 +66,16 @@
                 Connect your Strava account to create stunning visual overlays for your activities.
             </p>
 
-            <div class="mb-10">
-                <a href="#connect-strava" id="stravaConnectLink" class="strava-connect-btn inline-block transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-orange-500/50 rounded-md" aria-label="Connect with Strava">
-                    <img src="static/images/btn_strava_connect_with_orange.svg" alt="Connect with Strava">
+            <div class="relative flex flex-col items-center gap-4 mb-10">
+                <div id="userWelcome" class="hidden flex items-center gap-3">
+                    <span class="text-xl text-cyan-400 font-semibold"></span>
+                    <img id="userProfilePic" class="w-10 h-10 rounded-full border-2 border-green-500 object-cover" alt="Profile Picture">
+                </div>
+                <div id="stravaButtonContainer">
+                    <a href="/login" id="stravaConnectLink" class="strava-connect-btn inline-block transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-orange-500/50 rounded-md" aria-label="Connect with Strava">
+                        <img src="static/images/btn_strava_connect_with_orange.svg" alt="Connect with Strava">
                     </a>
+                </div>
             </div>
 
             <div class="w-full max-w-xs sm:max-w-sm mx-auto mb-12"> <h3 class="text-xl font-semibold text-gray-200 mb-4">Overlay Examples</h3>
@@ -141,26 +147,24 @@
         </div>
     </section>
 
+    <!-- Footer -->
     <footer class="bg-gray-800 py-8 px-6">
         <div class="max-w-4xl mx-auto text-center text-gray-500">
-            <p>&copy; <span id="currentYear"></span> FitOverlays. All rights reserved.</p>
-            <p class="text-sm mt-2">Connect your Strava. Elevate your shares.</p>
+            &copy; 2025 FitOverlays - Licensed under
+            <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
+                target="_blank" 
+                class="hover:text-strava-orange transition-colors">
+                AGPL-3.0
+        </a>
+            <img src="static/images/api_logo_pwrdBy_strava_horiz_black.svg" 
+                alt="Powered by Strava" 
+                class="h-4">
         </div>
     </footer>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Set current year in footer
-            document.getElementById('currentYear').textContent = new Date().getFullYear();
-
              const stravaConnectLink = document.getElementById('stravaConnectLink');
-
-            // --- IMPORTANT: SET YOUR STRAVA OAUTH URL ---
-            // Replace the placeholder href="#connect-strava" on the <a> tag
-            // with your actual Strava OAuth authorization URL.
-            // Example:
-            // const stravaAuthUrl = `https://www.strava.com/oauth/authorize?client_id=[YOUR_CLIENT_ID]&response_type=code&redirect_uri=[YOUR_APP_REDIRECT_URI]&approval_prompt=force&scope=activity:read_all`;
-            // stravaConnectLink.href = stravaAuthUrl;
 
             // --- Carousel Logic ---
             const carouselContainer = document.getElementById('carouselContainer');
@@ -295,6 +299,37 @@
                  setPositionByIndex(); // Recalculate and snap to current slide
              });
 
+            const userWelcome = document.getElementById('userWelcome');
+            const stravaButtonContainer = document.getElementById('stravaButtonContainer');
+
+            // Check authentication status on page load
+            fetch('/status', {
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.authenticated) {
+                    // Hide Strava button and show welcome message with profile pic
+                    stravaButtonContainer.classList.add('hidden');
+                    const welcomeDiv = document.getElementById('userWelcome');
+                    welcomeDiv.querySelector('span').textContent = `Hello, ${data.athlete_first_name || 'Athlete'}!`;
+                    const profilePic = document.getElementById('userProfilePic');
+                    if (data.athlete_profile) {
+                        profilePic.src = data.athlete_profile;
+                    } else {
+                        // Use a default avatar if no profile picture
+                        profilePic.src = 'static/images/default-avatar.png';
+                    }
+                    welcomeDiv.classList.remove('hidden');
+                } else {
+                    // Show Strava button and hide welcome message
+                    stravaButtonContainer.classList.remove('hidden');
+                    document.getElementById('userWelcome').classList.add('hidden');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking auth status:', error);
+            });
         });
     </script>
 
