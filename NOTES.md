@@ -1,6 +1,7 @@
 # FitOverlays Development Notes
 
 ## Environment Setup
+
 ```bash
 # Development setup
 python -m venv venv
@@ -16,6 +17,7 @@ cp .env.example .env
 ```
 
 ### Dependency Maintenance
+
 ```bash
 # Check for outdated packages
 pip list --outdated
@@ -29,6 +31,7 @@ pip install -r requirements.txt --upgrade
 # Generate requirements with versions
 pip freeze > requirements.txt
 ```
+
 Important: Always test thoroughly after updates!
 
 ## Maintenance Tasks
@@ -43,5 +46,6 @@ Important: Always test thoroughly after updates!
 ## API Integration
 
 ### Strava API
+
 - Monitor rate limits
 - Keep OAuth flow secure
