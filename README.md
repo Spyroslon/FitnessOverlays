@@ -36,21 +36,25 @@ FitOverlays is a sleek and easy-to-use web tool that transforms your Strava acti
 ## **List of the best parameters for an overlay**  
 
 ### **Metrics**  
-1. **Distance** (e.g., `11.01 km`)  
-2. **Moving Time** (formatted as `1h 5m 52s`)  
-3. **Pace** (calculated from moving time & distance, e.g., `5:58 min/km`)  
-4. **Average Heart Rate** (if available, e.g., `159 bpm`)  
-5. **Max Heart Rate** (e.g., `169 bpm`)  
-6. **Calories Burned** (e.g., `910 kcal`)  
-7. **Suffer Score** (if relevant for effort-based overlays, e.g., `98`)  
-8. **Elevation Gain** (e.g., `25 m`)
-9. **Calories** (e.g., `809`)
+- **Distance** (e.g., `11.01 km`)  
+- **Moving Time** (formatted as `1h 5m 52s`)  
+- **Pace** (calculated from moving time & distance, e.g., `5:58 min/km`)  
+- **Average Heart Rate** (if available, e.g., `159 bpm`)  
+- **Max Heart Rate** (e.g., `169 bpm`)  
+- **Calories Burned** (e.g., `910 kcal`)  
+- **Suffer Score** (if relevant for effort-based overlays, e.g., `98`)  
+- **Elevation Gain** (e.g., `25 m`)
+- **Calories** (e.g., `809`)
 
 
-### **Maps**  
-9. **Minimal** (generated from `summary_polyline`)  
-9. **Minimal** (generated from `summary_polyline`)  
+### **Maps** 
+(generated from `summary_polyline`)  
+- **Light**
+- **Dark**
+- **Outdoors**
+- **Satelite**
+- **Minimal**
 
-### **Maps**
-10. **Pace Graph** (from pace data if available)  
-11. **Heart Rate Graph** (if heartrate data exists) 
+### **Graphs**
+- **Pace Graph** (from pace data if available)  
+- **Heart Rate Graph** (if heartrate data exists) 
