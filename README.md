@@ -30,3 +30,31 @@ FitOverlays is a sleek and easy-to-use web tool that transforms your Strava acti
 
 🏆 **Powered by Strava**  
 🔥 Start sharing your workouts with style—Try FitOverlays today! 🔥
+
+---
+
+## **List of the best parameters for an overlay**  
+
+### **Metrics**  
+- **Distance** (e.g., `11.01 km`)  
+- **Moving Time** (formatted as `1h 5m 52s`)  
+- **Pace** (calculated from moving time & distance, e.g., `5:58 min/km`)  
+- **Average Heart Rate** (if available, e.g., `159 bpm`)  
+- **Max Heart Rate** (e.g., `169 bpm`)  
+- **Calories Burned** (e.g., `910 kcal`)  
+- **Suffer Score** (if relevant for effort-based overlays, e.g., `98`)  
+- **Elevation Gain** (e.g., `25 m`)
+- **Calories** (e.g., `809`)
+
+
+### **Maps** 
+(generated from `summary_polyline`)  
+- **Light**
+- **Dark**
+- **Outdoors**
+- **Satelite**
+- **Minimal**
+
+### **Graphs**
+- **Pace Graph** (from pace data if available)  
+- **Heart Rate Graph** (if heartrate data exists) 

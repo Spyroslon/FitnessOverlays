@@ -56,7 +56,7 @@ def add_security_headers(response: Response) -> Response:
     """Add security headers including Content Security Policy"""
     csp = {
         'default-src': ["'self'"],
-        'script-src': ["'self'", "'unsafe-inline'"],  # Required for inline scripts
+        'script-src': ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],  # Added Tailwind CDN
         'style-src': ["'self'", "'unsafe-inline'"],   # Required for inline styles
         'img-src': ["'self'", "*.strava.com", "dgalywyr863hv.cloudfront.net", "data:"],  # Added Strava CDN
         'connect-src': ["'self'", "www.strava.com", "strava.com"],

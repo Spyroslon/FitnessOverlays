@@ -4,548 +4,184 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="copyright" content="FitOverlays - Copyright (c) 2025 Spyros Lontos">
-        <meta name="license" content="AGPL-3.0">
+    <meta name="license" content="AGPL-3.0">
     <title>Strava Overlay Generator</title>
-    <style>
-        :root {
-            --strava-orange: #fc4c02;
-            --strava-dark-orange: #e64c02;
-            --strava-background: #f5f5f5;
-            --strava-text: #2c3e50;
-            --strava-gray: #a0a0a0;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        }
-
-        body {
-            background-color: var(--strava-background);
-            color: var(--strava-text);
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            padding: 10px; /* Reduced padding */
-        }
-
-        .container {
-            max-width: 600px; /* Increased to accommodate square canvas */
-            width: 100%;
-            margin: 0 auto;
-            background-color: white;
-            padding: 15px; /* Reduced padding */
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            position: relative; /* Added to position auth-status */
-        }
-
-        /* Add styles for strava container */
-        .strava-container {
-            max-width: 600px;
-            width: 100%;
-            margin: 10px auto 0;
-            background-color: white;
-            padding: 10px 15px;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.8rem;
-            color: var(--strava-gray);
-        }
-
-        .strava-container img {
-            height: 15px;
-            width: auto;
-        }
-
-        .strava-container a {
-            color: var(--strava-gray);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .strava-container a:hover {
-            color: var(--strava-orange);
-        }
-
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        h1 {
-            color: var(--strava-orange);
-            text-align: center;
-            margin-bottom: 0;
-            margin-right: 10px;
-            font-size: 1.5rem; /* Smaller font size */
-        }
-
-        h1 span {
-            color: var(--strava-text);
-            font-size: 2rem; /* Smaller font size */
-        }
-
-        .input-group {
-            margin-bottom: 8px; /* Reduced margin */
-        }
-
-        .strava-input {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        @media (max-width: 400px) {
-            .strava-input {
-                flex-direction: column;
-                gap: 5px;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        strava: {
+                            orange: '#fc4c02',
+                            'dark-orange': '#e64c02',
+                            background: '#f5f5f5',
+                            text: '#2c3e50',
+                            gray: '#a0a0a0'
+                        }
+                    }
+                }
             }
         }
-
-        input, button {
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        input {
-            flex-grow: 1;
-            border: 2px solid var(--strava-orange);
-        }
-
-        .load-btn {
-            background-color: var(--strava-orange);
-            color: white;
-            border: none;
-            cursor: pointer;
-            min-width: 100px;
-        }
-
-        .load-btn:hover {
-            background-color: var(--strava-dark-orange);
-        }
-
-        #overlayOptions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .overlay-option {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: var(--strava-gray);
-            color: white;
-            padding: 8px; /* Reduced padding */
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            font-size: 0.9rem; /* Smaller font size */
-        }
-
-        .overlay-option.active {
-            background-color: var(--strava-orange);
-        }
-
-        .color-picker-container {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            margin-bottom: 10px;
-        }
-
-        .option-label {
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--strava-text);
-            font-size: 0.875rem;
-        }
-
-        .color-picker {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            width: 40px;
-            height: 40px;
-            min-width: 40px;
-            max-width: 40px;
-            border: 3px solid var(--strava-orange);
-            cursor: pointer;
-            border-radius: 12px;
-            padding: 0;
-            background-color: var(--strava-text);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-
-        .color-picker:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-
-        .color-picker::-webkit-color-swatch-wrapper {
-            padding: 0;
-        }
-        .color-picker::-webkit-color-swatch {
-            border: none;
-            border-radius: 8px;
-        }
-        .color-picker::-moz-color-swatch {
-            border: none;
-            border-radius: 8px;
-        }
-        .color-picker::-ms-color-swatch {
-            border: none;
-            border-radius: 8px;
-        }
-
-        .canvas-container {
-            display: block;
-            position: relative;
-            width: 100%;
-            aspect-ratio: 1/1;
-            margin: 15px 0;
-            max-width: 100%;
-            overflow: hidden;
-        }
-
-        #overlayCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 2px dashed var(--strava-orange);
-            border-radius: 8px;
-            max-width: 100%;
-        }
-
-        @media (max-width: 840px) { /* 800px + 40px padding */
-            .canvas-container {
-                width: 100%;
-                margin: 15px 0;
-            }
-        }
-
-        .action-buttons {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .action-buttons button {
-            flex-grow: 1;
-            background-color: var(--strava-text);
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .toast {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: var(--strava-orange);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 500;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-            z-index: 1000;
-        }
-
-        .toast.show {
-            opacity: 1;
-        }
-
-        .status-message {
-            margin: 0;
-            padding: 0;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            max-height: 0;
-            overflow: hidden;
-            opacity: 0;
-            transition: all 0.3s ease-in-out;
-        }
-
-        .status-message.show {
-            opacity: 1;
-            max-height: 60px;
-            margin-top: 8px;
-            padding: 8px 12px;
-        }
-
-        .status-message.success {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .status-message.error {
-            background-color: #f44336;
-            color: white;
-        }
-
-        .auth-status {
-            position: static;
-            margin-left: auto;
-        }
-
-        .auth-button {
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .auth-button img {
-            height: 48px;
-            width: 200px; /* Same width as connect button */
-            display: block;
-            transition: transform 0.3s ease;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        .auth-button img.connect-btn {
-            border-radius: 0;
-            width: 200px; /* Set fixed width */
-            height: 48px; /* Set fixed height */
-            object-fit: contain; /* Keep aspect ratio of connect button */
-        }
-
-        /* Add logged-in profile picture style */
-        .auth-button.logged-in img {
-            width: 48px; /* Make it square for profile picture */
-            border: 3px solid #4CAF50; /* Green border */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        @media (max-width: 500px) {
-            .strava-input {
-                flex-direction: column;
-            }
-            
-            .auth-status {
-                margin-left: 0;
-                margin-top: 10px;
-                align-self: flex-end;
-            }
-        }
-
-        @media (max-width: 840px) {
-            body {
-                padding: 5px;
-            }
-
-            .container {
-                padding: 15px;
-                border-radius: 8px;
-            }
-
-            .strava-input {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-
-            .auth-status {
-                flex: 0 0 auto;
-                margin: 0;
-                min-width: 100px;
-            }
-
-            input {
-                min-width: 200px;
-                flex: 1;
-            }
-
-            .load-btn {
-                width: auto;
-                min-width: 100px;
-            }
-
-            #overlayOptions {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 8px;
-            }
-
-            .canvas-container {
-                margin: 15px 0;
-            }
-
-            .color-picker-container {
-                flex-direction: row;
-                align-items: center;
-                gap: 10px;
-            }
-
-            .action-buttons {
-                gap: 10px;
-                flex-direction: row;
-            }
-
-            .action-buttons button {
-                width: auto;
-                flex: 1;
-            }
-
-            .header-container {
-                flex-wrap: nowrap;
-                gap: 10px;
-            }
-
-            h1 {
-                font-size: 1.25rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .strava-input {
-                flex-direction: column;
-            }
-
-            #overlayOptions {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 360px) {
-            #overlayOptions {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-
-            h1 {
-                font-size: 1.25rem;
-            }
-        }
-
-        /* Add styles for strava link */
-        .strava-link-container {
-            text-align: center;
-            margin: 10px 0;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            height: 0;
-            overflow: hidden;
-        }
-
-        .strava-link-container.show {
-            opacity: 1;
-            height: auto;
-        }
-
-        .strava-link {
-            color: #FC5200;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-
-        .strava-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Add styles for invalid input */
-        input.invalid {
-            border-color: #ff4444 !important;
-            background-color: #fff8f8;
-        }
-    </style>
+    </script>
 </head>
-<body>
+<body class="bg-strava-background min-h-screen">
+    <!-- Main Container -->
+    <div class="max-w-3xl mx-auto space-y-1">
+        <!-- Header Card -->
+        <div class="bg-white rounded-b-xl shadow-lg py-1 px-4">
+            <div class="relative min-h-[4rem] flex justify-between items-center">
+                <div class="flex-1 min-w-0 pr-4">
+                    <h1 class="font-bold">
+                        <span class="text-2xl md:text-3xl lg:text-4xl text-strava-orange">FitOverlays</span>
+                        <span class="text-xl md:text-xl lg:text-2xl text-strava-text block">a Strava Overlay Generator</span>
+                    </h1>
+                </div>
+                <div class="auth-status flex-shrink-0">
+                    <button id="auth-button" class="auth-button transition transform hover:scale-110 h-full">
+                        <img src="static/images/btn_strava_connect_with_orange.svg" 
+                             alt="Connect with Strava" 
+                             id="auth-button-img"
+                             class="h-full w-auto">
+                    </button>
+                    <button id="profile-dropdown-trigger" 
+                            class="hidden absolute -bottom-0 -right-1 bg-white/80 rounded-full p-0 shadow-md border border-gray-200 hover:bg-gray-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg">
+                        <button class="w-full text-left px-4 py-2 text-sm font-bold text-red-600 bg-gray-100 hover:bg-gray-200 rounded-lg" id="logout-button">
+                            Log out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="container">
-        <div class="header-container">
-            <h1><span>FitOverlays</span> a Strava Overlay Generator</h1>
-            <div class="auth-status">
-                <button id="auth-button" class="auth-button">
-                    <img src="static/images/btn_strava_connect_with_orange.svg" alt="Connect with Strava" id="auth-button-img">
+        <!-- Input Card -->
+        <div class="bg-white rounded-xl shadow-lg p-6 space-y-1">
+            <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                    <div class="flex-1 relative">
+                        <input type="text" 
+                               id="activityInput" 
+                               placeholder="Enter Strava Activity URL or ID" 
+                               class="w-full px-4 py-3 rounded-lg border-2 border-strava-orange focus:outline-none focus:ring-2 focus:ring-strava-orange focus:border-transparent pr-10">
+                        <button id="clearInput" 
+                                class="absolute right-3 top-1/2 -translate-y-1/2 hidden">
+                            <div class="bg-gray-300 hover:bg-gray-400 rounded-full p-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 011.414 0L10 8.586l4.293-4.293a1 1 111.414 1.414L11.414 10l4.293 4.293a1 1 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 01-1.414-1.414L8.586 10 4.293 5.707a1 1 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
+                    <button id="loadActivityBtn" 
+                            class="bg-strava-orange hover:bg-strava-dark-orange text-white px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap">
+                        Load
+                    </button>
+                </div>
+                <div id="statusMessage" 
+                     class="transform translate-y-2 opacity-0 hidden rounded-lg p-4 text-sm transition-all duration-300 ease-in-out">
+                </div>
+                <div id="stravaLinkContainer" class="hidden text-center">
+                    <a href="#" 
+                       target="_blank" 
+                       id="stravaLink" 
+                       class="text-strava-orange hover:underline text-sm font-medium">
+                        View Activity on Strava
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas Card -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="relative aspect-square w-full">
+                <canvas id="overlayCanvas" class="absolute inset-0 w-full h-full border-2 border-dashed border-strava-orange rounded-lg"></canvas>
+            </div>
+        </div>
+
+        <!-- Options Card -->
+        <div class="bg-white rounded-xl shadow-lg p-6 space-y-4">
+            <h2 class="text-lg font-medium text-strava-text">Overlay Options</h2>
+            <div id="overlayOptions" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="distance">
+                    Distance
+                </button>
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="movingTime">
+                    Time
+                </button>
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="pace">
+                    Pace
+                </button>
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="elevationGain">
+                    Elevation
+                </button>
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="avgHeartRate">
+                    Avg HR
+                </button>
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="maxHeartRate">
+                    Max HR
+                </button>
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="calories">
+                    Calories
+                </button>
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="sufferScore">
+                    Suffer Score
                 </button>
             </div>
-        </div>
 
-        <div class="input-group">
-            <div class="strava-input">
-                <input type="text" id="activityInput" placeholder="Enter Strava Activity URL or ID" required>
-                <button id="loadActivityBtn" class="load-btn">Load</button>
+            <div class="flex items-center gap-4">
+                <label for="colorWheel" class="text-sm font-medium text-strava-text">Text Color</label>
+                <input type="color" 
+                       id="colorWheel" 
+                       value="#ffffff" 
+                       class="h-10 w-10 rounded-lg border-2 border-strava-orange cursor-pointer">
             </div>
-            <div id="statusMessage" class="status-message"></div>
-            <!-- Add link container after status message -->
-            <div id="stravaLinkContainer" class="strava-link-container">
-                <a href="#" target="_blank" id="stravaLink" class="strava-link">View Activity on Strava</a>
-            </div>
-        </div>
 
-        <div class="canvas-container">
-            <canvas id="overlayCanvas"></canvas>
-        </div>
-
-        <div class="input-group">
-            <label class="option-label">Overlay Options</label>
-            <div id="overlayOptions">
-                <div class="overlay-option" data-metric="distance">
-                    Distance
+            <div class="flex flex-col sm:flex-row gap-2">
+                <div class="flex-1 flex flex-col items-center gap-1">
+                    <button id="copyTextBtn" 
+                            class="w-14 h-14 bg-strava-text hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5A3.375 3.375 0 0 0 6.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0 0 15 2.25h-1.5a2.251 2.251 0 0 0-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 0 0-9-9Z" />
+                        </svg>
+                    </button>
+                    <span class="text-sm text-strava-text">Copy to Clipboard as text</span>
                 </div>
-                <div class="overlay-option" data-metric="pace">
-                    Pace
-                </div>
-                <div class="overlay-option" data-metric="elevation">
-                    Elevation
-                </div>
-                <div class="overlay-option" data-metric="time">
-                    Time
-                </div>
-                <div class="overlay-option" data-metric="heartRate">
-                    Heart Rate
+                <div class="flex-1 flex flex-col items-center gap-1">
+                    <button id="copyImageBtn" 
+                            class="w-14 h-14 bg-strava-text hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75" />
+                        </svg>
+                    </button>
+                    <span class="text-sm text-strava-text">Copy to Clipboard as Image</span>
                 </div>
             </div>
         </div>
 
-        <div class="color-picker-container">
-            <label for="colorWheel" class="option-label">Text Color</label>
-            <input type="color" id="colorWheel" value="#ffffff" class="color-picker">
-        </div>
-
-        <div class="action-buttons">
-            <button id="exportTextBtn">Export Text</button>
-            <button id="copyImageBtn">Copy Image</button>
+        <!-- Footer -->
+        <div class="bg-white rounded-t-xl shadow-lg p-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-strava-gray">
+            <div>
+                &copy; 2025 FitOverlays - Licensed under 
+                <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
+                   target="_blank" 
+                   class="hover:text-strava-orange transition-colors">
+                    AGPL-3.0
+                </a>
+            </div>
+            <img src="static/images/api_logo_pwrdBy_strava_horiz_black.svg" 
+                 alt="Powered by Strava" 
+                 class="h-4">
         </div>
     </div>
-    <div class="toast" id="toast">Copied to clipboard!</div>
-    
-    <!-- Replace footer with strava container -->
-    <div class="strava-container">
-        <div>&copy; 2025 FitOverlays - Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank">AGPL-3.0</a></div>
-        <img src="static/images/api_logo_pwrdBy_strava_horiz_black.svg" alt="Powered by Strava">
+
+    <!-- Toast -->
+    <div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-strava-orange text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 pointer-events-none z-50 opacity-0">
+        Copied to clipboard!
     </div>
 
     <script>
@@ -579,6 +215,9 @@
                             buttonImg.src = data.athlete_profile;
                             buttonImg.alt = 'Profile Picture';
                             buttonImg.classList.remove('connect-btn');
+                            buttonImg.classList.add('rounded-full', 'object-cover', 'w-12', 'h-12', 'border-2', 'border-green-500'); // Add green border
+                            // Show dropdown trigger when logged in with profile
+                            document.getElementById('profile-dropdown-trigger').classList.remove('hidden');
                         } else {
                             // Hide the button if no profile picture
                             button.style.display = 'none';
@@ -601,10 +240,13 @@
                         buttonImg.src = 'static/images/btn_strava_connect_with_orange.svg';
                         buttonImg.alt = 'Connect with Strava';
                         buttonImg.classList.add('connect-btn');
+                        buttonImg.classList.remove('rounded-full', 'object-cover', 'w-12', 'h-12', 'border-2', 'border-green-500'); // Remove green border
                         button.classList.remove('logged-in');
                         button.classList.add('logged-out');
                         state.isAuthenticated = false;
                         disableActivityInput();
+                        document.getElementById('profile-dropdown-trigger').classList.add('hidden');
+                        document.getElementById('profile-dropdown').classList.add('hidden');
 
                         if (data.error) {
                             showStatusMessage(data.error);
@@ -617,6 +259,7 @@
                     buttonImg.src = 'static/images/btn_strava_connect_with_orange.svg';
                     buttonImg.alt = 'Connect with Strava';
                     buttonImg.classList.add('connect-btn');
+                    buttonImg.classList.remove('rounded-full', 'object-cover', 'w-12', 'h-12', 'border-2', 'border-green-500'); // Remove green border
                     button.classList.remove('logged-in');
                     button.classList.add('logged-out');
                     state.isAuthenticated = false;
@@ -682,6 +325,33 @@
                 }
             });
 
+            // Dropdown functionality
+            const dropdownTrigger = document.getElementById('profile-dropdown-trigger');
+            const dropdown = document.getElementById('profile-dropdown');
+            const logoutButton = document.getElementById('logout-button');
+
+            dropdownTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!dropdown.contains(e.target) && !dropdownTrigger.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+
+            // Connect logout button to existing logout functionality
+            logoutButton.addEventListener('click', () => {
+                fetch("/logout", addCSRFToken({
+                    method: 'POST',
+                    credentials: "include"
+                })).then(() => {
+                    window.location.href = "/";
+                });
+            });
+
             // Check auth status on load
             checkAuth();
 
@@ -690,7 +360,7 @@
             const loadActivityBtn = document.getElementById('loadActivityBtn');
             const overlayCanvas = document.getElementById('overlayCanvas');
             const colorWheel = document.getElementById('colorWheel');
-            const exportTextBtn = document.getElementById('exportTextBtn');
+            const copyTextBtn = document.getElementById('copyTextBtn');
             const copyImageBtn = document.getElementById('copyImageBtn');
             const ctx = overlayCanvas.getContext('2d');
             
@@ -730,40 +400,58 @@
                 const statusMessage = document.getElementById('statusMessage');
                 messageQueue.clear();
                 
+                const typeStyles = {
+                    error: 'bg-red-100 text-red-700 border border-red-200',
+                    success: 'bg-green-100 text-green-700 border border-green-200',
+                    warning: 'bg-yellow-100 text-yellow-700 border border-yellow-200',
+                    info: 'bg-blue-100 text-blue-700 border border-blue-200'
+                };
+
+                // Reset animation state
+                statusMessage.classList.remove('hidden');
+                statusMessage.classList.add('transform', 'translate-y-2', 'opacity-0');
+                
+                statusMessage.className = `transform translate-y-2 opacity-0 rounded-lg p-4 text-sm transition-all duration-300 ease-in-out ${typeStyles[type] || typeStyles.error}`;
                 statusMessage.textContent = message;
-                statusMessage.className = `status-message ${type} show`;
+                
+                // Force a reflow
+                void statusMessage.offsetWidth;
+                
+                // Slide up animation
+                statusMessage.classList.remove('translate-y-2', 'opacity-0');
+                statusMessage.classList.add('translate-y-0', 'opacity-100');
                 
                 messageQueue.timer = setTimeout(() => {
-                    statusMessage.classList.remove('show');
-                    messageQueue.timer = null;
-                    messageQueue.currentMessage = null;
+                    hideStatusMessage();
                 }, 3000);
                 
                 messageQueue.currentMessage = message;
             }
 
-            function showLoginRequired(action) {
-                showStatusMessage(`Please login to ${action}`);
-            }
-
             function hideStatusMessage() {
                 messageQueue.clear();
                 const statusMessage = document.getElementById('statusMessage');
-                statusMessage.classList.remove('show');
+                
+                // If already hidden, do nothing
+                if (statusMessage.classList.contains('hidden')) {
+                    return;
+                }
+                
+                // Slide down animation
+                statusMessage.classList.remove('translate-y-0', 'opacity-100');
+                statusMessage.classList.add('translate-y-2', 'opacity-0');
+                
+                // Wait for animation to complete before hiding
+                setTimeout(() => {
+                    statusMessage.classList.add('hidden');
+                }, 300);
             }
 
-            // Mock Strava API data (replace with actual API call)
-            const mockStravaData = {
-                distance: 10.5,
-                pace: '5:30',
-                elevation: 250,
-                time: '01:02:15',
-                heartRate: 162
-            };
+            const StravaData = {};
 
             // Set fixed canvas dimensions
             function initCanvas() {
-                generateOverlay(mockStravaData);
+                generateOverlay(StravaData);
             }
 
             // Replace resizeCanvas with initCanvas
@@ -810,7 +498,7 @@
                 const activityIdentifier = extractActivityId(input);
                 
                 if (!activityIdentifier) {
-                    showStatusMessage('Please enter a valid Strava activity URL or ID. Example:  https://strava.app.link/ab12cd34ef or https://www.strava.com/activities/123456789 or 123456789', 'error');
+                    showStatusMessage('Please enter a valid Strava activity URL or ID. Examples: https://strava.app.link/ab12cd34ef or https://www.strava.com/activities/123456789 or 123456789', 'error');
                     return;
                 }
 
@@ -818,23 +506,57 @@
 
                 try {
                     const activityData = await fetchActivityData(activityIdentifier);
-                    state.activityId = activityData.id; // Use the resolved activity ID from server
+                    state.activityId = activityData.id;
                     
-                    // Update mockStravaData with real data
-                    mockStravaData.distance = (activityData.distance / 1000).toFixed(2);
-                    mockStravaData.time = new Date(activityData.moving_time * 1000).toISOString().substr(11, 8);
-                    mockStravaData.elevation = Math.round(activityData.total_elevation_gain);
-                    mockStravaData.pace = ((activityData.moving_time / 60) / (activityData.distance / 1000)).toFixed(2);
-                    mockStravaData.heartRate = activityData.average_heartrate ? Math.round(activityData.average_heartrate) : 0;
+                    // Create metrics map with availability status
+                    const metricsAvailability = {
+                        distance: !!activityData.distance,
+                        movingTime: !!activityData.moving_time,
+                        pace: !!(activityData.moving_time && activityData.distance),
+                        elevationGain: !!activityData.total_elevation_gain,
+                        avgHeartRate: !!activityData.average_heartrate,
+                        maxHeartRate: !!activityData.max_heartrate,
+                        calories: !!activityData.calories,
+                        sufferScore: !!activityData.suffer_score
+                    };
+
+                    console.log(metricsAvailability);
+
+                    // Update buttons based on data availability
+                    document.querySelectorAll('.overlay-option').forEach(button => {
+                        const metric = button.dataset.metric;
+                        if (!metricsAvailability[metric]) {
+                            button.disabled = true;
+                            button.classList.remove('bg-strava-gray', 'bg-strava-orange');
+                            button.classList.add('bg-gray-300', 'cursor-not-allowed');
+                        } else {
+                            button.disabled = false;
+                            button.classList.remove('bg-gray-300', 'cursor-not-allowed');
+                            button.classList.add('bg-strava-gray');
+                        }
+                    });
+
+                    // Update StravaData only for available metrics
+                    StravaData.distance = metricsAvailability.distance ? (activityData.distance / 1000).toFixed(2) + ' km' : null;
+                    StravaData.movingTime = metricsAvailability.movingTime ? formatDuration(activityData.moving_time) : null;
+                    StravaData.pace = metricsAvailability.pace ? formatPace(activityData.moving_time, activityData.distance) + ' /km' : null;
+                    StravaData.elevationGain = metricsAvailability.elevationGain ? Math.round(activityData.total_elevation_gain) + 'm' : null;
+                    StravaData.avgHeartRate = metricsAvailability.avgHeartRate ? Math.round(activityData.average_heartrate) + ' bpm' : null;
+                    StravaData.maxHeartRate = metricsAvailability.maxHeartRate ? Math.round(activityData.max_heartrate) + ' bpm' : null;
+                    StravaData.calories = metricsAvailability.calories ? Math.round(activityData.calories) : null;
+                    StravaData.sufferScore = metricsAvailability.sufferScore ? Math.round(activityData.suffer_score) : null;
+
+                    // Remove any selected metrics that are no longer available
+                    state.selectedMetrics = state.selectedMetrics.filter(metric => metricsAvailability[metric]);
 
                     // Update Strava link
                     const linkContainer = document.getElementById('stravaLinkContainer');
                     const stravaLink = document.getElementById('stravaLink');
                     stravaLink.href = `https://www.strava.com/activities/${activityData.id}`;
-                    linkContainer.classList.add('show');
+                    linkContainer.classList.remove('hidden');
 
-                    generateOverlay(mockStravaData);
-                    exportTextBtn.disabled = false;
+                    generateOverlay(StravaData);
+                    copyTextBtn.disabled = false;
                     copyImageBtn.disabled = false;
                     
                     showStatusMessage(`Activity "${activityData.name}" loaded successfully`, 'success');
@@ -851,7 +573,7 @@
                         showStatusMessage('Failed to load activity. Please check the activity ID and try again.', 'error');
                     }
                     // Hide Strava link on error
-                    document.getElementById('stravaLinkContainer').classList.remove('show');
+                    document.getElementById('stravaLinkContainer').classList.add('hidden');
                 } finally {
                     loadActivityBtn.disabled = false;
                 }
@@ -876,56 +598,55 @@
 
             function disableActivityInput() {
                 activityInput.disabled = true;
-                // Don't disable load button to allow error message trigger
                 loadActivityBtn.disabled = false;
                 activityInput.placeholder = "Please login to load activities";
                 // Clear any existing activity data
                 state.activityId = null;
-                generateOverlay(mockStravaData);
-                // Don't show message immediately, wait for user interaction
-                document.getElementById('stravaLinkContainer').classList.remove('show');
+                document.getElementById('stravaLinkContainer').classList.add('hidden');
+                generateOverlay(StravaData);
             }
 
             // Existing code
             document.querySelectorAll('.overlay-option').forEach(option => {
                 option.addEventListener('click', () => {
                     if (!state.isAuthenticated) {
-                        showLoginRequired('customize overlays');
+                        showStatusMessage('Please login to customize overlays', 'warning');
                         return;
                     }
                     if (!state.activityId) {
-                        showStatusMessage('Please load an activity first to customize overlays');
+                        showStatusMessage('Please load an activity first to customize overlays', 'warning');
                         return;
                     }
 
-                    option.classList.toggle('active');
                     const metric = option.dataset.metric;
                     
-                    if (state.selectedMetrics.includes(metric)) {
+                    if (option.classList.contains('bg-strava-orange')) {
+                        option.classList.remove('bg-strava-orange');
+                        option.classList.add('bg-strava-gray');
                         state.selectedMetrics = state.selectedMetrics.filter(m => m !== metric);
                     } else {
+                        option.classList.remove('bg-strava-gray');
+                        option.classList.add('bg-strava-orange');
                         state.selectedMetrics.push(metric);
                     }
 
-                    if (state.activityId) {
-                        generateOverlay(mockStravaData);
-                    }
+                    generateOverlay(StravaData);
                 });
             });
 
             // Update color wheel handler
             colorWheel.addEventListener('input', (e) => {
                 if (!state.isAuthenticated) {
-                    showLoginRequired('customize colors');
+                    showStatusMessage('Please login to customize colors', 'warning');
                     return;
                 }
                 if (!state.activityId) {
-                    showStatusMessage('Please load an activity first to customize colors');
+                    showStatusMessage('Please load an activity first to customize colors', 'warning');
                     return;
                 }
 
                 state.textColor = e.target.value;
-                generateOverlay(mockStravaData);
+                generateOverlay(StravaData);
             });
 
             // Generate Overlay
@@ -940,29 +661,46 @@
             }
 
             function drawMetrics(data, context = ctx) {
-                // Calculate center position
+                const metrics = [
+                    { name: 'Distance', value: data.distance, key: 'distance' },
+                    { name: 'Time', value: data.movingTime, key: 'movingTime' },
+                    { name: 'Pace', value: data.pace, key: 'pace' },
+                    { name: 'Elevation', value: data.elevationGain, key: 'elevationGain' },
+                    { name: 'Avg HR', value: data.avgHeartRate, key: 'avgHeartRate' },
+                    { name: 'Max HR', value: data.maxHeartRate, key: 'maxHeartRate' },
+                    { name: 'Calories', value: data.calories, key: 'calories' },
+                    { name: 'Suffer Score', value: data.sufferScore, key: 'sufferScore' }
+                ];
+
+                const selectedMetrics = metrics
+                    .filter(metric => state.selectedMetrics.includes(metric.key))
+                    .filter(metric => metric.value !== 'N/A');
+
+                if (selectedMetrics.length === 0) return;
+
+                const maxHeight = overlayCanvas.height * 0.9;
                 const centerX = overlayCanvas.width / 2;
                 const centerY = overlayCanvas.height / 2;
 
-                // Adjust font sizes for square canvas
-                const metricsCount = Math.max(1, state.selectedMetrics.length);
-                const titleFontSize = Math.min(80, 160 * (5 / metricsCount));
-                const valueFontSize = Math.min(100, 200 * (5 / metricsCount));
-                const spacing = Math.min(60, 120 * (5 / metricsCount));
+                // Start with initial sizes
+                let titleFontSize = 80;
+                let valueFontSize = 100;
+                let spacing = 60;
 
-                const metrics = [
-                    { name: 'Distance', value: `${data.distance} km`, key: 'distance' },
-                    { name: 'Pace', value: `${data.pace} min/km`, key: 'pace' },
-                    { name: 'Elevation', value: `${data.elevation} m`, key: 'elevation' },
-                    { name: 'Time', value: data.time, key: 'time' },
-                    { name: 'Heart Rate', value: `${data.heartRate} bpm`, key: 'heartRate' }
-                ];
+                // Calculate minimum font size needed to fit everything
+                let totalHeight;
+                do {
+                    titleFontSize *= 0.95;
+                    valueFontSize *= 0.95;
+                    spacing *= 0.95;
+                    
+                    // Calculate total height without extra spacing
+                    const itemHeight = titleFontSize + valueFontSize;
+                    const totalSpacing = (selectedMetrics.length - 1) * spacing;
+                    totalHeight = (selectedMetrics.length * itemHeight) + totalSpacing;
+                } while (totalHeight > maxHeight && titleFontSize > 20);
 
-                const selectedMetrics = metrics.filter(metric => 
-                    state.selectedMetrics.includes(metric.key)
-                );
-
-                const totalHeight = selectedMetrics.length * (titleFontSize + valueFontSize + spacing);
+                // Calculate starting Y position to center content
                 let yOffset = centerY - (totalHeight / 2);
 
                 // Styling
@@ -970,7 +708,7 @@
                 context.textAlign = 'center';
                 context.textBaseline = 'top';
 
-                selectedMetrics.forEach(metric => {
+                selectedMetrics.forEach((metric, index) => {
                     // Title
                     context.font = `bold ${titleFontSize}px Arial`;
                     context.fillText(metric.name, centerX, yOffset);
@@ -979,8 +717,29 @@
                     context.font = `bold ${valueFontSize}px Arial`;
                     context.fillText(metric.value, centerX, yOffset + titleFontSize + 10);
                     
-                    yOffset += titleFontSize + valueFontSize + spacing;
+                    // Only add spacing if it's not the last item
+                    yOffset += titleFontSize + valueFontSize + (index < selectedMetrics.length - 1 ? spacing : 0);
                 });
+            }
+
+            // Add these utility functions for metric formatting
+            function formatDuration(seconds) {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const remainingSeconds = seconds % 60;
+                
+                if (hours > 0) {
+                    return `${hours}h ${minutes}m ${remainingSeconds}s`;
+                }
+                return `${minutes}m ${remainingSeconds}s`;
+            }
+
+            function formatPace(seconds, distance) {
+                if (!distance) return "0:00";
+                const paceInSeconds = seconds / (distance / 1000);
+                const minutes = Math.floor(paceInSeconds / 60);
+                const remainingSeconds = Math.ceil(paceInSeconds % 60);
+                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
             }
 
             function measureTextBounds(context, metrics, titleFontSize, valueFontSize, spacing) {
@@ -1011,35 +770,73 @@
             }
 
             function getCroppedDimensions(data, context) {
-                const metricsCount = Math.max(1, state.selectedMetrics.length);
-                const titleFontSize = Math.min(80, 160 * (5 / metricsCount));
-                const valueFontSize = Math.min(100, 200 * (5 / metricsCount));
-                const spacing = Math.min(60, 120 * (5 / metricsCount));
-
                 const metrics = [
-                    { name: 'Distance', value: `${data.distance} km`, key: 'distance' },
-                    { name: 'Pace', value: `${data.pace} min/km`, key: 'pace' },
-                    { name: 'Elevation', value: `${data.elevation} m`, key: 'elevation' },
-                    { name: 'Time', value: data.time, key: 'time' },
-                    { name: 'Heart Rate', value: `${data.heartRate} bpm`, key: 'heartRate' }
-                ].filter(metric => state.selectedMetrics.includes(metric.key));
+                    { name: 'Distance', value: data.distance, key: 'distance' },
+                    { name: 'Time', value: data.movingTime, key: 'movingTime' },
+                    { name: 'Pace', value: data.pace, key: 'pace' },
+                    { name: 'Elevation', value: data.elevationGain, key: 'elevationGain' },
+                    { name: 'Avg HR', value: data.avgHeartRate, key: 'avgHeartRate' },
+                    { name: 'Max HR', value: data.maxHeartRate, key: 'maxHeartRate' },
+                    { name: 'Calories', value: data.calories, key: 'calories' },
+                    { name: 'Suffer Score', value: data.sufferScore, key: 'sufferScore' }
+                ].filter(metric => state.selectedMetrics.includes(metric.key))
+                 .filter(metric => metric.value !== 'N/A');
 
-                const bounds = measureTextBounds(context, metrics, titleFontSize, valueFontSize, spacing);
+                if (metrics.length === 0) return { x: 0, y: 0, width: overlayCanvas.width, height: overlayCanvas.height };
+
+                const maxHeight = overlayCanvas.height * 0.9;
+                let titleFontSize = 80;
+                let valueFontSize = 100;
+                let spacing = 60;
+
+                // Calculate minimum font size needed
+                let totalHeight;
+                do {
+                    titleFontSize *= 0.95;
+                    valueFontSize *= 0.95;
+                    spacing *= 0.95;
+                    // Remove one spacing interval since we don't need spacing after the last item
+                    totalHeight = (metrics.length * (titleFontSize + valueFontSize + spacing)) - spacing;
+                } while (totalHeight > maxHeight && titleFontSize > 20);
+
+                const centerY = overlayCanvas.height / 2;
+                const contentHeight = (metrics.length * (titleFontSize + valueFontSize + spacing)) - spacing;
+                const startY = centerY - (contentHeight / 2);
+                const endY = startY + contentHeight;
                 const margin = 40;
 
+                // Calculate horizontal bounds
+                let maxWidth = 0;
+                metrics.forEach(metric => {
+                    context.font = `bold ${titleFontSize}px Arial`;
+                    const titleWidth = context.measureText(metric.name).width;
+                    context.font = `bold ${valueFontSize}px Arial`;
+                    const valueWidth = context.measureText(metric.value).width;
+                    maxWidth = Math.max(maxWidth, titleWidth, valueWidth);
+                });
+
+                const centerX = overlayCanvas.width / 2;
+                const contentStartX = centerX - (maxWidth / 2);
+                const contentEndX = centerX + (maxWidth / 2);
+
                 return {
-                    x: Math.max(0, bounds.minX - margin),
-                    y: Math.max(0, bounds.minY - margin),
-                    width: Math.min(overlayCanvas.width, bounds.maxX - bounds.minX + 2 * margin),
-                    height: Math.min(overlayCanvas.height, bounds.maxY - bounds.minY + 2 * margin)
+                    x: Math.max(0, contentStartX - margin),
+                    y: Math.max(0, startY - margin),
+                    width: Math.min(overlayCanvas.width, (contentEndX - contentStartX) + (2 * margin)),
+                    height: Math.min(overlayCanvas.height, (endY - startY) + (2 * margin))
                 };
             }
 
             function showToast() {
                 const toast = document.getElementById('toast');
-                toast.classList.add('show');
+                // Reset the animation by forcing a reflow
+                void toast.offsetWidth;
+                toast.classList.remove('opacity-0');
+                toast.classList.add('opacity-100');
+                
                 setTimeout(() => {
-                    toast.classList.remove('show');
+                    toast.classList.remove('opacity-100');
+                    toast.classList.add('opacity-0');
                 }, 2000);
             }
 
@@ -1049,7 +846,7 @@
                     return true;
                 }
                 if (!state.activityId) {
-                    showStatusMessage('Please load an activity first before exporting');
+                    showStatusMessage('Please load an activity first before copying');
                     return true;
                 }
                 return false;
@@ -1073,31 +870,34 @@
                 return true;
             }
 
-            // Update export text button handler
-            exportTextBtn.addEventListener('click', async () => {
-                if (showActionRequired('export activities')) return;
+            // Update Copy text button handler
+            copyTextBtn.addEventListener('click', async () => {
+                if (showActionRequired('copy activities')) return;
 
                 // Remove permission check for text
                 const metrics = [
-                    { name: 'Distance', value: `${mockStravaData.distance} km`, key: 'distance' },
-                    { name: 'Pace', value: `${mockStravaData.pace} min/km`, key: 'pace' },
-                    { name: 'Elevation', value: `${mockStravaData.elevation} m`, key: 'elevation' },
-                    { name: 'Time', value: `${mockStravaData.time}`, key: 'time' },
-                    { name: 'Heart Rate', value: `${mockStravaData.heartRate} bpm`, key: 'heartRate' }
+                    { name: 'Distance', value: StravaData.distance, key: 'distance' },
+                    { name: 'Time', value: StravaData.movingTime, key: 'movingTime' },
+                    { name: 'Pace', value: StravaData.pace, key: 'pace' },
+                    { name: 'Elevation', value: StravaData.elevationGain, key: 'elevationGain' },
+                    { name: 'Avg HR', value: StravaData.avgHeartRate, key: 'avgHeartRate' },
+                    { name: 'Max HR', value: StravaData.maxHeartRate, key: 'maxHeartRate' },
+                    { name: 'Calories', value: StravaData.calories, key: 'calories' },
+                    { name: 'Suffer Score', value: StravaData.sufferScore, key: 'sufferScore' }
                 ];
 
-                const exportText = metrics
+                const copyText = metrics
                     .filter(metric => state.selectedMetrics.includes(metric.key))
                     .map(metric => `${metric.name}\n${metric.value}`)
                     .join('\n\n');
 
                 try {
-                    await navigator.clipboard.writeText(exportText);
+                    await navigator.clipboard.writeText(copyText);
                     showToast();
                 } catch (err) {
                     // iOS fallback with explicit user action required
                     const textarea = document.createElement('textarea');
-                    textarea.value = exportText;
+                    textarea.value = copyText;
                     textarea.style.position = 'fixed';
                     textarea.style.opacity = '0';
                     document.body.appendChild(textarea);
@@ -1115,13 +915,13 @@
             });
 
             copyImageBtn.addEventListener('click', async () => {
-                if (showActionRequired('export activities')) return;
+                if (showActionRequired('copy activities')) return;
 
                 // if (!await requestClipboardPermission('copy image')) {
                 //     return;
                 // }
 
-                const dimensions = getCroppedDimensions(mockStravaData, ctx);
+                const dimensions = getCroppedDimensions(StravaData, ctx);
 
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = dimensions.width;
@@ -1131,7 +931,7 @@
                 tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
                 tempCtx.save();
                 tempCtx.translate(-dimensions.x, -dimensions.y);
-                drawMetrics(mockStravaData, tempCtx);
+                drawMetrics(StravaData, tempCtx);
                 tempCtx.restore();
 
                 try {
@@ -1182,12 +982,78 @@
                         activityInput.classList.add('invalid');
                     } else {
                         activityInput.classList.remove('invalid');
+                        hideStatusMessage(); // Add this line
                     }
                 } else {
                     activityInput.classList.remove('invalid');
+                    hideStatusMessage(); // Add this line
                 }
             });
 
+            activityInput.addEventListener('input', (e) => {
+                const clearButton = document.getElementById('clearInput');
+                if (e.target.value) {
+                    clearButton.classList.remove('hidden');
+                } else {
+                    clearButton.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('clearInput').addEventListener('click', () => {
+                activityInput.value = '';
+                activityInput.classList.remove('invalid');
+                document.getElementById('clearInput').classList.add('hidden');
+                hideStatusMessage(); // Add this line
+            });
+
+            // Update the showLoginRequired function
+            function showLoginRequired(action) {
+                const statusMessage = document.getElementById('statusMessage');
+                messageQueue.clear();
+                
+                const message = `Please login to ${action}`;
+                const typeStyles = 'bg-yellow-100 text-yellow-700 border border-yellow-200';
+                
+                statusMessage.className = `transform translate-y-2 opacity-0 rounded-lg p-4 text-sm transition-all duration-300 ease-in-out ${typeStyles}`;
+                statusMessage.textContent = message;
+                statusMessage.classList.remove('hidden');
+                
+                void statusMessage.offsetWidth;
+                
+                statusMessage.classList.remove('translate-y-2', 'opacity-0');
+                statusMessage.classList.add('translate-y-0', 'opacity-100');
+                
+                messageQueue.timer = setTimeout(() => {
+                    hideStatusMessage();
+                }, 3000);
+                
+                messageQueue.currentMessage = message;
+            }
+
+            // Update activityInput input handler to use hideStatusMessage
+            activityInput.addEventListener('input', (e) => {
+                const input = e.target.value.trim();
+                if (input) {
+                    // Simple client-side validation for immediate feedback
+                    const directPattern = /^(?:https?:\/\/)?(?:www\.)?strava\.com\/activities\/\d+(?:\/.*)?$/;
+                    const deepLinkPattern = /^(?:https?:\/\/)?strava\.app\.link\/[A-Za-z0-9_-]+$/;
+                    const idPattern = /^\d+$/;
+                    
+                    if (!directPattern.test(input) && !deepLinkPattern.test(input) && !idPattern.test(input)) {
+                        activityInput.classList.add('invalid');
+                    } else {
+                        activityInput.classList.remove('invalid');
+                        if (messageQueue.currentMessage) {
+                            hideStatusMessage();
+                        }
+                    }
+                } else {
+                    activityInput.classList.remove('invalid');
+                    if (messageQueue.currentMessage) {
+                        hideStatusMessage();
+                    }
+                }
+            });
         });
     </script>
 </body>
