@@ -29,7 +29,7 @@
     <!-- Main Container -->
     <div class="max-w-3xl mx-auto space-y-1">
         <!-- Header Card -->
-        <div class="bg-white rounded-xl shadow-lg py-1 px-4">
+        <div class="bg-white rounded-b-xl shadow-lg py-1 px-4">
             <div class="relative min-h-[4rem] flex justify-between items-center">
                 <div class="flex-1 min-w-0 pr-4">
                     <h1 class="font-bold">
@@ -106,21 +106,30 @@
         <!-- Options Card -->
         <div class="bg-white rounded-xl shadow-lg p-6 space-y-4">
             <h2 class="text-lg font-medium text-strava-text">Overlay Options</h2>
-            <div id="overlayOptions" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            <div id="overlayOptions" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="distance">
                     Distance
+                </button>
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="movingTime">
+                    Time
                 </button>
                 <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="pace">
                     Pace
                 </button>
-                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="elevation">
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="elevationGain">
                     Elevation
                 </button>
-                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="time">
-                    Time
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="avgHeartRate">
+                    Avg HR
                 </button>
-                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="heartRate">
-                    Heart Rate
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="maxHeartRate">
+                    Max HR
+                </button>
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="calories">
+                    Calories
+                </button>
+                <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="sufferScore">
+                    Suffer Score
                 </button>
             </div>
 
@@ -145,7 +154,7 @@
         </div>
 
         <!-- Footer -->
-        <div class="bg-white rounded-xl shadow-lg p-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-strava-gray">
+        <div class="bg-white rounded-t-xl shadow-lg p-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-strava-gray">
             <div>
                 &copy; 2025 FitOverlays - Licensed under 
                 <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
@@ -428,18 +437,11 @@
                 }, 300);
             }
 
-            // Mock Strava API data (replace with actual API call)
-            const mockStravaData = {
-                distance: 10.5,
-                pace: '5:30',
-                elevation: 250,
-                time: '01:02:15',
-                heartRate: 162
-            };
+            const StravaData = {};
 
             // Set fixed canvas dimensions
             function initCanvas() {
-                generateOverlay(mockStravaData);
+                generateOverlay(StravaData);
             }
 
             // Replace resizeCanvas with initCanvas
@@ -495,21 +497,23 @@
                 try {
                     const activityData = await fetchActivityData(activityIdentifier);
                     state.activityId = activityData.id; // Use the resolved activity ID from server
-                    
-                    // Update mockStravaData with real data
-                    mockStravaData.distance = (activityData.distance / 1000).toFixed(2);
-                    mockStravaData.time = new Date(activityData.moving_time * 1000).toISOString().substr(11, 8);
-                    mockStravaData.elevation = Math.round(activityData.total_elevation_gain);
-                    mockStravaData.pace = ((activityData.moving_time / 60) / (activityData.distance / 1000)).toFixed(2);
-                    mockStravaData.heartRate = activityData.average_heartrate ? Math.round(activityData.average_heartrate) : 0;
+                    // Update the StravaData with activity metrics
+                    StravaData.distance = (activityData.distance / 1000).toFixed(2) + ' km';;
+                    StravaData.movingTime = formatDuration(activityData.moving_time);
+                    StravaData.pace = formatPace(activityData.moving_time, activityData.distance) + ' /km';
+                    StravaData.elevationGain = Math.round(activityData.total_elevation_gain) + 'm';
+                    StravaData.avgHeartRate = activityData.average_heartrate ? Math.round(activityData.average_heartrate) + ' bpm' : 'N/A';
+                    StravaData.maxHeartRate = activityData.max_heartrate ? Math.round(activityData.max_heartrate) + ' bpm' : 'N/A';
+                    StravaData.calories = activityData.calories ? Math.round(activityData.calories) : 'N/A';
+                    StravaData.sufferScore = activityData.suffer_score ? Math.round(activityData.suffer_score) : 'N/A';
 
                     // Update Strava link
                     const linkContainer = document.getElementById('stravaLinkContainer');
                     const stravaLink = document.getElementById('stravaLink');
                     stravaLink.href = `https://www.strava.com/activities/${activityData.id}`;
-                    linkContainer.classList.add('show');
+                    linkContainer.classList.remove('hidden');
 
-                    generateOverlay(mockStravaData);
+                    generateOverlay(StravaData);
                     exportTextBtn.disabled = false;
                     copyImageBtn.disabled = false;
                     
@@ -527,7 +531,7 @@
                         showStatusMessage('Failed to load activity. Please check the activity ID and try again.', 'error');
                     }
                     // Hide Strava link on error
-                    document.getElementById('stravaLinkContainer').classList.remove('show');
+                    document.getElementById('stravaLinkContainer').classList.add('hidden');
                 } finally {
                     loadActivityBtn.disabled = false;
                 }
@@ -557,9 +561,9 @@
                 activityInput.placeholder = "Please login to load activities";
                 // Clear any existing activity data
                 state.activityId = null;
-                generateOverlay(mockStravaData);
+                generateOverlay(StravaData);
                 // Don't show message immediately, wait for user interaction
-                document.getElementById('stravaLinkContainer').classList.remove('show');
+                document.getElementById('stravaLinkContainer').classList.remove('hidden');
             }
 
             // Existing code
@@ -584,7 +588,7 @@
                     }
 
                     if (state.activityId) {
-                        generateOverlay(mockStravaData);
+                        generateOverlay(StravaData);
                     }
                 });
             });
@@ -601,7 +605,7 @@
                 }
 
                 state.textColor = e.target.value;
-                generateOverlay(mockStravaData);
+                generateOverlay(StravaData);
             });
 
             // Generate Overlay
@@ -615,6 +619,7 @@
                 drawMetrics(data);
             }
 
+           // Update the drawMetrics function
             function drawMetrics(data, context = ctx) {
                 // Calculate center position
                 const centerX = overlayCanvas.width / 2;
@@ -627,16 +632,19 @@
                 const spacing = Math.min(60, 120 * (5 / metricsCount));
 
                 const metrics = [
-                    { name: 'Distance', value: `${data.distance} km`, key: 'distance' },
-                    { name: 'Pace', value: `${data.pace} min/km`, key: 'pace' },
-                    { name: 'Elevation', value: `${data.elevation} m`, key: 'elevation' },
-                    { name: 'Time', value: data.time, key: 'time' },
-                    { name: 'Heart Rate', value: `${data.heartRate} bpm`, key: 'heartRate' }
+                    { name: 'Distance', value: data.distance, key: 'distance' },
+                    { name: 'Time', value: data.movingTime, key: 'movingTime' },
+                    { name: 'Pace', value: data.pace, key: 'pace' },
+                    { name: 'Elevation', value: data.elevationGain, key: 'elevationGain' },
+                    { name: 'Avg HR', value: data.avgHeartRate, key: 'avgHeartRate' },
+                    { name: 'Max HR', value: data.maxHeartRate, key: 'maxHeartRate' },
+                    { name: 'Calories', value: data.calories, key: 'calories' },
+                    { name: 'Suffer Score', value: data.sufferScore, key: 'sufferScore' }
                 ];
 
-                const selectedMetrics = metrics.filter(metric => 
-                    state.selectedMetrics.includes(metric.key)
-                );
+                const selectedMetrics = metrics
+                    .filter(metric => state.selectedMetrics.includes(metric.key))
+                    .filter(metric => metric.value !== 'N/A');
 
                 const totalHeight = selectedMetrics.length * (titleFontSize + valueFontSize + spacing);
                 let yOffset = centerY - (totalHeight / 2);
@@ -657,6 +665,26 @@
                     
                     yOffset += titleFontSize + valueFontSize + spacing;
                 });
+            }
+
+            // Add these utility functions for metric formatting
+            function formatDuration(seconds) {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const remainingSeconds = seconds % 60;
+                
+                if (hours > 0) {
+                    return `${hours}h ${minutes}m ${remainingSeconds}s`;
+                }
+                return `${minutes}m ${remainingSeconds}s`;
+            }
+
+            function formatPace(seconds, distance) {
+                if (!distance) return "0:00";
+                const paceInSeconds = seconds / (distance / 1000);
+                const minutes = Math.floor(paceInSeconds / 60);
+                const remainingSeconds = Math.ceil(paceInSeconds % 60);
+                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
             }
 
             function measureTextBounds(context, metrics, titleFontSize, valueFontSize, spacing) {
@@ -755,11 +783,14 @@
 
                 // Remove permission check for text
                 const metrics = [
-                    { name: 'Distance', value: `${mockStravaData.distance} km`, key: 'distance' },
-                    { name: 'Pace', value: `${mockStravaData.pace} min/km`, key: 'pace' },
-                    { name: 'Elevation', value: `${mockStravaData.elevation} m`, key: 'elevation' },
-                    { name: 'Time', value: `${mockStravaData.time}`, key: 'time' },
-                    { name: 'Heart Rate', value: `${mockStravaData.heartRate} bpm`, key: 'heartRate' }
+                    { name: 'Distance', value: StravaData.distance, key: 'distance' },
+                    { name: 'Time', value: StravaData.movingTime, key: 'movingTime' },
+                    { name: 'Pace', value: StravaData.pace, key: 'pace' },
+                    { name: 'Elevation', value: StravaData.elevationGain, key: 'elevationGain' },
+                    { name: 'Avg HR', value: StravaData.avgHeartRate, key: 'avgHeartRate' },
+                    { name: 'Max HR', value: StravaData.maxHeartRate, key: 'maxHeartRate' },
+                    { name: 'Calories', value: StravaData.calories, key: 'calories' },
+                    { name: 'Suffer Score', value: StravaData.sufferScore, key: 'sufferScore' }
                 ];
 
                 const exportText = metrics
@@ -797,7 +828,7 @@
                 //     return;
                 // }
 
-                const dimensions = getCroppedDimensions(mockStravaData, ctx);
+                const dimensions = getCroppedDimensions(StravaData, ctx);
 
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = dimensions.width;
@@ -807,7 +838,7 @@
                 tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
                 tempCtx.save();
                 tempCtx.translate(-dimensions.x, -dimensions.y);
-                drawMetrics(mockStravaData, tempCtx);
+                drawMetrics(StravaData, tempCtx);
                 tempCtx.restore();
 
                 try {

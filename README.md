@@ -35,7 +35,7 @@ FitOverlays is a sleek and easy-to-use web tool that transforms your Strava acti
 
 ## **List of the best parameters for an overlay**  
 
-### **Top Priority**  
+### **Metrics**  
 1. **Distance** (e.g., `11.01 km`)  
 2. **Moving Time** (formatted as `1h 5m 52s`)  
 3. **Pace** (calculated from moving time & distance, e.g., `5:58 min/km`)  
@@ -43,11 +43,14 @@ FitOverlays is a sleek and easy-to-use web tool that transforms your Strava acti
 5. **Max Heart Rate** (e.g., `169 bpm`)  
 6. **Calories Burned** (e.g., `910 kcal`)  
 7. **Suffer Score** (if relevant for effort-based overlays, e.g., `98`)  
-8. **Elevation Gain** (e.g., `25 m`)  
+8. **Elevation Gain** (e.g., `25 m`)
+9. **Calories** (e.g., `809`)
 
-### **Secondary**  
-9. **Map** (generated from `summary_polyline`)  
+
+### **Maps**  
+9. **Minimal** (generated from `summary_polyline`)  
+9. **Minimal** (generated from `summary_polyline`)  
+
+### **Maps**
 10. **Pace Graph** (from pace data if available)  
-11. **Heart Rate Graph** (if heartrate data exists)  
-12. **Max Speed** (e.g., `5.11 m/s` → converted to `18.4 km/h`)  
-13. **Elevation High/Low** (`45.9m / 36.9m`)
+11. **Heart Rate Graph** (if heartrate data exists) 
