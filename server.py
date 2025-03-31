@@ -82,14 +82,10 @@ def add_security_headers(response: Response) -> Response:
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Permissions-Policy'] = (
-        'accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), '
-        'camera=(), cross-origin-isolated=(), display-capture=(), '
-        'document-domain=(), encrypted-media=(), execution-while-not-rendered=(), '
-        'execution-while-out-of-viewport=(), fullscreen=(), geolocation=(), '
-        'gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), '
-        'navigation-override=(), payment=(), picture-in-picture=(), '
-        'publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), '
-        'usb=(), web-share=(), xr-spatial-tracking=()'
+        'accelerometer=(), autoplay=(), camera=(), cross-origin-isolated=(), display-capture=(), '
+        'encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), keyboard-map=(), '
+        'magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), '
+        'screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()'
     )
     response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
@@ -221,6 +217,12 @@ def logout():
 @app.route('/')
 def home():
     return send_from_directory('.', 'index.html')
+
+@app.before_request
+def require_authentication():
+    """Serve the authentication required page for unauthenticated users."""
+    if request.path not in ['/', '/login', '/callback', '/static/'] and 'athlete_id' not in session:
+        return send_from_directory('.', 'auth_required.html')
 
 ALLOWED_EXTENSIONS = {
     '.css', '.js', '.png', '.jpg', '.jpeg', '.gif', 
@@ -518,6 +520,11 @@ def handle_ratelimit_error(e):
         "error": "Rate limit exceeded. Please wait before trying again.",
         "status": 429
     }), 429
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """Handle 404 errors by serving our custom 404 page"""
+    return send_from_directory('.', '404.html'), 404
 
 def refresh_access_token(refresh_token):
     """Refresh the access token with robust error handling"""

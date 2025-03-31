@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+    <meta name="copyright" content="FitOverlays - Copyright (c) 2025 Spyros Lontos">
+    <meta name="license" content="AGPL-3.0">
+    <title>Page Not Found - FitnessOverlays</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800
+             bg-gradient-to-br from-white to-[#fc4c02]/20
+             min-h-screen flex flex-col">
+
+    <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
+        <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center">
+            <div class="flex justify-start min-w-[40px]"></div>
+            <div class="text-center flex justify-center items-center">
+                <h1 class="text-2xl font-bold">
+                    <span class="text-[#fc4c02]">Fitness</span><span class="text-gray-900">Overlays</span>
+                </h1>
+            </div>
+            <div class="flex justify-end min-w-[40px]"></div>
+        </nav>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 md:py-12 flex items-center justify-center">
+        <div class="text-center max-w-lg p-8 md:p-12 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 w-full mx-4">
+            <div class="mb-6 relative">
+                <div class="text-[8rem] md:text-[12rem] font-bold text-[#fc4c02]/10 select-none">404</div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <svg class="w-16 h-16 md:w-24 md:h-24 text-[#fc4c02]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold mb-4 text-gray-900">Off The Beaten Track!</h2>
+            <p class="text-lg text-gray-600 mb-8">
+                Looks like this page went for a run and got lost. Let's get back on track!
+            </p>
+            <a href="/" class="inline-block bg-[#fc4c02] text-white font-bold py-3 px-8 rounded-lg 
+                              transform hover:scale-110 transition-all duration-200 
+                              drop-shadow-lg">
+                Back to Home
+            </a>
+        </div>
+    </main>
+
+    <footer class="bg-gray-900/80 backdrop-blur-sm text-gray-300 text-sm py-6 border-t border-gray-700/50">
+        <div class="container mx-auto px-4 flex flex-col items-center space-y-4">
+            <div class="text-center">
+                &copy; 2025 FitnessOverlays - Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
+                   target="_blank" 
+                   class="hover:text-strava-orange transition-colors">
+                    AGPL-3.0
+                </a>
+            </div>
+            <div>
+                <img src="static/images/api_logo_pwrdBy_strava_horiz_white.svg" 
+                     alt="Powered by Strava" 
+                     class="h-4 width-auto mx-auto">
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
