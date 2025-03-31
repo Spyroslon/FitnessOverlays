@@ -221,7 +221,10 @@ def home():
 @app.before_request
 def require_authentication():
     """Serve the authentication required page for unauthenticated users."""
-    if request.path not in ['/', '/login', '/callback', '/static/'] and 'athlete_id' not in session:
+    if request.path.startswith('/static/'):
+        return  # Allow Flask to serve static files
+
+    if request.path not in ['/', '/login', '/callback'] and 'athlete_id' not in session:
         return send_from_directory('.', 'auth_required.html')
 
 ALLOWED_EXTENSIONS = {

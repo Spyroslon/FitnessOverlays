@@ -32,7 +32,7 @@
     </style>
     </head>
 <body class="font-sans antialiased text-gray-800
-             bg-gradient-to-br from-white to-[#d63606]/80">
+             bg-gradient-to-br from-white to-[#fc4c02]/60">
 
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
         <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center">
@@ -73,7 +73,7 @@
                     Connect your Strava account, pick an activity, and generate stunning, shareable overlays for your Instagram Stories in seconds.
                 </p>
                 <div id="connect-strava" class="inline-block transform hover:scale-110 transition-transform duration-200 cursor-pointer">
-                    <img src="static/images/btn_strava_connect_with_orange_x2.svg" alt="Connect with Strava" class="h-12 drop-shadow-lg rounded-lg">
+                    <img src="/static/images/btn_strava_connect_with_orange_x2.svg" alt="Connect with Strava" class="h-12 drop-shadow-lg rounded-lg">
                 </div>
                 <div id="create-overlay-btn" class="hidden flex justify-center">
                     <button class="bg-[#fc4c02] text-white font-bold py-3 px-8 rounded-lg 
@@ -91,22 +91,23 @@
         <section class="mb-12 md:mb-16 relative z-10">
             <h3 class="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8 text-gray-900">See What You Can Create</h3>
             <div class="flex space-x-4 overflow-x-auto pb-4 carousel snap-x snap-mandatory scroll-smooth bg-white/30 backdrop-blur-sm p-4 rounded-lg">
-                <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200"> <img src="static/images/overlays_dummy_example.png" alt="Example Overlay 1" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200"> 
+                    <img src="/static/images/overlays_dummy_example.png" alt="Example Overlay 1" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
                 </div>
                  <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200">
-                    <img src="static/images/overlays_dummy_example.png" alt="Example Overlay 2" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    <img src="/static/images/overlays_dummy_example.png" alt="Example Overlay 2" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
                 </div>
                  <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200">
-                    <img src="static/images/overlays_dummy_example.png" alt="Example Overlay 3" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    <img src="/static/images/overlays_dummy_example.png" alt="Example Overlay 3" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
                 </div>
                  <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200">
-                    <img src="static/images/overlays_dummy_example.png" alt="Example Overlay 4" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    <img src="/static/images/overlays_dummy_example.png" alt="Example Overlay 4" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
                 </div>
                  <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200">
-                    <img src="static/images/overlays_dummy_example.png" alt="Example Overlay 5" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    <img src="/static/images/overlays_dummy_example.png" alt="Example Overlay 5" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
                 </div>
                 <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200">
-                   <img src="static/images/overlays_dummy_example.png" alt="Example Overlay 5" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                   <img src="/static/images/overlays_dummy_example.png" alt="Example Overlay 5" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
                </div>
                 </div>
             <p class="text-center text-sm text-gray-600 mt-2">Scroll or swipe to see more examples &rarr;</p>
@@ -150,101 +151,101 @@
                 </a>
             </div>
             <div>
-                <img src="static/images/api_logo_pwrdBy_strava_horiz_white.svg" 
+                <img src="/static/images/api_logo_pwrdBy_strava_horiz_white.svg" 
                      alt="Powered by Strava" 
                      class="h-4 width-auto mx-auto">
             </div>
         </div>
     </footer>
 
-    <!-- <script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // // Add CSRF token management
-            // let csrfToken = '';
+            // Add CSRF token management
+            let csrfToken = '';
 
-            // // Helper function to add CSRF token to fetch options
-            // function addCSRFToken(options = {}) {
-            //     return {
-            //         ...options,
-            //         headers: {
-            //             ...options.headers,
-            //             'X-CSRF-Token': csrfToken
-            //         }
-            //     };
-            // }
+            // Helper function to add CSRF token to fetch options
+            function addCSRFToken(options = {}) {
+                return {
+                    ...options,
+                    headers: {
+                        ...options.headers,
+                        'X-CSRF-Token': csrfToken
+                    }
+                };
+            }
 
-            // // Update checkAuth function to store CSRF token
-            // async function checkAuth() {
-            //     try {
-            //         const response = await fetch("/status", {
-            //             credentials: "include"
-            //         });
-            //         if (!response.ok) {
-            //             throw new Error(`HTTP error! status: ${response.status}`);
-            //         }
-            //         const data = await response.json();
-            //         csrfToken = data.csrf_token;  // Store CSRF token
+            // Update checkAuth function to store CSRF token
+            async function checkAuth() {
+                try {
+                    const response = await fetch("/status", {
+                        credentials: "include"
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    csrfToken = data.csrf_token;  // Store CSRF token
                     
-            //         // Handle require_login flag
-            //         if (data.require_login) {
-            //             window.location.href = "/login";
-            //             return;
-            //         }
+                    // Handle require_login flag
+                    if (data.require_login) {
+                        window.location.href = "/login";
+                        return;
+                    }
                     
-            //         if (data.authenticated) {
-            //             console.log('User is authenticated:', data);  // Log authentication status
-            //             // Show profile picture if available
-            //             if (data.athlete_profile) {
-            //                 const profileContainer = document.getElementById('profile-container');
-            //                 const profilePicture = document.getElementById('profile-picture');
-            //                 profilePicture.src = data.athlete_profile;
-            //                 profileContainer.classList.remove('hidden');
-            //             }
-            //             // Hide connect button and show create overlay buttons
-            //             document.getElementById('connect-strava').classList.add('hidden');
-            //             document.getElementById('create-overlay-btn').classList.remove('hidden');
-            //             document.getElementById('create-overlay-header-btn').classList.remove('hidden');
-            //             // Start token expiry check timer
-            //             if (data.expires_at) {
-            //                 const timeToExpiry = data.expires_at - (Date.now() / 1000);
-            //                 if (timeToExpiry > 0) {
-            //                     // Check auth status 5 minutes before expiry
-            //                     setTimeout(checkAuth, (timeToExpiry - 300) * 1000);
-            //                 }
-            //             }
-            //         } else {
-            //             console.log('User is not authenticated:', data);  // Log authentication status
-            //             // Hide profile picture and create buttons when not authenticated
-            //             document.getElementById('profile-container').classList.add('hidden');
-            //             document.getElementById('create-overlay-header-btn').classList.add('hidden');
-            //             // Show connect button when not authenticated
-            //             document.getElementById('connect-strava').classList.remove('hidden');
-            //             document.getElementById('create-overlay-btn').classList.add('hidden');
-            //         }
-            //     } catch (error) {
-            //         console.error("Auth check failed:", error);
-            //     }
-            // }
+                    if (data.authenticated) {
+                        console.log('User is authenticated:', data);  // Log authentication status
+                        // Show profile picture if available
+                        if (data.athlete_profile) {
+                            const profileContainer = document.getElementById('profile-container');
+                            const profilePicture = document.getElementById('profile-picture');
+                            profilePicture.src = data.athlete_profile;
+                            profileContainer.classList.remove('hidden');
+                        }
+                        // Hide connect button and show create overlay buttons
+                        document.getElementById('connect-strava').classList.add('hidden');
+                        document.getElementById('create-overlay-btn').classList.remove('hidden');
+                        document.getElementById('create-overlay-header-btn').classList.remove('hidden');
+                        // Start token expiry check timer
+                        if (data.expires_at) {
+                            const timeToExpiry = data.expires_at - (Date.now() / 1000);
+                            if (timeToExpiry > 0) {
+                                // Check auth status 5 minutes before expiry
+                                setTimeout(checkAuth, (timeToExpiry - 300) * 1000);
+                            }
+                        }
+                    } else {
+                        console.log('User is not authenticated:', data);  // Log authentication status
+                        // Hide profile picture and create buttons when not authenticated
+                        document.getElementById('profile-container').classList.add('hidden');
+                        document.getElementById('create-overlay-header-btn').classList.add('hidden');
+                        // Show connect button when not authenticated
+                        document.getElementById('connect-strava').classList.remove('hidden');
+                        document.getElementById('create-overlay-btn').classList.add('hidden');
+                    }
+                } catch (error) {
+                    console.error("Auth check failed:", error);
+                }
+            }
 
-            // // Add click handler for Strava connect button
-            // document.getElementById("connect-strava").addEventListener("click", function() {
-            //     window.location.href = "/login";
-            // });
+            // Add click handler for Strava connect button
+            document.getElementById("connect-strava").addEventListener("click", function() {
+                window.location.href = "/login";
+            });
 
-            // // Add click handler for create overlay button
-            // document.getElementById("create-overlay-btn").addEventListener("click", function() {
-            //     console.log("now going to the overlay generator page");
-            // });
+            // Add click handler for create overlay button
+            document.getElementById("create-overlay-btn").addEventListener("click", function() {
+                console.log("now going to the overlay generator page");
+            });
 
-            // // Add click handler for header create overlay button
-            // document.getElementById("create-overlay-header-btn").addEventListener("click", function() {
-            //     console.log("now going to the overlay generator page");
-            // });
+            // Add click handler for header create overlay button
+            document.getElementById("create-overlay-header-btn").addEventListener("click", function() {
+                console.log("now going to the overlay generator page");
+            });
 
-            // // Check auth status on load
-            // checkAuth();
+            // Check auth status on load
+            checkAuth();
         });
-    </script> -->
+    </script>
 
 </body>
 </html>
