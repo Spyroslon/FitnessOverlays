@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+    <meta name="copyright" content="FitOverlays - Copyright (c) 2025 Spyros Lontos">
+    <meta name="license" content="AGPL-3.0">
+    <title>Load Activity - FitnessOverlays</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Roboto', 'sans-serif'],
+                    },
+                    colors: {
+                        'strava-orange': '#fc4c02',
+                        'strava-dark-orange': '#e34402',
+                        'strava-gray': '#666666',
+                        'strava-text': '#242428',
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40 min-h-screen flex flex-col">
+
+    <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
+        <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center max-w-[900px]">
+            <div class="flex justify-start min-w-[40px]">
+                <div id="profile-container" class="hidden">
+                    <img id="profile-picture" 
+                         src="" 
+                         alt="Profile" 
+                         class="w-8 h-8 rounded-full object-cover border border-gray-200/50">
+                </div>
+            </div>
+
+            <div class="text-center flex justify-center items-center">
+                <a href="/" class="text-3xl font-bold hover:opacity-80 transition-opacity">
+                    <span class="text-[#fc4c02]">Fitness</span><span class="text-gray-900">Overlays</span>
+                </a>
+            </div>
+
+            <div class="flex justify-end min-w-[40px]">
+                <a href="/input_activity" id="create-overlay-header-btn" 
+                   class="hidden w-8 h-8 bg-[#fc4c02] text-white rounded-full 
+                          flex items-center justify-center
+                          transform hover:scale-110 transition-all duration-200 
+                          drop-shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 md:py-12 flex items-center justify-center">
+        <div class="max-w-lg w-full mx-auto">
+            <!-- Input Card -->
+            <div id="inputCard" class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Load Strava Activity</h2>
+                <div class="space-y-4">
+                    <div class="relative">
+                        <input type="text" 
+                            id="activityInput" 
+                            placeholder="Enter Strava Activity URL or ID" 
+                            oninput="document.getElementById('clearInput').classList.toggle('hidden', !this.value)"
+                            class="w-full px-4 py-3 rounded-lg border-2 border-strava-orange focus:outline-none focus:ring-2 focus:ring-strava-orange focus:border-transparent pr-10">
+                        <button id="clearInput" 
+                                onclick="this.previousElementSibling.value=''; this.classList.add('hidden'); document.getElementById('activityInput').dispatchEvent(new Event('input'));"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 hidden">
+                            <div class="bg-gray-300 hover:bg-gray-400 rounded-full p-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
+                    <div id="statusMessage" 
+                         class="transform translate-y-2 opacity-0 hidden rounded-lg p-4 text-sm transition-all duration-300 ease-in-out">
+                    </div>
+                    <div class="flex justify-between items-center gap-4">
+                         <button id="cancelBtn"
+                                class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap">
+                            Cancel
+                        </button>
+                         <button id="loadActivityBtn" 
+                                class="flex-1 bg-strava-orange hover:bg-strava-dark-orange text-white px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                            Load Activity
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-900/80 backdrop-blur-sm text-gray-300 text-sm py-6 border-t border-gray-700/50">
+        <div class="container mx-auto px-4 flex flex-col items-center space-y-4">
+            <div class="text-center">
+                &copy; 2025 FitnessOverlays - Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
+                   target="_blank" 
+                   class="hover:text-strava-orange transition-colors">
+                    AGPL-3.0
+                </a>
+            </div>
+            <div>
+                <img src="/static/images/api_logo_pwrdBy_strava_horiz_white.svg" 
+                     alt="Powered by Strava" 
+                     class="h-4 width-auto mx-auto">
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let csrfToken = '';
+            let athleteId = null;
+
+            const activityInput = document.getElementById('activityInput');
+            const loadActivityBtn = document.getElementById('loadActivityBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const statusMessage = document.getElementById('statusMessage');
+
+            // Helper function to add CSRF token to fetch options
+            function addCSRFToken(options = {}) {
+                return {
+                    ...options,
+                    headers: {
+                        ...options.headers,
+                        'X-CSRF-Token': csrfToken
+                    }
+                };
+            }
+
+            // Function to show status messages
+            function showStatus(message, type = 'error') {
+                statusMessage.textContent = message;
+                statusMessage.classList.remove('hidden', 'opacity-0', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+                if (type === 'error') {
+                    statusMessage.classList.add('bg-red-100', 'text-red-700');
+                } else { // success or info
+                    statusMessage.classList.add('bg-green-100', 'text-green-700');
+                }
+                // Trigger reflow to restart animation
+                void statusMessage.offsetWidth;
+                statusMessage.classList.add('opacity-100');
+                
+                // Optionally hide after some time
+                 setTimeout(() => {
+                     statusMessage.classList.add('opacity-0');
+                     setTimeout(() => statusMessage.classList.add('hidden'), 300); // Hide after fade out
+                 }, 5000); // Hide after 5 seconds
+            }
+            
+            // Function to extract/validate activity identifier
+            function extractActivityId(input) {
+                input = input.trim();
+                const deepLinkPattern = /^(?:https?:\/\/)?strava\.app\.link\/[A-Za-z0-9_-]+$/;
+                if (deepLinkPattern.test(input)) {
+                    return input; 
+                }
+                const urlPattern = /^(?:https?:\/\/)?(?:www\.)?strava\.com\/activities\/(\d+)(?:[?#].*)?$/i;
+                const urlMatch = input.match(urlPattern);
+                if (urlMatch) {
+                    if (urlMatch[1].length >= 21) return null;
+                    return urlMatch[1];
+                }
+                const idPattern = /^\d+$/;
+                if (idPattern.test(input) && input.length < 21) {
+                    return input;
+                }
+                return null;
+            }
+
+            // Check auth status on load
+            async function checkAuth() {
+                try {
+                    const response = await fetch("/status", { credentials: "include" });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    csrfToken = data.csrf_token;
+
+                    if (data.require_login || !data.authenticated) {
+                        window.location.href = "/login"; // Redirect to login if not authenticated
+                        return;
+                    }
+                    
+                    athleteId = data.athlete_id; // Store athlete ID
+                    
+                    // Show profile picture if available
+                    if (data.athlete_profile) {
+                        document.getElementById('profile-container').classList.remove('hidden');
+                        document.getElementById('profile-picture').src = data.athlete_profile;
+                    }
+                    document.getElementById('create-overlay-header-btn').classList.remove('hidden');
+
+                    // Token refresh check (optional on this page, but good practice)
+                    if (data.expires_at) {
+                        const timeToExpiry = data.expires_at - (Date.now() / 1000);
+                        if (timeToExpiry > 0 && timeToExpiry < 300) { // Refresh within 5 mins
+                            setTimeout(checkAuth, (timeToExpiry - 60) * 1000); // Check again in timeToExpiry - 60s
+                        } else if (timeToExpiry <= 0) {
+                             window.location.href = "/login"; // Force login if expired
+                        }
+                    }
+                    
+                    // Enable the load button now that we have CSRF/athleteId
+                    loadActivityBtn.disabled = false;
+
+                } catch (error) {
+                    console.error("Auth check failed:", error);
+                    showStatus('Authentication check failed. Please try reloading.', 'error');
+                     loadActivityBtn.disabled = true; // Keep disabled on error
+                }
+            }
+            
+            // Disable load button initially until auth check completes
+            loadActivityBtn.disabled = true;
+            checkAuth(); // Run auth check
+
+            // Load Activity Button Handler
+            loadActivityBtn.addEventListener('click', async () => {
+                const input = activityInput.value.trim();
+                const activityIdentifier = extractActivityId(input);
+
+                if (!activityIdentifier) {
+                    showStatus('Invalid Strava Activity URL or ID format.', 'error');
+                    return;
+                }
+                
+                if (!athleteId || !csrfToken) {
+                     showStatus('Authentication error. Please reload the page.', 'error');
+                    return;
+                }
+
+                loadActivityBtn.disabled = true;
+                loadActivityBtn.textContent = 'Loading...';
+                statusMessage.classList.add('hidden', 'opacity-0'); // Hide previous messages
+
+                try {
+                    const fetchResponse = await fetch(
+                        `/fetch_activity/${athleteId}/${encodeURIComponent(activityIdentifier)}`, 
+                        addCSRFToken({
+                            method: 'POST',
+                            credentials: "include"
+                        })
+                    );
+
+                    const data = await fetchResponse.json();
+
+                    if (!fetchResponse.ok) {
+                        if (data.require_login) {
+                            window.location.href = "/login";
+                            return;
+                        }
+                        throw new Error(data.error || `Failed to fetch activity (Status: ${fetchResponse.status})`);
+                    }
+
+                    // Store fetched data in sessionStorage
+                    sessionStorage.setItem('currentActivity', JSON.stringify(data));
+                    console.log("Activity data stored in sessionStorage:", sessionStorage.getItem('currentActivity'));
+
+                    // Redirect to generate overlays page on success (with a small delay for testing)
+                    setTimeout(() => {
+                        console.log("Redirecting to /generate_overlays");
+                        window.location.href = '/generate_overlays';
+                    }, 50); // 50ms delay
+
+                } catch (error) {
+                    console.error('Error loading activity:', error);
+                    showStatus(error.message || 'Failed to load activity. Please check the input and try again.', 'error');
+                } finally {
+                    loadActivityBtn.disabled = false;
+                    loadActivityBtn.textContent = 'Load Activity';
+                }
+            });
+
+            // Cancel Button Handler
+            cancelBtn.addEventListener('click', () => {
+                 // Go back to the previous page in history
+                 // This handles both coming from '/' and '/generate_overlays' correctly
+                 history.back();
+            });
+
+            // Optional: Allow pressing Enter in the input field to trigger load
+             activityInput.addEventListener('keypress', (event) => {
+                 if (event.key === 'Enter') {
+                     event.preventDefault(); // Prevent default form submission if any
+                     loadActivityBtn.click(); // Trigger the button click
+                 }
+             });
+        });
+    </script>
+</body>
+</html> 
