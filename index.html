@@ -43,11 +43,10 @@
         }
     </style>
     </head>
-<body class="font-sans antialiased text-gray-800
-             bg-gradient-to-br from-white to-[#fc4c02]/60">
+<body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40">
 
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
-        <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center">
+        <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center max-w-[900px]">
             <div class="flex justify-start min-w-[40px]">
                 <div id="profile-container" class="hidden">
                     <img id="profile-picture" 
@@ -58,21 +57,21 @@
             </div>
 
             <div class="text-center flex justify-center items-center">
-                <h1 class="text-3xl font-bold">
+                <a href="/" class="text-3xl font-bold hover:opacity-80 transition-opacity">
                     <span class="text-[#fc4c02]">Fitness</span><span class="text-gray-900">Overlays</span>
-                </h1>
+                </a>
             </div>
 
             <div class="flex justify-end min-w-[40px]">
-                <button id="create-overlay-header-btn" 
-                        class="hidden w-8 h-8 bg-[#fc4c02] text-white rounded-full 
-                               flex items-center justify-center
-                               transform hover:scale-110 transition-all duration-200 
-                               drop-shadow-lg">
+                <a href="/generate_overlays" id="create-overlay-header-btn" 
+                   class="hidden w-8 h-8 bg-[#fc4c02] text-white rounded-full 
+                          flex items-center justify-center
+                          transform hover:scale-110 transition-all duration-200 
+                          drop-shadow-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                     </svg>
-                </button>
+                </a>
             </div>
         </nav>
     </header>
@@ -88,15 +87,19 @@
                     <img src="/static/images/btn_strava_connect_with_orange_x2.svg" alt="Connect with Strava" class="h-12 drop-shadow-lg rounded-lg">
                 </div>
                 <div id="create-overlay-btn" class="hidden flex justify-center">
-                    <button class="bg-[#fc4c02] text-white font-bold py-3 px-8 rounded-lg 
-                                 transform hover:scale-110 transition-all duration-200 
-                                 drop-shadow-lg
-                                 flex items-center space-x-2">
+                    <a href="/generate_overlays" 
+                       class="bg-[#fc4c02] text-white font-bold py-3 px-8 rounded-lg
+                              transform hover:scale-110 transition-all duration-200 
+                              drop-shadow-lg
+                              flex items-center space-x-2">
                         <span>Create Your Overlay</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" 
+                             class="h-5 w-5" 
+                             viewBox="0 0 20 20" 
+                             fill="currentColor">
                             <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
-                    </button>
+                    </a>
                 </div>
              </section>
 
@@ -247,13 +250,13 @@
             });
 
             // Add click handler for create overlay button
-            document.getElementById("create-overlay-btn").addEventListener("click", function() {
-                console.log("now going to the overlay generator page");
+            document.getElementById("create-overlay-btn").addEventListener("click", function(e) {
+                window.location.href = "/generate_overlays";
             });
 
             // Add click handler for header create overlay button
-            document.getElementById("create-overlay-header-btn").addEventListener("click", function() {
-                console.log("now going to the overlay generator page");
+            document.getElementById("create-overlay-header-btn").addEventListener("click", function(e) {
+                window.location.href = "/generate_overlays";
             });
 
             // Check auth status on load

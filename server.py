@@ -1,7 +1,7 @@
 # FitOverlays - Copyright (c) 2025 Spyros Lontos
 # Licensed under AGPL-3.0
 
-from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response
+from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response, send_file
 import os
 import json
 import time
@@ -56,17 +56,17 @@ def add_security_headers(response: Response) -> Response:
     """Add security headers including Content Security Policy"""
     csp = {
         'default-src': ["'self'"],
-        'script-src': ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],  # Added Tailwind CDN
-        'style-src': ["'self'", "'unsafe-inline'"],   # Required for inline styles
-        'img-src': ["'self'", "*.strava.com", "dgalywyr863hv.cloudfront.net", "data:"],  # Added Strava CDN
+        'script-src': ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
+        'style-src': ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],   # Added Google Fonts
+        'font-src': ["'self'", "fonts.gstatic.com"],  # Allow loading font files
+        'img-src': ["'self'", "*.strava.com", "dgalywyr863hv.cloudfront.net", "data:"],
         'connect-src': ["'self'", "www.strava.com", "strava.com"],
         'frame-ancestors': ["'none'"],
         'form-action': ["'self'"],
         'base-uri': ["'self'"],
-        'font-src': ["'self'"],
         'manifest-src': ["'self'"],
         'media-src': ["'self'"],
-        'object-src': ["'none'"],  # Prevent object injection attacks
+        'object-src': ["'none'"],
         'worker-src': ["'self'"]
     }
     
@@ -641,6 +641,14 @@ def fetch_activity(activity_id):
     except requests.exceptions.RequestException as e:
         logger.error(f'Strava API error details: {str(e)} - IP: {get_remote_address()} - Activity: {activity_id}')
         return jsonify({"error": "Unable to fetch activity data. Please try again later."}), 500
+
+@app.route('/generate_overlays')
+def generate_overlays():
+    """Serve the generate overlays page for authenticated users"""
+    if not session.get('access_token'):
+        return redirect(url_for('login'))
+    
+    return send_file('generate_overlays.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
