@@ -18,6 +18,7 @@ from flask_limiter.errors import RateLimitExceeded
 from validators import validate_activity_input, validate_activity_id, validate_filename
 from werkzeug.utils import secure_filename, safe_join
 import re
+from functools import wraps
 
 # Load environment variables from .env file
 load_dotenv()
@@ -642,13 +643,31 @@ def fetch_activity(activity_id):
         logger.error(f'Strava API error details: {str(e)} - IP: {get_remote_address()} - Activity: {activity_id}')
         return jsonify({"error": "Unable to fetch activity data. Please try again later."}), 500
 
+# Add login_required decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'athlete_id' not in session:
+            # Redirect to login page if not authenticated
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/input_activity')
+@login_required
+def input_activity():
+    """Serve the page for inputting Strava activity ID/URL"""
+    # Use send_from_directory to serve from the root
+    return send_from_directory('.', 'input_activity.html')
+
 @app.route('/generate_overlays')
+@login_required
 def generate_overlays():
     """Serve the generate overlays page for authenticated users"""
     if not session.get('access_token'):
         return redirect(url_for('login'))
     
-    return send_file('generate_overlays.html')
+    return send_from_directory('.', 'generate_overlays.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
