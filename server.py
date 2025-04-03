@@ -15,7 +15,7 @@ from flask_cors import CORS
 from requests_oauthlib import OAuth2Session
 from dotenv import load_dotenv
 from flask_limiter.errors import RateLimitExceeded
-from validators import validate_activity_input, validate_activity_id, validate_filename
+from validators import validate_activity_id, validate_filename
 from werkzeug.utils import secure_filename, safe_join
 import re
 from functools import wraps
@@ -671,4 +671,3 @@ def generate_overlays():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-    # app.run(host='0.0.0.0', debug=True, port=5000)

@@ -206,7 +206,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Add CSRF token management
             let csrfToken = '';
-            let previousPage = document.referrer;
+            // Unused: let previousPage = document.referrer;
 
             const state = {
                 activityData: null,
@@ -297,7 +297,6 @@
 
                 if (!storedActivity) {
                     console.warn('No activity data found in session storage. Canvas will be empty.');
-                    // window.location.href = '/input_activity';
                     return;
                 }
 
@@ -375,7 +374,6 @@
                     // Clear corrupted data and redirect
                     sessionStorage.removeItem('currentActivity');
                     alert('Error loading activity data from storage. Please load the activity again.');
-                    // window.location.href = '/input_activity';
                 }
             }
 
@@ -473,14 +471,10 @@
             // Attach listeners only after DOM is ready and elements exist
             document.addEventListener('DOMContentLoaded', () => {
                 // Color Wheel listener
-                if (colorWheel) {
-                    colorWheel.addEventListener('input', (e) => {
-                        currentTextColor = e.target.value;
-                        updateCanvas();
-                    });
-                } else {
-                    console.error('overlayCanvas element not found');
-                }
+                colorWheel?.addEventListener('input', (e) => {
+                    currentTextColor = e.target.value;
+                    updateCanvas();
+                });
 
                 // Metric buttons listener
                 document.querySelectorAll('.overlay-option').forEach(button => {
@@ -501,100 +495,91 @@
                 });
 
                 // Copy Text Button
-                if (copyTextBtn) {
-                    copyTextBtn.addEventListener('click', () => {
-                        if (!state.activityData || state.selectedMetrics.length === 0) return;
+                copyTextBtn?.addEventListener('click', () => {
+                    if (!state.activityData || state.selectedMetrics.length === 0) return;
 
-                        const textToCopy = state.selectedMetrics
-                            .map(metric => {
-                                const value = StravaData[metric];
-                                return value !== null && value !== undefined ? `${getMetricLabel(metric)}: ${value}` : null;
-                            })
-                            .filter(line => line !== null) // Filter out null lines
-                            .join('\n');
+                    const textToCopy = state.selectedMetrics
+                        .map(metric => {
+                            const value = StravaData[metric];
+                            return value !== null && value !== undefined ? `${getMetricLabel(metric)}: ${value}` : null;
+                        })
+                        .filter(line => line !== null) // Filter out null lines
+                        .join('\n');
 
-                        if (textToCopy) {
-                            navigator.clipboard.writeText(textToCopy)
-                                .then(() => showToast('Text copied!'))
-                                .catch(err => {
-                                    console.error('Failed to copy text: ', err);
-                                    showToast('Failed to copy text');
-                                });
-                        }
-                    });
-                } else {
-                    console.warn('copyTextBtn element not found');
-                }
+                    if (textToCopy) {
+                        navigator.clipboard.writeText(textToCopy)
+                            .then(() => showToast('Text copied!'))
+                            .catch(err => {
+                                console.error('Failed to copy text: ', err);
+                                showToast('Failed to copy text');
+                            });
+                    }
+                });
 
                 // Copy Image Button
-                if (copyImageBtn && canvas) {
-                    copyImageBtn.addEventListener('click', async () => {
-                        if (!state.activityData || state.selectedMetrics.length === 0) return;
-                        try {
-                            // Temporarily remove the checkerboard background for copying
-                            const checkerboard = canvas.previousElementSibling;
-                            checkerboard.style.display = 'none';
+                copyImageBtn?.addEventListener('click', async () => {
+                    if (!state.activityData || state.selectedMetrics.length === 0) return;
+                    const checkerboard = canvas?.previousElementSibling;
+                    try {
+                        // Temporarily remove the checkerboard background for copying
+                        if (checkerboard) checkerboard.style.display = 'none';
 
-                            // Ensure canvas is fully rendered
-                            await new Promise(resolve => setTimeout(resolve, 50));
+                        // Ensure canvas is fully rendered
+                        await new Promise(resolve => setTimeout(resolve, 50));
 
-                            // Create a temporary canvas to draw only the selected content
-                            const tempCanvas = document.createElement('canvas');
-                            const tempCtx = tempCanvas.getContext('2d');
-                            const dpr = window.devicePixelRatio || 1;
-                            const bbox = calculateTextBoundingBox(ctx, state.selectedMetrics);
+                        // Create a temporary canvas to draw only the selected content
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        const dpr = window.devicePixelRatio || 1;
+                        const bbox = calculateTextBoundingBox(ctx, state.selectedMetrics);
 
-                            if (!bbox) { // Handle case where no text is drawn
-                                checkerboard.style.display = ''; // Restore background
-                                return;
-                            }
-
-                            // Set temp canvas size based on text bounds + padding
-                            const padding = 10 * dpr;
-                            tempCanvas.width = bbox.width + 2 * padding;
-                            tempCanvas.height = bbox.height + 2 * padding;
-
-                            // Draw the relevant text onto the temporary canvas
-                            tempCtx.fillStyle = currentTextColor;
-                            tempCtx.font = ctx.font; // Use the same font style
-                            tempCtx.textAlign = 'left'; // Align left for bounding box calc
-                            tempCtx.textBaseline = 'top';
-
-                            let yOffset = padding;
-                            state.selectedMetrics.forEach(metric => {
-                                const value = StravaData[metric];
-                                if (value !== null && value !== undefined) {
-                                    const label = getMetricLabel(metric);
-                                    tempCtx.fillText(`${label}: ${value}`, padding, yOffset);
-                                    yOffset += (parseInt(ctx.font, 10) || 18) * 1.5 * dpr; // Estimate line height
-                                }
-                            });
-
-                            // Convert temp canvas to Blob
-                            tempCanvas.toBlob(async (blob) => {
-                                try {
-                                    await navigator.clipboard.write([
-                                        new ClipboardItem({ 'image/png': blob })
-                                    ]);
-                                    showToast('Image copied!');
-                                } catch (err) {
-                                    console.error('Failed to copy image: ', err);
-                                    showToast('Failed to copy image');
-                                    if (canvas.previousElementSibling) canvas.previousElementSibling.style.display = ''; // Ensure background is restored
-                                } finally {
-                                    checkerboard.style.display = ''; // Restore background
-                                }
-                            }, 'image/png');
-
-                        } catch (err) {
-                            console.error('Error preparing image for copy: ', err);
-                            showToast('Error copying image');
-                            if (canvas.previousElementSibling) canvas.previousElementSibling.style.display = ''; // Ensure background is restored
+                        if (!bbox) { // Handle case where no text is drawn
+                            if (checkerboard) checkerboard.style.display = ''; // Restore background
+                            return;
                         }
-                    });
-                } else {
-                    console.warn('copyImageBtn or overlayCanvas element not found');
-                }
+
+                        // Set temp canvas size based on text bounds + padding
+                        const padding = 10 * dpr;
+                        tempCanvas.width = bbox.width + 2 * padding;
+                        tempCanvas.height = bbox.height + 2 * padding;
+
+                        // Draw the relevant text onto the temporary canvas
+                        tempCtx.fillStyle = currentTextColor;
+                        tempCtx.font = ctx.font; // Use the same font style
+                        tempCtx.textAlign = 'left'; // Align left for bounding box calc
+                        tempCtx.textBaseline = 'top';
+
+                        let yOffset = padding;
+                        state.selectedMetrics.forEach(metric => {
+                            const value = StravaData[metric];
+                            if (value !== null && value !== undefined) {
+                                const label = getMetricLabel(metric);
+                                tempCtx.fillText(`${label}: ${value}`, padding, yOffset);
+                                yOffset += (parseInt(ctx.font, 10) || 18) * 1.5 * dpr; // Estimate line height
+                            }
+                        });
+
+                        // Convert temp canvas to Blob
+                        tempCanvas.toBlob(async (blob) => {
+                            try {
+                                await navigator.clipboard.write([
+                                    new ClipboardItem({ 'image/png': blob })
+                                ]);
+                                showToast('Image copied!');
+                            } catch (err) {
+                                console.error('Failed to copy image: ', err);
+                                showToast('Failed to copy image');
+                            } finally {
+                                if (checkerboard) checkerboard.style.display = ''; // Restore background
+                            }
+                        }, 'image/png');
+
+                    } catch (err) {
+                        console.error('Error preparing image for copy: ', err);
+                        showToast('Error copying image');
+                        if (checkerboard) checkerboard.style.display = ''; // Restore background
+                    }
+                });
 
                 // Calculate bounding box of the drawn text
                 function calculateTextBoundingBox(context, metrics) {
@@ -642,8 +627,6 @@
                 if (canvas) {
                     resizeCanvas(); // Initial size
                     window.addEventListener('resize', resizeCanvas);
-                } else {
-                    console.error('overlayCanvas element not found');
                 }
             });
         });
