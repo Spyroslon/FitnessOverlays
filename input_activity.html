@@ -271,11 +271,8 @@
                     sessionStorage.setItem('currentActivity', JSON.stringify(data));
                     console.log("Activity data stored in sessionStorage:", sessionStorage.getItem('currentActivity'));
 
-                    // Redirect to generate overlays page on success (with a small delay for testing)
-                    setTimeout(() => {
-                        console.log("Redirecting to /generate_overlays");
-                        window.location.href = '/generate_overlays';
-                    }, 50); // 50ms delay
+                    // Redirect to generate overlays page on success
+                    window.location.href = '/generate_overlays';
 
                 } catch (error) {
                     console.error('Error loading activity:', error);
@@ -286,20 +283,16 @@
                 }
             });
 
-            // Cancel Button Handler
             cancelBtn?.addEventListener('click', () => {
-                 // Go back to the previous page in history
-                 // This handles both coming from '/' and '/generate_overlays' correctly
-                 history.back();
+                history.back();
             });
 
-            // Optional: Allow pressing Enter in the input field to trigger load
              activityInput?.addEventListener('keypress', (event) => {
-                 if (event.key === 'Enter') {
-                     event.preventDefault(); // Prevent default form submission if any
-                     loadActivityBtn.click(); // Trigger the button click
-                 }
-             });
+                if (event.key === 'Enter') {
+                event.preventDefault();
+                loadActivityBtn.click();
+                }
+            });
         });
     </script>
 </body>

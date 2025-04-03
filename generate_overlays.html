@@ -26,7 +26,7 @@
             },
         }
     </script>
-    <style>
+    <style> 
         html {
             scroll-behavior: smooth;
         }
@@ -100,7 +100,7 @@
     <main class="flex-grow container mx-auto p-3">
         <div class="max-w-[900px] w-full mx-auto">
             <!-- Activity Info Card -->
-            <div id="activityInfoCard" class="hidden bg-white rounded-xl shadow-lg p-3 mb-3">
+            <div id="activityInfoCard" class="bg-white rounded-xl shadow-lg p-3 mb-3">
                 <div class="flex justify-between items-center">
                     <h2 id="activityName" class="text-lg text-gray-800"></h2>
                     <a id="stravaLink" href="#" target="_blank" 
@@ -209,19 +209,20 @@
             // Unused: let previousPage = document.referrer;
 
             const state = {
+                activityId: null,
                 activityData: null,
                 athleteId: null,
-                selectedMetrics: [],
+                selectedMetrics: ['distance', 'movingTime', 'pace'],
                 isAuthenticated: false,
+                backgroundColor: '#2c3e50', // Default background color (accessible dark blue)
+                textColor: '#ffffff',
             };
 
             const StravaData = {};
 
             const activityInfoCard = document.getElementById('activityInfoCard');
-            const inputCard = document.getElementById('inputCard');
             const activityName = document.getElementById('activityName');
             const stravaLink = document.getElementById('stravaLink');
-            const loadActivityBtn = document.getElementById('loadActivityBtn');
 
             // Helper function to add CSRF token to fetch options
             function addCSRFToken(options = {}) {
@@ -293,7 +294,7 @@
             // Function to load and process activity data from sessionStorage
             function loadActivityFromSession() {
                 const storedActivity = sessionStorage.getItem('currentActivity');
-                console.log("Checking sessionStorage for 'currentActivity' on page load:", storedActivity);
+                // console.log("Checking sessionStorage for 'currentActivity' on page load:", storedActivity);
 
                 if (!storedActivity) {
                     console.warn('No activity data found in session storage. Canvas will be empty.');
@@ -309,10 +310,6 @@
                     // Display Activity Info Card
                     activityName.textContent = parsedData.name || 'Untitled Activity';
                     stravaLink.href = `https://www.strava.com/activities/${parsedData.id}`;
-                    activityInfoCard.classList.remove('hidden');
-
-                    // If the inputCard element still exists somehow, hide it
-                    if (inputCard) inputCard.classList.add('hidden');
 
                     // Create metrics map with availability status
                     const metricsAvailability = {
@@ -326,7 +323,7 @@
                         sufferScore: !!parsedData.suffer_score
                     };
 
-                    console.log(metricsAvailability);
+                    console.log("metricsAvailability:", metricsAvailability);
 
                     // Update buttons based on data availability
                     document.querySelectorAll('.overlay-option').forEach(button => {
@@ -352,21 +349,33 @@
                     StravaData.calories = metricsAvailability.calories ? Math.round(parsedData.calories) : null;
                     StravaData.sufferScore = metricsAvailability.sufferScore ? Math.round(parsedData.suffer_score) : null;
 
-                    // Remove any selected metrics that are no longer available
-                    state.selectedMetrics = state.selectedMetrics.filter(metric => metricsAvailability[metric]);
-
-                    // Reset button styles for newly loaded activity, then apply selections
+                    // --- Apply Button Styles Based on Availability and Default Selection ---
                     document.querySelectorAll('.overlay-option').forEach(button => {
                         const metric = button.dataset.metric;
-                        button.classList.remove('bg-strava-orange');
-                        button.classList.toggle('bg-strava-gray');
+
+                        // Reset classes and disabled state
+                        button.classList.remove('bg-strava-orange', 'bg-strava-gray', 'bg-gray-300', 'cursor-not-allowed');
+                        button.disabled = false;
+
+                        if (!metricsAvailability[metric]) {
+                            // State 1: Unavailable Metric -> Darker Grey, Disabled
+                            button.disabled = true;
+                            button.classList.add('bg-gray-300', 'cursor-not-allowed');
+                        } else {
+                            // Metric is Available
+                            if (state.selectedMetrics.includes(metric)) {
+                                // State 2: Available AND Selected (including defaults) -> Strava Orange, Enabled
+                                button.classList.add('bg-strava-orange');
+                            } else {
+                                // State 3: Available BUT Not Selected -> Strava Grey, Enabled
+                                button.classList.add('bg-strava-gray');
+                            }
+                        }
                     });
 
-                    // Restore previously selected metrics if any (e.g., if page was reloaded)
-                    // Or simply draw the canvas with default/no metrics selected initially
-                    updateCanvas(); // Draw canvas with current state (potentially empty selections)
+                    generateOverlay();
 
-                    console.log(`Activity "${parsedData.name || 'Untitled Activity'}" loaded from session storage.`);
+                    // console.log(`Activity "${parsedData.name || 'Untitled Activity'}" loaded from session storage.`);
 
                 } catch (error) {
                     console.error('Error parsing activity data from sessionStorage:', error);
@@ -405,11 +414,20 @@
             const copyImageBtn = document.getElementById('copyImageBtn');
             const toast = document.getElementById('toast');
 
-            let currentTextColor = '#ffffff'; // Default text color
+            let currentTextColor = '#ffffff'; // Default text color (white, as per color wheel initial value)
+
+            // --- Constants for Drawing ---
+            const BASE_FONT_SIZE = 30; // Base size similar to old file adjusted for 9:16
+            const VALUE_FONT_SIZE_MULTIPLIER = 1.33; // Value slightly larger than title
+            const MIN_FONT_SIZE = 10; // Minimum font size to prevent text becoming too small
+            const VERTICAL_PADDING_FACTOR = 0.9; // Use 90% of canvas height
+            const ITEM_SPACING = 15; // Spacing between metric blocks (label+value)
 
             function resizeCanvas() {
                 const container = canvas.parentElement;
                 const dpr = window.devicePixelRatio || 1;
+                if (!canvas) return;
+
                 const rect = container.getBoundingClientRect();
                 
                 canvas.width = rect.width * dpr;
@@ -419,30 +437,174 @@
                 canvas.style.width = `${rect.width}px`;
                 canvas.style.height = `${rect.height}px`;
                 
-                updateCanvas(); // Redraw canvas after resize
+                generateOverlay(); // Redraw canvas after resize
             }
 
-            function updateCanvas() {
-                if (!state.activityData) return; // Don't draw if no data
+            // // --- Updated generateOverlay based on old logic ---
+            // function generateOverlay(data = StravaData, context = ctx, canvasRef = overlayCanvas) {
+            //     if (!canvasRef) return;
+            //     const dpr = window.devicePixelRatio || 1;
+            //     // Clear the entire canvas using physical dimensions
+            //     context.clearRect(0, 0, canvasRef.width, canvasRef.height);
 
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = currentTextColor;
-                ctx.font = 'bold 18px Roboto'; // Example font
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
+            //     // No background fill needed as it's an overlay
 
-                let yOffset = 30; // Starting position from top
-                const lineHeight = 30; // Spacing between lines
+            //     drawMetrics(data, context, canvasRef);
+            // }
 
-                state.selectedMetrics.forEach(metric => {
-                    const value = StravaData[metric];
-                    if (value !== null && value !== undefined) { // Check if metric data exists
-                        const label = getMetricLabel(metric); // Get a user-friendly label
-                        ctx.fillText(`${label}: ${value}`, canvas.offsetWidth / 2 / (window.devicePixelRatio||1), yOffset);
-                        yOffset += lineHeight;
-                    }
+            // Generate Overlay
+            function generateOverlay(data = StravaData) {
+                // Clear the entire canvas
+                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+                // Draw background color
+                ctx.fillStyle = state.backgroundColor;
+                ctx.fillRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                drawMetrics(data);
+            }
+
+            function drawMetrics(data, context = ctx) {
+                const metrics = [
+                    { name: 'Distance', value: data.distance, key: 'distance' },
+                    { name: 'Time', value: data.movingTime, key: 'movingTime' },
+                    { name: 'Pace', value: data.pace, key: 'pace' },
+                    { name: 'Elevation', value: data.elevationGain, key: 'elevationGain' },
+                    { name: 'Avg HR', value: data.avgHeartRate, key: 'avgHeartRate' },
+                    { name: 'Max HR', value: data.maxHeartRate, key: 'maxHeartRate' },
+                    { name: 'Calories', value: data.calories, key: 'calories' },
+                    { name: 'Suffer Score', value: data.sufferScore, key: 'sufferScore' }
+                ];
+
+                const selectedMetrics = metrics
+                    .filter(metric => state.selectedMetrics.includes(metric.key))
+                    .filter(metric => metric.value !== 'N/A');
+
+                if (selectedMetrics.length === 0) return;
+
+                const maxHeight = overlayCanvas.height * 0.9;
+                const centerX = overlayCanvas.width / 2;
+                const centerY = overlayCanvas.height / 2;
+
+                // Start with initial sizes
+                let titleFontSize = 80;
+                let valueFontSize = 100;
+                let spacing = 60;
+
+                // Calculate minimum font size needed to fit everything
+                let totalHeight;
+                do {
+                    titleFontSize *= 0.95;
+                    valueFontSize *= 0.95;
+                    spacing *= 0.95;
+                    
+                    // Calculate total height without extra spacing
+                    const itemHeight = titleFontSize + valueFontSize;
+                    const totalSpacing = (selectedMetrics.length - 1) * spacing;
+                    totalHeight = (selectedMetrics.length * itemHeight) + totalSpacing;
+                } while (totalHeight > maxHeight && titleFontSize > 20);
+
+                // Calculate starting Y position to center content
+                let yOffset = centerY - (totalHeight / 2);
+
+                // Styling
+                context.fillStyle = state.textColor;
+                context.textAlign = 'center';
+                context.textBaseline = 'top';
+
+                selectedMetrics.forEach((metric, index) => {
+                    // Title
+                    context.font = `bold ${titleFontSize}px Arial`;
+                    context.fillText(metric.name, centerX, yOffset);
+                    
+                    // Value
+                    context.font = `bold ${valueFontSize}px Arial`;
+                    context.fillText(metric.value, centerX, yOffset + titleFontSize + 10);
+                    
+                    // Only add spacing if it's not the last item
+                    yOffset += titleFontSize + valueFontSize + (index < selectedMetrics.length - 1 ? spacing : 0);
                 });
             }
+
+
+            // --- Ported getCroppedDimensions from old file, adapted for new drawing logic ---
+            function getCroppedDimensions(data, context, canvasRef) {
+                if (!canvasRef) return { x: 0, y: 0, width: 0, height: 0 }; // Handle missing canvas
+
+                const metrics = [
+                    { name: 'Distance', value: data.distance, key: 'distance' },
+                    { name: 'Time', value: data.movingTime, key: 'movingTime' },
+                    { name: 'Pace', value: data.pace, key: 'pace' },
+                    { name: 'Elevation', value: data.elevationGain, key: 'elevationGain' },
+                    { name: 'Avg HR', value: data.avgHeartRate, key: 'avgHeartRate' },
+                    { name: 'Max HR', value: data.maxHeartRate, key: 'maxHeartRate' },
+                    { name: 'Calories', value: data.calories, key: 'calories' },
+                    { name: 'Suffer Score', value: data.sufferScore, key: 'sufferScore' }
+                ].filter(metric => state.selectedMetrics.includes(metric.key))
+                 .filter(metric => metric.value !== null && metric.value !== undefined);
+
+                if (metrics.length === 0) return { x: 0, y: 0, width: canvasRef.width, height: canvasRef.height }; // Return full canvas if empty
+
+                const dpr = window.devicePixelRatio || 1;
+                const canvasWidthLogical = canvasRef.width / dpr;
+                const canvasHeightLogical = canvasRef.height / dpr;
+                const maxHeightLogical = canvasHeightLogical * VERTICAL_PADDING_FACTOR;
+                const centerXLogical = canvasWidthLogical / 2;
+                const centerYLogical = canvasHeightLogical / 2;
+
+                // Recalculate font sizes exactly as in drawMetrics
+                let titleFontSize = BASE_FONT_SIZE;
+                let valueFontSize = BASE_FONT_SIZE * VALUE_FONT_SIZE_MULTIPLIER;
+                let spacing = ITEM_SPACING;
+                let totalHeightLogical;
+                do {
+                    const itemHeight = titleFontSize + valueFontSize + 5;
+                    const totalSpacing = (metrics.length - 1) * spacing;
+                    totalHeightLogical = (metrics.length * itemHeight) + totalSpacing;
+                    if (totalHeightLogical > maxHeightLogical && titleFontSize > MIN_FONT_SIZE) {
+                        titleFontSize *= 0.95;
+                        valueFontSize *= 0.95;
+                        spacing *= 0.95;
+                    } else {
+                        break;
+                    }
+                } while (true);
+
+                // Calculate content bounds (in physical pixels)
+                const contentHeightPhysical = totalHeightLogical * dpr;
+                const startYPhysical = (centerYLogical - (totalHeightLogical / 2)) * dpr;
+                const endYPhysical = startYPhysical + contentHeightPhysical;
+
+                // Calculate horizontal bounds based on the actual font sizes used (physical pixels)
+                let maxTextWidthPhysical = 0;
+                context.textAlign = 'center'; // Ensure context is set correctly for measurement
+                metrics.forEach(metric => {
+                    context.font = `normal ${titleFontSize * dpr}px Roboto`;
+                    const titleWidth = context.measureText(metric.name).width;
+                    context.font = `bold ${valueFontSize * dpr}px Roboto`;
+                    const valueWidth = context.measureText(metric.value).width;
+                    maxTextWidthPhysical = Math.max(maxTextWidthPhysical, titleWidth, valueWidth);
+                });
+
+                const centerXPhysical = canvasRef.width / 2;
+                const contentStartXPhysical = centerXPhysical - (maxTextWidthPhysical / 2);
+                // const contentEndXPhysical = centerXPhysical + (maxTextWidthPhysical / 2); // Not needed directly
+
+                const marginPhysical = 20 * dpr; // Margin in physical pixels
+
+                // Return dimensions in physical pixels, clamped to canvas bounds
+                const finalX = Math.max(0, contentStartXPhysical - marginPhysical);
+                const finalY = Math.max(0, startYPhysical - marginPhysical);
+                const finalWidth = Math.min(canvasRef.width - finalX, maxTextWidthPhysical + (2 * marginPhysical));
+                const finalHeight = Math.min(canvasRef.height - finalY, contentHeightPhysical + (2 * marginPhysical));
+
+                 return {
+                    x: finalX,
+                    y: finalY,
+                    width: finalWidth,
+                    height: finalHeight
+                };
+            }
+            // --- End Ported getCroppedDimensions ---
 
             function getMetricLabel(metricKey) {
                 const labels = {
@@ -470,31 +632,58 @@
 
             // Attach listeners only after DOM is ready and elements exist
             document.addEventListener('DOMContentLoaded', () => {
-                // Color Wheel listener
+                // Color Wheel listener - Update text color and redraw
                 colorWheel?.addEventListener('input', (e) => {
                     currentTextColor = e.target.value;
-                    updateCanvas();
+                    generateOverlay(); // Redraw with new color
                 });
 
-                // Metric buttons listener
+                // Metric buttons listener - Updated to match old file functionality
                 document.querySelectorAll('.overlay-option').forEach(button => {
                     button.addEventListener('click', () => {
-                        if (!state.activityData) return; // Need activity data loaded
+                        if (!state.isAuthenticated) {
+                            console.warn('Please login to customize overlays');
+                            return;
+                        }
+                        if (!state.activityData) {
+                            console.warn('Please load an activity first to customize overlays');
+                            return;
+                        }
 
                         const metric = button.dataset.metric;
-                        button.classList.toggle('bg-strava-orange');
-                        button.classList.toggle('bg-strava-gray');
-
-                        if (state.selectedMetrics.includes(metric)) {
+                        
+                        if (button.classList.contains('bg-strava-orange')) {
+                            // Is selected -> Deselect
+                            button.classList.remove('bg-strava-orange');
+                            button.classList.add('bg-strava-gray');
                             state.selectedMetrics = state.selectedMetrics.filter(m => m !== metric);
                         } else {
+                            // Is not selected -> Select
+                            button.classList.remove('bg-strava-gray');
+                            button.classList.add('bg-strava-orange');
                             state.selectedMetrics.push(metric);
                         }
-                        updateCanvas();
+
+                        generateOverlay(); // Redraw canvas after selection changes
                     });
                 });
 
-                // Copy Text Button
+            // Update color wheel handler
+            colorWheel.addEventListener('input', (e) => {
+                if (!state.isAuthenticated) {
+                    showStatusMessage('Please login to customize colors', 'warning');
+                    return;
+                }
+                if (!state.activityId) {
+                    showStatusMessage('Please load an activity first to customize colors', 'warning');
+                    return;
+                }
+
+                state.textColor = e.target.value;
+                generateOverlay(StravaData);
+            });
+
+                // Copy Text Button - Seems mostly correct, ensure toast
                 copyTextBtn?.addEventListener('click', () => {
                     if (!state.activityData || state.selectedMetrics.length === 0) return;
 
@@ -516,112 +705,81 @@
                     }
                 });
 
-                // Copy Image Button
+                // Copy Image Button - Replace with ported logic
                 copyImageBtn?.addEventListener('click', async () => {
-                    if (!state.activityData || state.selectedMetrics.length === 0) return;
-                    const checkerboard = canvas?.previousElementSibling;
+                    if (!state.activityData || state.selectedMetrics.length === 0) {
+                        console.warn('No activity data or selected metrics to copy.');
+                        return;
+                    }
+                    if (!canvas) {
+                        console.error("Canvas element not found for copying image.");
+                        return;
+                    }
+                    const checkerboard = canvas.previousElementSibling; // Get the checkerboard div
+
                     try {
-                        // Temporarily remove the checkerboard background for copying
-                        if (checkerboard) checkerboard.style.display = 'none';
+                        // Temporarily hide the checkerboard background for copying
+                        if (checkerboard && checkerboard.classList.contains('checkerboard')) {
+                           checkerboard.style.opacity = '0'; // Hide instead of display none to avoid layout shifts
+                        }
 
-                        // Ensure canvas is fully rendered
-                        await new Promise(resolve => setTimeout(resolve, 50));
+                        // Ensure canvas is fully rendered - small delay might help
+                        await new Promise(resolve => setTimeout(resolve, 100)); // Increased delay slightly
 
-                        // Create a temporary canvas to draw only the selected content
-                        const tempCanvas = document.createElement('canvas');
-                        const tempCtx = tempCanvas.getContext('2d');
-                        const dpr = window.devicePixelRatio || 1;
-                        const bbox = calculateTextBoundingBox(ctx, state.selectedMetrics);
+                        // Get dimensions of the drawn content
+                        const bbox = getCroppedDimensions(StravaData, ctx, canvas);
 
-                        if (!bbox) { // Handle case where no text is drawn
-                            if (checkerboard) checkerboard.style.display = ''; // Restore background
+                        if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
+                            console.warn("No content detected on canvas or invalid bounding box.", bbox);
+                             if (checkerboard) checkerboard.style.opacity = ''; // Restore background
+                            showToast('Nothing to copy');
                             return;
                         }
 
-                        // Set temp canvas size based on text bounds + padding
-                        const padding = 10 * dpr;
-                        tempCanvas.width = bbox.width + 2 * padding;
-                        tempCanvas.height = bbox.height + 2 * padding;
+                        // Create a temporary canvas sized to the bounding box
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCanvas.width = bbox.width;
+                        tempCanvas.height = bbox.height;                    
 
-                        // Draw the relevant text onto the temporary canvas
-                        tempCtx.fillStyle = currentTextColor;
-                        tempCtx.font = ctx.font; // Use the same font style
-                        tempCtx.textAlign = 'left'; // Align left for bounding box calc
-                        tempCtx.textBaseline = 'top';
+                        // Draw the relevant part of the original canvas onto the temporary canvas
+                        // Source rect: bbox.x, bbox.y, bbox.width, bbox.height
+                        // Dest rect: 0, 0, bbox.width, bbox.height
+                        tempCtx.drawImage(
+                            canvas,
+                            bbox.x, bbox.y, bbox.width, bbox.height, // Source rectangle (from original canvas)
+                            0, 0, bbox.width, bbox.height           // Destination rectangle (whole temp canvas)
+                        );
 
-                        let yOffset = padding;
-                        state.selectedMetrics.forEach(metric => {
-                            const value = StravaData[metric];
-                            if (value !== null && value !== undefined) {
-                                const label = getMetricLabel(metric);
-                                tempCtx.fillText(`${label}: ${value}`, padding, yOffset);
-                                yOffset += (parseInt(ctx.font, 10) || 18) * 1.5 * dpr; // Estimate line height
-                            }
-                        });
 
-                        // Convert temp canvas to Blob
+                        // Convert temp canvas to Blob for clipboard API
                         tempCanvas.toBlob(async (blob) => {
+                            if (!blob) {
+                                throw new Error("Canvas toBlob failed");
+                            }
                             try {
+                                // Use ClipboardItem API
                                 await navigator.clipboard.write([
                                     new ClipboardItem({ 'image/png': blob })
                                 ]);
                                 showToast('Image copied!');
                             } catch (err) {
-                                console.error('Failed to copy image: ', err);
+                                console.error('Failed to copy image using ClipboardItem API: ', err);
                                 showToast('Failed to copy image');
+                                // Consider a fallback download here if needed
                             } finally {
-                                if (checkerboard) checkerboard.style.display = ''; // Restore background
+                                // Restore checkerboard visibility regardless of success/failure
+                                if (checkerboard) checkerboard.style.opacity = '';
                             }
                         }, 'image/png');
 
                     } catch (err) {
                         console.error('Error preparing image for copy: ', err);
                         showToast('Error copying image');
-                        if (checkerboard) checkerboard.style.display = ''; // Restore background
+                        // Ensure checkerboard is restored in case of error
+                        if (checkerboard) checkerboard.style.opacity = '';
                     }
                 });
-
-                // Calculate bounding box of the drawn text
-                function calculateTextBoundingBox(context, metrics) {
-                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                    let hasText = false;
-                    const dpr = window.devicePixelRatio || 1;
-                    const baseFontSize = parseInt(context.font, 10) || 18;
-                    const lineHeight = baseFontSize * 1.5 * dpr; // Rough estimate
-                    let currentY = 30 * dpr; // Match initial yOffset used in updateCanvas
-
-                    context.font = `bold ${baseFontSize * dpr}px Roboto`; // Ensure font is set with DPR
-                    context.textAlign = 'center';
-                    context.textBaseline = 'middle';
-
-                    metrics.forEach(metric => {
-                        const value = StravaData[metric];
-                        if (value !== null && value !== undefined) {
-                            const label = getMetricLabel(metric);
-                            const text = `${label}: ${value}`;
-                            const textMetrics = context.measureText(text);
-                            const textWidth = textMetrics.width;
-                            const textHeight = baseFontSize * dpr; // Approx height
-                            const x = (context.canvas.width / 2) - (textWidth / 2);
-                            
-                            minX = Math.min(minX, x);
-                            minY = Math.min(minY, currentY - textHeight / 2);
-                            maxX = Math.max(maxX, x + textWidth);
-                            maxY = Math.max(maxY, currentY + textHeight / 2);
-                            currentY += lineHeight;
-                            hasText = true;
-                        }
-                    });
-
-                    if (!hasText) return null;
-
-                    return {
-                        x: minX,
-                        y: minY,
-                        width: maxX - minX,
-                        height: maxY - minY
-                    };
-                }
 
                 // Initial canvas setup and resize listener
                 if (canvas) {
