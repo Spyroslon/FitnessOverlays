@@ -30,30 +30,6 @@
         html {
             scroll-behavior: smooth;
         }
-        
-        .checkerboard {
-            background-image:
-                linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
-                linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
-                linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
-            background-size: 20px 20px;
-            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-            background-color: #ffffff;
-            position: relative;
-        }
-        
-        /* Add a semi-transparent overlay to improve contrast with any text color */
-        .checkerboard::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.05);
-            border-radius: inherit;
-        }
 
         .aspect-9-16 {
             aspect-ratio: 9/16;
@@ -66,13 +42,13 @@
         /* Add dark checkerboard pattern */
         canvas.dark-checkerboard {
             background-image:
-                linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
-                linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
-                linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+            linear-gradient(45deg, #333333 25%, transparent 25%),
+            linear-gradient(-45deg, #333333 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #333333 75%),
+            linear-gradient(-45deg, transparent 75%, #333333 75%);
             background-size: 20px 20px;
             background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-            background-color: #2c2c2c;
+            background-color: #4a4a4a;
         }
 
         /* Style the color picker */
@@ -139,6 +115,86 @@
             width: 24px;
             height: 24px;
         }
+
+        /* Add styles for size control buttons */
+        .size-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fc4c02;
+            background-color: white;
+            color: #666666;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            font-weight: bold;
+            font-size: 0.875rem;
+        }
+
+        .size-btn:hover {
+            background-color: #f3f4f6;
+        }
+
+        .size-btn.active {
+            background-color: #fc4c02;
+            color: white;
+        }
+
+        /* Update size control buttons container style */
+        .size-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            background: #f8f8f8;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+        }
+
+        .size-controls-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .size-controls-group .size-buttons {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .size-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Add column control button style */
+        .column-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fc4c02;
+            background-color: white;
+            color: #666666;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            font-weight: bold;
+            font-size: 0.75rem;
+            padding: 0.5rem;
+            gap: 0.25rem;
+        }
+
+        .column-btn:hover {
+            background-color: #f3f4f6;
+        }
+
+        .column-btn.active {
+            background-color: #fc4c02;
+            color: white;
+        }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40">
@@ -190,7 +246,6 @@
             <!-- Canvas Card -->
             <div class="bg-white rounded-xl relative shadow-lg p-3 max-w-sm mx-auto mb-3">
                 <div class="aspect-9-16 relative w-full max-w-sm">
-                    <div class="checkerboard absolute inset-0 rounded-lg border-2 border-dashed border-strava-orange"></div>
                     <canvas id="overlayCanvas" class="absolute inset-0 w-full h-full"></canvas>
                 </div>
             </div>
@@ -223,17 +278,16 @@
                         <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="sufferScore">Suffer Score</button>
                     </div>
 
-                    <!-- Update text controls container -->
-                    <div class="flex items-center gap-4 mt-4">
-                        <!-- Color Picker with vertical centering -->
-                        <div class="relative flex items-center group">
+                    <!-- Replace text controls container content -->
+                    <div class="flex items-center gap-6 mt-4">
+                        <div class="relative group">
                             <input type="color" id="colorWheel" value="#ffffff" 
                                 class="transition-transform hover:scale-105 focus:scale-105"
                                 title="Choose text color">
                         </div>
 
-                        <!-- Text Alignment with updated container -->
-                        <div class="flex gap-1 ml-4">
+                        <!-- Text Alignment buttons -->
+                        <div class="flex gap-1">
                             <button class="text-align-btn" data-align="left" title="Align Left">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h10M4 14h16M4 18h10" />
@@ -249,6 +303,36 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M10 10h10M4 14h16M10 18h10" />
                                 </svg>
                             </button>
+                        </div>
+
+                        <div class="size-controls">
+                            <div class="size-controls-group">
+                                <div class="size-label">Labels</div>
+                                <div class="size-buttons">
+                                    <button class="size-btn" data-label-size="small" title="Small Labels">S</button>
+                                    <button class="size-btn active" data-label-size="medium" title="Medium Labels">M</button>
+                                    <button class="size-btn" data-label-size="large" title="Large Labels">L</button>
+                                </div>
+                            </div>
+
+                            <div class="size-controls-group">
+                                <div class="size-label">Values</div>
+                                <div class="size-buttons">
+                                    <button class="size-btn" data-value-size="small" title="Small Values">S</button>
+                                    <button class="size-btn active" data-value-size="medium" title="Medium Values">M</button>
+                                    <button class="size-btn" data-value-size="large" title="Large Values">L</button>
+                                </div>
+                            </div>
+
+                            <div class="size-controls-group">
+                                <div class="size-label">Columns</div>
+                                <button class="column-btn active" id="columnToggle" title="Toggle number of columns">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125Z" />
+                                    </svg>
+                                    <span id="columnCount">1</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -333,7 +417,16 @@
                 textAlign: 'center', // Default center alignment
                 selectedMapStyle: 'light', // Default map style
                 selectedGraphType: 'pace', // Default graph type
-                activeSection: 'text' // Track active section
+                activeSection: 'text', // Track active section
+                labelSize: 'medium',
+                valueSize: 'medium',
+                columns: 1 // Add columns to state
+            };
+
+            const SIZE_MULTIPLIERS = {
+                small: 0.8,
+                medium: 1.0,
+                large: 1.2
             };
 
             const StravaData = {};
@@ -535,12 +628,13 @@
             let currentTextColor = '#ffffff'; // Default text color (white, as per color wheel initial value)
 
             // --- Constants for Drawing ---
-            const BASE_FONT_SIZE = 30; // Base size similar to old file adjusted for 9:16
-            const VALUE_FONT_SIZE_MULTIPLIER = 1.33; // Value slightly larger than title
-            const MIN_FONT_SIZE = 10; // Minimum font size to prevent text becoming too small
-            const VERTICAL_PADDING_FACTOR = 0.9; // Use 90% of canvas height
-            const ITEM_SPACING = 15; // Spacing between metric blocks (label+value)
-            const TEXT_PADDING = 20; // Padding for left/right aligned text
+            const BASE_FONT_SIZE = 24; // Reduced base size
+            const VALUE_FONT_SIZE_MULTIPLIER = 1.2; // Slightly reduced multiplier
+            const MIN_FONT_SIZE = 8; // Smaller minimum font size
+            const VERTICAL_PADDING_FACTOR = 0.85; // Slightly reduced to ensure content fits
+            const METRIC_GROUP_SPACING = 40; // Increased space between metric groups
+            const LABEL_VALUE_SPACING = 6; // Reduced space between label and value
+            const HORIZONTAL_PADDING = 30; // Padding from canvas edges
 
             function resizeCanvas() {
                 const container = canvas.parentElement;
@@ -563,6 +657,7 @@
                 generateOverlay();
             }
 
+            // Update drawMetrics function
             function drawMetrics(data, context = ctx) {
                 const metrics = state.selectedMetrics
                     .map(key => ({
@@ -574,63 +669,80 @@
                 if (metrics.length === 0) return;
 
                 const dpr = window.devicePixelRatio || 1;
-                
-                // Use logical (CSS) pixels for calculations
                 const logicalWidth = overlayCanvas.width / dpr;
                 const logicalHeight = overlayCanvas.height / dpr;
 
-                // Set up text alignment and position
-                context.textAlign = state.textAlign;
-                context.textBaseline = 'middle';
-                context.fillStyle = state.textColor;
+                // Calculate columns
+                const columns = Math.min(state.columns, metrics.length);
+                const itemsPerColumn = Math.ceil(metrics.length / columns);
+                
+                // Calculate available width per column with padding
+                const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
+                const columnWidth = availableWidth / columns;
+                
+                // Calculate dynamic font sizes based on available space
+                const maxFontBase = Math.min(
+                    logicalHeight / (itemsPerColumn * 4), // Increased division factor for better scaling
+                    columnWidth * 0.12, // Reduced width factor for better fit
+                    BASE_FONT_SIZE // Maximum size cap
+                );
+                
+                let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
+                let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
 
-                // Calculate dynamic font sizes (based on canvas height)
-                const baseFontSize = Math.min(logicalHeight * 0.07, 40); // Cap maximum size
-                let titleFontSize = baseFontSize;
-                let valueFontSize = baseFontSize * 1.2;
-                let spacing = baseFontSize * 0.8;
+                // Ensure minimum font size
+                titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
+                valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
 
-                // Calculate metrics block total height
-                const getBlockHeight = () => {
-                    return metrics.length * (titleFontSize + valueFontSize + spacing);
-                };
+                // Calculate spacing
+                const itemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
+                const totalContentHeight = (itemHeight * itemsPerColumn) + 
+                                        (METRIC_GROUP_SPACING * (Math.max(0, itemsPerColumn - 1)));
 
-                // Scale down fonts if content is too tall or wide
-                while (getBlockHeight() > logicalHeight * 0.8) {
-                    titleFontSize *= 0.95;
-                    valueFontSize *= 0.95;
-                    spacing *= 0.95;
+                // Center content vertically
+                const startY = (logicalHeight - totalContentHeight) / 2;
 
-                    // Prevent infinite loop with minimum size
-                    if (titleFontSize < 12) break;
-                }
+                // Draw metrics in columns
+                metrics.forEach((metric, index) => {
+                    const columnIndex = Math.floor(index / itemsPerColumn);
+                    const itemIndex = index % itemsPerColumn;
+                    
+                    // Calculate x position based on alignment and columns
+                    let xPos;
+                    if (columns === 1) {
+                        // Single column uses text alignment
+                        switch (state.textAlign) {
+                            case 'left':
+                                xPos = HORIZONTAL_PADDING;
+                                break;
+                            case 'right':
+                                xPos = logicalWidth - HORIZONTAL_PADDING;
+                                break;
+                            default: // center
+                                xPos = logicalWidth / 2;
+                        }
+                    } else {
+                        // Multiple columns are always centered in their column
+                        xPos = HORIZONTAL_PADDING + (columnWidth * columnIndex) + (columnWidth / 2);
+                    }
 
-                // Center the entire block vertically
-                const totalHeight = getBlockHeight();
-                let currentY = (logicalHeight - totalHeight) / 2;
+                    const yBase = startY + (itemIndex * (itemHeight + METRIC_GROUP_SPACING));
 
-                // Calculate x position based on alignment
-                const xPos = state.textAlign === 'left' ? 
-                            TEXT_PADDING : 
-                            state.textAlign === 'right' ? 
-                            logicalWidth - TEXT_PADDING : 
-                            logicalWidth / 2;
-
-                // Draw each metric with adjusted x position
-                metrics.forEach(metric => {
-                    // Title
+                    // Set text alignment
+                    context.textAlign = columns === 1 ? state.textAlign : 'center';
+                    context.fillStyle = state.textColor;
+                    
+                    // Draw label
                     context.font = `${titleFontSize}px Roboto`;
-                    context.fillText(metric.name, xPos, currentY + titleFontSize/2);
+                    context.fillText(metric.name, xPos, yBase + titleFontSize/2);
 
-                    // Value
+                    // Draw value
                     context.font = `bold ${valueFontSize}px Roboto`;
                     context.fillText(
-                        metric.value, 
-                        xPos, 
-                        currentY + titleFontSize + spacing/2 + valueFontSize/2
+                        metric.value,
+                        xPos,
+                        yBase + titleFontSize + LABEL_VALUE_SPACING + valueFontSize/2
                     );
-
-                    currentY += titleFontSize + valueFontSize + spacing;
                 });
             }
 
@@ -1110,6 +1222,37 @@
                     state.textAlign = alignment;
                     generateOverlay(StravaData);
                 });
+            });
+
+            // Add event listeners for size buttons
+            document.querySelectorAll('[data-label-size]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const size = btn.dataset.labelSize;
+                    document.querySelectorAll('[data-label-size]').forEach(b => {
+                        b.classList.toggle('active', b === btn);
+                    });
+                    state.labelSize = size;
+                    generateOverlay(StravaData);
+                });
+            });
+
+            document.querySelectorAll('[data-value-size]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const size = btn.dataset.valueSize;
+                    document.querySelectorAll('[data-value-size]').forEach(b => {
+                        b.classList.toggle('active', b === btn);
+                    });
+                    state.valueSize = size;
+                    generateOverlay(StravaData);
+                });
+            });
+
+            // Add after existing event listeners
+            document.getElementById('columnToggle').addEventListener('click', () => {
+                // Cycle through 1, 2, 3, 4 columns
+                state.columns = (state.columns % 4) + 1;
+                document.getElementById('columnCount').textContent = state.columns;
+                generateOverlay(StravaData);
             });
         });
     </script>
