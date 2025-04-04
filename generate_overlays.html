@@ -62,6 +62,47 @@
             max-width: calc(50vh * 9/16); /* Adjusted to match new max-height */
             margin: 0 auto;
         }
+
+        /* Add dark checkerboard pattern */
+        canvas.dark-checkerboard {
+            background-image:
+                linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
+                linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
+                linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            background-color: #2c2c2c;
+        }
+
+        /* Style the color picker */
+        input[type="color"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            width: 48px;
+            height: 48px;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid #fc4c02;
+            border-radius: 8px;
+            padding: 0;
+        }
+
+        /* Firefox */
+        input[type="color"]::-moz-color-swatch {
+            border: 2px solid #fc4c02;
+            border-radius: 8px;
+            padding: 0;
+        }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40">
@@ -150,10 +191,13 @@
 
                 <div class="flex items-center gap-4">
                     <label for="colorWheel" class="text-sm font-medium text-strava-text">Text Color</label>
-                    <input type="color" 
-                        id="colorWheel" 
-                        value="#ffffff" 
-                        class="h-10 w-10 rounded-lg border-2 border-strava-orange cursor-pointer">
+                    <div class="relative group">
+                        <input type="color" 
+                            id="colorWheel" 
+                            value="#ffffff" 
+                            class="transition-transform hover:scale-105 focus:scale-105"
+                            title="Choose text color">
+                    </div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-2">
@@ -214,7 +258,6 @@
                 athleteId: null,
                 selectedMetrics: ['distance', 'movingTime', 'pace'],
                 isAuthenticated: false,
-                backgroundColor: '#2c3e50', // Default background color (accessible dark blue)
                 textColor: '#ffffff',
             };
 
@@ -426,121 +469,130 @@
             function resizeCanvas() {
                 const container = canvas.parentElement;
                 const dpr = window.devicePixelRatio || 1;
-                if (!canvas) return;
-
+                
+                // Get the container's computed dimensions
                 const rect = container.getBoundingClientRect();
                 
+                // Set canvas size in pixels, accounting for DPR
                 canvas.width = rect.width * dpr;
                 canvas.height = rect.height * dpr;
+                
+                // Scale all drawing operations by DPR
                 ctx.scale(dpr, dpr);
                 
+                // Set display size (CSS pixels)
                 canvas.style.width = `${rect.width}px`;
                 canvas.style.height = `${rect.height}px`;
                 
-                generateOverlay(); // Redraw canvas after resize
+                generateOverlay();
             }
 
-            // // --- Updated generateOverlay based on old logic ---
-            // function generateOverlay(data = StravaData, context = ctx, canvasRef = overlayCanvas) {
-            //     if (!canvasRef) return;
-            //     const dpr = window.devicePixelRatio || 1;
-            //     // Clear the entire canvas using physical dimensions
-            //     context.clearRect(0, 0, canvasRef.width, canvasRef.height);
+            function drawMetrics(data, context = ctx) {
+                const metrics = state.selectedMetrics
+                    .map(key => ({
+                        name: getMetricLabel(key),
+                        value: data[key]
+                    }))
+                    .filter(metric => metric.value !== null && metric.value !== undefined);
 
-            //     // No background fill needed as it's an overlay
+                if (metrics.length === 0) return;
 
-            //     drawMetrics(data, context, canvasRef);
-            // }
+                const dpr = window.devicePixelRatio || 1;
+                
+                // Use logical (CSS) pixels for calculations
+                const logicalWidth = overlayCanvas.width / dpr;
+                const logicalHeight = overlayCanvas.height / dpr;
+
+                // Set up text alignment
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillStyle = state.textColor;
+
+                // Calculate dynamic font sizes (based on canvas height)
+                const baseFontSize = Math.min(logicalHeight * 0.07, 40); // Cap maximum size
+                let titleFontSize = baseFontSize;
+                let valueFontSize = baseFontSize * 1.2;
+                let spacing = baseFontSize * 0.8;
+
+                // Calculate metrics block total height
+                const getBlockHeight = () => {
+                    return metrics.length * (titleFontSize + valueFontSize + spacing);
+                };
+
+                // Scale down fonts if content is too tall or wide
+                while (getBlockHeight() > logicalHeight * 0.8) {
+                    titleFontSize *= 0.95;
+                    valueFontSize *= 0.95;
+                    spacing *= 0.95;
+
+                    // Prevent infinite loop with minimum size
+                    if (titleFontSize < 12) break;
+                }
+
+                // Center the entire block vertically
+                const totalHeight = getBlockHeight();
+                let currentY = (logicalHeight - totalHeight) / 2;
+
+                // Draw each metric
+                metrics.forEach(metric => {
+                    // Title
+                    context.font = `${titleFontSize}px Roboto`;
+                    context.fillText(metric.name, logicalWidth / 2, currentY + titleFontSize/2);
+
+                    // Value
+                    context.font = `bold ${valueFontSize}px Roboto`;
+                    context.fillText(
+                        metric.value, 
+                        logicalWidth / 2, 
+                        currentY + titleFontSize + spacing/2 + valueFontSize/2
+                    );
+
+                    // Move to next metric position
+                    currentY += titleFontSize + valueFontSize + spacing;
+                });
+            }
+
+            // Existing code
+            document.querySelectorAll('.overlay-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const metric = option.dataset.metric;
+                    
+                    if (option.classList.contains('bg-strava-orange')) {
+                        option.classList.remove('bg-strava-orange');
+                        option.classList.add('bg-strava-gray');
+                        state.selectedMetrics = state.selectedMetrics.filter(m => m !== metric);
+                    } else {
+                        option.classList.remove('bg-strava-gray');
+                        option.classList.add('bg-strava-orange');
+                        state.selectedMetrics.push(metric);
+                    }
+
+                    generateOverlay(StravaData);
+                });
+            });
 
             // Generate Overlay
             function generateOverlay(data = StravaData) {
                 // Clear the entire canvas
                 ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
-                // Draw background color
-                ctx.fillStyle = state.backgroundColor;
-                ctx.fillRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                // Add dark checkerboard class to canvas
+                canvas.classList.add('dark-checkerboard');
+
+                // Draw metrics
                 drawMetrics(data);
             }
-
-            function drawMetrics(data, context = ctx) {
-                const metrics = [
-                    { name: 'Distance', value: data.distance, key: 'distance' },
-                    { name: 'Time', value: data.movingTime, key: 'movingTime' },
-                    { name: 'Pace', value: data.pace, key: 'pace' },
-                    { name: 'Elevation', value: data.elevationGain, key: 'elevationGain' },
-                    { name: 'Avg HR', value: data.avgHeartRate, key: 'avgHeartRate' },
-                    { name: 'Max HR', value: data.maxHeartRate, key: 'maxHeartRate' },
-                    { name: 'Calories', value: data.calories, key: 'calories' },
-                    { name: 'Suffer Score', value: data.sufferScore, key: 'sufferScore' }
-                ];
-
-                const selectedMetrics = metrics
-                    .filter(metric => state.selectedMetrics.includes(metric.key))
-                    .filter(metric => metric.value !== 'N/A');
-
-                if (selectedMetrics.length === 0) return;
-
-                const maxHeight = overlayCanvas.height * 0.9;
-                const centerX = overlayCanvas.width / 2;
-                const centerY = overlayCanvas.height / 2;
-
-                // Start with initial sizes
-                let titleFontSize = 80;
-                let valueFontSize = 100;
-                let spacing = 60;
-
-                // Calculate minimum font size needed to fit everything
-                let totalHeight;
-                do {
-                    titleFontSize *= 0.95;
-                    valueFontSize *= 0.95;
-                    spacing *= 0.95;
-                    
-                    // Calculate total height without extra spacing
-                    const itemHeight = titleFontSize + valueFontSize;
-                    const totalSpacing = (selectedMetrics.length - 1) * spacing;
-                    totalHeight = (selectedMetrics.length * itemHeight) + totalSpacing;
-                } while (totalHeight > maxHeight && titleFontSize > 20);
-
-                // Calculate starting Y position to center content
-                let yOffset = centerY - (totalHeight / 2);
-
-                // Styling
-                context.fillStyle = state.textColor;
-                context.textAlign = 'center';
-                context.textBaseline = 'top';
-
-                selectedMetrics.forEach((metric, index) => {
-                    // Title
-                    context.font = `bold ${titleFontSize}px Arial`;
-                    context.fillText(metric.name, centerX, yOffset);
-                    
-                    // Value
-                    context.font = `bold ${valueFontSize}px Arial`;
-                    context.fillText(metric.value, centerX, yOffset + titleFontSize + 10);
-                    
-                    // Only add spacing if it's not the last item
-                    yOffset += titleFontSize + valueFontSize + (index < selectedMetrics.length - 1 ? spacing : 0);
-                });
-            }
-
 
             // --- Ported getCroppedDimensions from old file, adapted for new drawing logic ---
             function getCroppedDimensions(data, context, canvasRef) {
                 if (!canvasRef) return { x: 0, y: 0, width: 0, height: 0 }; // Handle missing canvas
 
-                const metrics = [
-                    { name: 'Distance', value: data.distance, key: 'distance' },
-                    { name: 'Time', value: data.movingTime, key: 'movingTime' },
-                    { name: 'Pace', value: data.pace, key: 'pace' },
-                    { name: 'Elevation', value: data.elevationGain, key: 'elevationGain' },
-                    { name: 'Avg HR', value: data.avgHeartRate, key: 'avgHeartRate' },
-                    { name: 'Max HR', value: data.maxHeartRate, key: 'maxHeartRate' },
-                    { name: 'Calories', value: data.calories, key: 'calories' },
-                    { name: 'Suffer Score', value: data.sufferScore, key: 'sufferScore' }
-                ].filter(metric => state.selectedMetrics.includes(metric.key))
-                 .filter(metric => metric.value !== null && metric.value !== undefined);
+                const metrics = state.selectedMetrics
+                    .map(key => ({
+                        name: getMetricLabel(key),
+                        value: data[key]
+                    }))
+                    .filter(metric => metric.value !== null && metric.value !== undefined);
 
                 if (metrics.length === 0) return { x: 0, y: 0, width: canvasRef.width, height: canvasRef.height }; // Return full canvas if empty
 
@@ -604,6 +656,71 @@
                     height: finalHeight
                 };
             }
+
+            function getCroppedDimensions(data, context, canvasRef) {
+                if (!canvasRef) return { x: 0, y: 0, width: 0, height: 0 }; // Handle missing canvas
+
+                const metrics = state.selectedMetrics
+                    .map(key => ({
+                        name: getMetricLabel(key),
+                        value: data[key]
+                    }))
+                    .filter(metric => metric.value !== null && metric.value !== undefined);
+
+                if (metrics.length === 0) return { x: 0, y: 0, width: canvasRef.width, height: canvasRef.height };
+
+                const dpr = window.devicePixelRatio || 1;
+                const canvasWidthLogical = canvasRef.width / dpr;
+                const canvasHeightLogical = canvasRef.height / dpr;
+
+                // Calculate font sizes just like in drawMetrics
+                const baseFontSize = Math.min(canvasHeightLogical * 0.07, 40);
+                let titleFontSize = baseFontSize;
+                let valueFontSize = baseFontSize * 1.2;
+                let spacing = baseFontSize * 0.8;
+
+                // Scale down fonts if needed
+                const totalMetricsHeight = metrics.length * (titleFontSize + valueFontSize + spacing);
+                if (totalMetricsHeight > canvasHeightLogical * 0.8) {
+                    const scale = (canvasHeightLogical * 0.8) / totalMetricsHeight;
+                    titleFontSize *= scale;
+                    valueFontSize *= scale;
+                    spacing *= scale;
+                }
+
+                // Find the exact content dimensions
+                let maxWidth = 0;
+                context.textAlign = 'center';
+                metrics.forEach(metric => {
+                    context.font = `${titleFontSize * dpr}px Roboto`;
+                    const titleWidth = context.measureText(metric.name).width;
+                    context.font = `bold ${valueFontSize * dpr}px Roboto`;
+                    const valueWidth = context.measureText(metric.value).width;
+                    maxWidth = Math.max(maxWidth, titleWidth, valueWidth);
+                });
+
+                // Calculate exact content height
+                const contentHeight = metrics.length * (titleFontSize + valueFontSize + spacing) - spacing; // Subtract last spacing
+                
+                // Add minimal padding (10px converted to physical pixels)
+                const padding = 10 * dpr;
+                
+                // Calculate final dimensions
+                const finalWidth = maxWidth + (padding * 2);
+                const finalHeight = contentHeight * dpr + (padding * 2);
+                
+                // Center the crop box
+                const x = (canvasRef.width - finalWidth) / 2;
+                const y = (canvasRef.height - finalHeight) / 2;
+
+                return {
+                    x: Math.max(0, x),
+                    y: Math.max(0, y),
+                    width: Math.min(canvasRef.width, finalWidth),
+                    height: Math.min(canvasRef.height, finalHeight)
+                };
+            }
+
             // --- End Ported getCroppedDimensions ---
 
             function getMetricLabel(metricKey) {
@@ -631,42 +748,43 @@
             // --- Event Listeners (Outside DOMContentLoaded, but referencing elements obtained within) ---
 
             // Attach listeners only after DOM is ready and elements exist
-            document.addEventListener('DOMContentLoaded', () => {
-                // Color Wheel listener - Update text color and redraw
-                colorWheel?.addEventListener('input', (e) => {
-                    currentTextColor = e.target.value;
-                    generateOverlay(); // Redraw with new color
-                });
+            // document.addEventListener('DOMContentLoaded', () => {
+            //     // Color Wheel listener - Update text color and redraw
+            //     colorWheel?.addEventListener('input', (e) => {
+            //         currentTextColor = e.target.value;
+            //         generateOverlay(); // Redraw with new color
+            //     });
 
-                // Metric buttons listener - Updated to match old file functionality
-                document.querySelectorAll('.overlay-option').forEach(button => {
-                    button.addEventListener('click', () => {
-                        if (!state.isAuthenticated) {
-                            console.warn('Please login to customize overlays');
-                            return;
-                        }
-                        if (!state.activityData) {
-                            console.warn('Please load an activity first to customize overlays');
-                            return;
-                        }
+            //     // Metric buttons listener - Updated to match old file functionality
+            //     document.querySelectorAll('.overlay-option').forEach(button => {
+            //         button.addEventListener('click', () => {
+            //             if (!state.isAuthenticated) {
+            //                 console.warn('Please login to customize overlays');
+            //                 return;
+            //             }
+            //             if (!state.activityData) {
+            //                 console.warn('Please load an activity first to customize overlays');
+            //                 return;
+            //             }
 
-                        const metric = button.dataset.metric;
+            //             const metric = button.dataset.metric;
+            //             console.log('CLICKING BUTTON')
                         
-                        if (button.classList.contains('bg-strava-orange')) {
-                            // Is selected -> Deselect
-                            button.classList.remove('bg-strava-orange');
-                            button.classList.add('bg-strava-gray');
-                            state.selectedMetrics = state.selectedMetrics.filter(m => m !== metric);
-                        } else {
-                            // Is not selected -> Select
-                            button.classList.remove('bg-strava-gray');
-                            button.classList.add('bg-strava-orange');
-                            state.selectedMetrics.push(metric);
-                        }
+            //             if (button.classList.contains('bg-strava-orange')) {
+            //                 // Is selected -> Deselect
+            //                 button.classList.remove('bg-strava-orange');
+            //                 button.classList.add('bg-strava-gray');
+            //                 state.selectedMetrics = state.selectedMetrics.filter(m => m !== metric);
+            //             } else {
+            //                 // Is not selected -> Select
+            //                 button.classList.remove('bg-strava-gray');
+            //                 button.classList.add('bg-strava-orange');
+            //                 state.selectedMetrics.push(metric);
+            //             }
 
-                        generateOverlay(); // Redraw canvas after selection changes
-                    });
-                });
+            //             generateOverlay(); // Redraw canvas after selection changes
+            //         });
+            //     });
 
             // Update color wheel handler
             colorWheel.addEventListener('input', (e) => {
@@ -690,10 +808,12 @@
                     const textToCopy = state.selectedMetrics
                         .map(metric => {
                             const value = StravaData[metric];
-                            return value !== null && value !== undefined ? `${getMetricLabel(metric)}: ${value}` : null;
+                            return value !== null && value !== undefined 
+                                ? `${getMetricLabel(metric)}\n${value}`  // Put label and value on separate lines
+                                : null;
                         })
-                        .filter(line => line !== null) // Filter out null lines
-                        .join('\n');
+                        .filter(line => line !== null)
+                        .join('\n\n');  // Add double line break between metrics
 
                     if (textToCopy) {
                         navigator.clipboard.writeText(textToCopy)
@@ -724,7 +844,7 @@
                         }
 
                         // Ensure canvas is fully rendered - small delay might help
-                        await new Promise(resolve => setTimeout(resolve, 100)); // Increased delay slightly
+                        // await new Promise(resolve => setTimeout(resolve, 100)); // Increased delay slightly
 
                         // Get dimensions of the drawn content
                         const bbox = getCroppedDimensions(StravaData, ctx, canvas);
@@ -787,7 +907,6 @@
                     window.addEventListener('resize', resizeCanvas);
                 }
             });
-        });
     </script>
 </body>
 </html>
