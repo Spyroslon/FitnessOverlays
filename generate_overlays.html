@@ -95,6 +95,10 @@
             border: 2px solid #fc4c02;
             border-radius: 8px;
             padding: 0;
+            background: linear-gradient(135deg, 
+            #FFB3BA, #BAFFC9, #BAE1FF,
+            #FFD700, #FFB6C1, #98FF98,
+            #E6E6FA, #FFC0CB);
         }
 
         /* Firefox */
@@ -102,6 +106,10 @@
             border: 2px solid #fc4c02;
             border-radius: 8px;
             padding: 0;
+            background: linear-gradient(135deg,
+            #FFB3BA, #BAFFC9, #BAE1FF,
+            #FFD700, #FFB6C1, #98FF98,
+            #E6E6FA, #FFC0CB);
         }
 
         /* Update text alignment button styles - replace all previous .text-align-btn styles */
@@ -217,9 +225,8 @@
 
                     <!-- Update text controls container -->
                     <div class="flex items-center gap-4 mt-4">
-                        <!-- Color Picker -->
-                        <label for="colorWheel" class="text-sm font-medium text-strava-text">Text Color</label>
-                        <div class="relative group">
+                        <!-- Color Picker with vertical centering -->
+                        <div class="relative flex items-center group">
                             <input type="color" id="colorWheel" value="#ffffff" 
                                 class="transition-transform hover:scale-105 focus:scale-105"
                                 title="Choose text color">
@@ -264,8 +271,8 @@
                 </div>
 
                 <!-- Copy Buttons -->
-                <div class="flex flex-col sm:flex-row gap-2 mt-6">
-                    <div class="flex-1 flex flex-col items-center gap-1">
+                <div id="copyButtonsContainer" class="flex flex-col sm:flex-row gap-2 mt-6">
+                    <div id="copyTextContainer" class="flex-1 flex flex-col items-center gap-1">
                         <button id="copyTextBtn" 
                                 class="w-14 h-14 bg-strava-text hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -274,7 +281,7 @@
                         </button>
                         <span class="text-sm text-strava-text">Copy to Clipboard as text</span>
                     </div>
-                    <div class="flex-1 flex flex-col items-center gap-1">
+                    <div id="copyImageContainer" class="flex-1 flex flex-col items-center gap-1">
                         <button id="copyImageBtn" 
                                 class="w-14 h-14 bg-strava-text hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -324,6 +331,9 @@
                 isAuthenticated: false,
                 textColor: '#ffffff',
                 textAlign: 'center', // Default center alignment
+                selectedMapStyle: 'light', // Default map style
+                selectedGraphType: 'pace', // Default graph type
+                activeSection: 'text' // Track active section
             };
 
             const StravaData = {};
@@ -963,10 +973,11 @@
             document.querySelectorAll('.section-header').forEach(header => {
                 header.addEventListener('click', () => {
                     const sectionName = header.dataset.section;
+                    state.activeSection = sectionName;
                     
                     // Toggle active state on headers
                     document.querySelectorAll('.section-header').forEach(h => {
-                        h.classList.toggle('bg-gray-200', h === header);
+                        h.classList.toggle('bg-gray-400', h === header);
                         h.classList.toggle('bg-gray-100', h !== header);
                     });
                     
@@ -974,11 +985,79 @@
                     Object.entries(sections).forEach(([name, element]) => {
                         element.classList.toggle('hidden', name !== sectionName);
                     });
+
+                    // Handle copy buttons visibility and layout
+                    const copyTextContainer = document.getElementById('copyTextContainer');
+                    const copyImageContainer = document.getElementById('copyImageContainer');
+                    const copyButtonsContainer = document.getElementById('copyButtonsContainer');
+
+                    if (sectionName === 'text') {
+                        copyTextContainer.style.display = 'flex';
+                        copyButtonsContainer.classList.remove('justify-center');
+                        copyImageContainer.classList.remove('flex-none');
+                    } else {
+                        copyTextContainer.style.display = 'none';
+                        copyButtonsContainer.classList.add('justify-center');
+                        copyImageContainer.classList.add('flex-none');
+                    }
                 });
             });
 
+            // Set initial copy button states
+            if (state.activeSection !== 'text') {
+                document.getElementById('copyTextContainer').style.display = 'none';
+                document.getElementById('copyButtonsContainer').classList.add('justify-center');
+                document.getElementById('copyImageContainer').classList.add('flex-none');
+            }
+
+            // Set initial active states for map styles and graphs
+            document.querySelector(`[data-style="${state.selectedMapStyle}"]`)?.classList.add('bg-strava-orange');
+            document.querySelector(`[data-style="${state.selectedMapStyle}"]`)?.classList.remove('bg-strava-gray');
+            
+            document.querySelector(`[data-graph="${state.selectedGraphType}"]`)?.classList.add('bg-strava-orange');
+            document.querySelector(`[data-graph="${state.selectedGraphType}"]`)?.classList.remove('bg-strava-gray');
+
+            // Update map style handlers to store selection in state
+            document.querySelectorAll('.map-option').forEach(button => {
+                button.addEventListener('click', () => {
+                    const style = button.dataset.style;
+                    state.selectedMapStyle = style;
+                    console.log(`Map style selected: ${style}`);
+                    
+                    document.querySelectorAll('.map-option').forEach(btn => {
+                        btn.classList.remove('bg-strava-orange');
+                        btn.classList.add('bg-strava-gray');
+                    });
+                    
+                    button.classList.remove('bg-strava-gray');
+                    button.classList.add('bg-strava-orange');
+                });
+            });
+
+            // Update graph handlers to store selection in state
+            document.querySelectorAll('.graph-option').forEach(button => {
+                button.addEventListener('click', () => {
+                    const graphType = button.dataset.graph;
+                    state.selectedGraphType = graphType;
+                    console.log(`Graph type selected: ${graphType}`);
+                    
+                    document.querySelectorAll('.graph-option').forEach(btn => {
+                        btn.classList.remove('bg-strava-orange');
+                        btn.classList.add('bg-strava-gray');
+                    });
+                    
+                    button.classList.remove('bg-strava-gray');
+                    button.classList.add('bg-strava-orange');
+                });
+            });
+
+            // Hide text copy button initially if not in text section
+            if (state.activeSection !== 'text') {
+                copyTextBtn.style.display = 'none';
+            }
+
             // Add initial active state for text section
-            document.querySelector('[data-section="text"]').classList.add('bg-gray-200');
+            document.querySelector('[data-section="text"]').classList.add('bg-gray-400');
             document.querySelector('[data-section="text"]').classList.remove('bg-gray-100');
 
             // Add map style button handlers
