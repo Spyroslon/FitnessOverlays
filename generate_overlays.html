@@ -103,6 +103,34 @@
             border-radius: 8px;
             padding: 0;
         }
+
+        /* Update text alignment button styles - replace all previous .text-align-btn styles */
+        .text-align-btn {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fc4c02;
+            background-color: white;
+            color: #666666;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .text-align-btn:hover {
+            background-color: #f3f4f6;
+        }
+
+        .text-align-btn.active {
+            background-color: #fc4c02;
+            color: white;
+        }
+
+        .text-align-btn svg {
+            width: 24px;
+            height: 24px;
+        }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40">
@@ -161,46 +189,82 @@
 
             <!-- Options Card -->
             <div class="bg-white rounded-xl shadow-lg p-6 space-y-4">
-                <h2 class="text-lg font-medium text-strava-text">Overlay Options</h2>
-                <div id="overlayOptions" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                    <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="distance">
-                        Distance
+                <!-- Section Headers -->
+                <div class="flex space-x-2">
+                    <button class="section-header flex-1 p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" data-section="text">
+                        <span class="font-medium text-strava-text">Text Overlay</span>
                     </button>
-                    <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="movingTime">
-                        Time
+                    <button class="section-header flex-1 p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" data-section="maps">
+                        <span class="font-medium text-strava-text">Map Styles</span>
                     </button>
-                    <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="pace">
-                        Pace
-                    </button>
-                    <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="elevationGain">
-                        Elevation
-                    </button>
-                    <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="avgHeartRate">
-                        Avg HR
-                    </button>
-                    <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="maxHeartRate">
-                        Max HR
-                    </button>
-                    <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="calories">
-                        Calories
-                    </button>
-                    <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="sufferScore">
-                        Suffer Score
+                    <button class="section-header flex-1 p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" data-section="graphs">
+                        <span class="font-medium text-strava-text">Activity Graphs</span>
                     </button>
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <label for="colorWheel" class="text-sm font-medium text-strava-text">Text Color</label>
-                    <div class="relative group">
-                        <input type="color" 
-                            id="colorWheel" 
-                            value="#ffffff" 
-                            class="transition-transform hover:scale-105 focus:scale-105"
-                            title="Choose text color">
+                <!-- Section Contents -->
+                <div id="textSection" class="section-content">
+                    <div id="overlayOptions" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="distance">Distance</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="movingTime">Time</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="pace">Pace</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="elevationGain">Elevation</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="avgHeartRate">Avg HR</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="maxHeartRate">Max HR</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="calories">Calories</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="sufferScore">Suffer Score</button>
+                    </div>
+
+                    <!-- Update text controls container -->
+                    <div class="flex items-center gap-4 mt-4">
+                        <!-- Color Picker -->
+                        <label for="colorWheel" class="text-sm font-medium text-strava-text">Text Color</label>
+                        <div class="relative group">
+                            <input type="color" id="colorWheel" value="#ffffff" 
+                                class="transition-transform hover:scale-105 focus:scale-105"
+                                title="Choose text color">
+                        </div>
+
+                        <!-- Text Alignment with updated container -->
+                        <div class="flex gap-1 ml-4">
+                            <button class="text-align-btn" data-align="left" title="Align Left">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h10M4 14h16M4 18h10" />
+                                </svg>
+                            </button>
+                            <button class="text-align-btn active" data-align="center" title="Center">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M7 10h10M4 14h16M7 18h10" />
+                                </svg>
+                            </button>
+                            <button class="text-align-btn" data-align="right" title="Align Right">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M10 10h10M4 14h16M10 18h10" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-2">
+                <div id="mapsSection" class="section-content hidden">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <button class="map-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-style="light">Light</button>
+                        <button class="map-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-style="dark">Dark</button>
+                        <button class="map-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-style="outdoors">Outdoors</button>
+                        <button class="map-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-style="satellite">Satellite</button>
+                        <button class="map-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-style="minimal">Minimal</button>
+                    </div>
+                </div>
+
+                <div id="graphsSection" class="section-content hidden">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="graph-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-graph="pace">Pace Graph</button>
+                        <button class="graph-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-graph="heartrate">Heart Rate Graph</button>
+                    </div>
+                </div>
+
+                <!-- Copy Buttons -->
+                <div class="flex flex-col sm:flex-row gap-2 mt-6">
                     <div class="flex-1 flex flex-col items-center gap-1">
                         <button id="copyTextBtn" 
                                 class="w-14 h-14 bg-strava-text hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
@@ -259,6 +323,7 @@
                 selectedMetrics: ['distance', 'movingTime', 'pace'],
                 isAuthenticated: false,
                 textColor: '#ffffff',
+                textAlign: 'center', // Default center alignment
             };
 
             const StravaData = {};
@@ -465,6 +530,7 @@
             const MIN_FONT_SIZE = 10; // Minimum font size to prevent text becoming too small
             const VERTICAL_PADDING_FACTOR = 0.9; // Use 90% of canvas height
             const ITEM_SPACING = 15; // Spacing between metric blocks (label+value)
+            const TEXT_PADDING = 20; // Padding for left/right aligned text
 
             function resizeCanvas() {
                 const container = canvas.parentElement;
@@ -503,8 +569,8 @@
                 const logicalWidth = overlayCanvas.width / dpr;
                 const logicalHeight = overlayCanvas.height / dpr;
 
-                // Set up text alignment
-                context.textAlign = 'center';
+                // Set up text alignment and position
+                context.textAlign = state.textAlign;
                 context.textBaseline = 'middle';
                 context.fillStyle = state.textColor;
 
@@ -533,21 +599,27 @@
                 const totalHeight = getBlockHeight();
                 let currentY = (logicalHeight - totalHeight) / 2;
 
-                // Draw each metric
+                // Calculate x position based on alignment
+                const xPos = state.textAlign === 'left' ? 
+                            TEXT_PADDING : 
+                            state.textAlign === 'right' ? 
+                            logicalWidth - TEXT_PADDING : 
+                            logicalWidth / 2;
+
+                // Draw each metric with adjusted x position
                 metrics.forEach(metric => {
                     // Title
                     context.font = `${titleFontSize}px Roboto`;
-                    context.fillText(metric.name, logicalWidth / 2, currentY + titleFontSize/2);
+                    context.fillText(metric.name, xPos, currentY + titleFontSize/2);
 
                     // Value
                     context.font = `bold ${valueFontSize}px Roboto`;
                     context.fillText(
                         metric.value, 
-                        logicalWidth / 2, 
+                        xPos, 
                         currentY + titleFontSize + spacing/2 + valueFontSize/2
                     );
 
-                    // Move to next metric position
                     currentY += titleFontSize + valueFontSize + spacing;
                 });
             }
@@ -658,8 +730,8 @@
             }
 
             function getCroppedDimensions(data, context, canvasRef) {
-                if (!canvasRef) return { x: 0, y: 0, width: 0, height: 0 }; // Handle missing canvas
-
+                if (!canvasRef) return { x: 0, y: 0, width: 0, height: 0 };
+                
                 const metrics = state.selectedMetrics
                     .map(key => ({
                         name: getMetricLabel(key),
@@ -679,18 +751,9 @@
                 let valueFontSize = baseFontSize * 1.2;
                 let spacing = baseFontSize * 0.8;
 
-                // Scale down fonts if needed
-                const totalMetricsHeight = metrics.length * (titleFontSize + valueFontSize + spacing);
-                if (totalMetricsHeight > canvasHeightLogical * 0.8) {
-                    const scale = (canvasHeightLogical * 0.8) / totalMetricsHeight;
-                    titleFontSize *= scale;
-                    valueFontSize *= scale;
-                    spacing *= scale;
-                }
-
-                // Find the exact content dimensions
+                // Find the widest text
+                context.textAlign = 'center'; // Temporarily set to center for measurement
                 let maxWidth = 0;
-                context.textAlign = 'center';
                 metrics.forEach(metric => {
                     context.font = `${titleFontSize * dpr}px Roboto`;
                     const titleWidth = context.measureText(metric.name).width;
@@ -699,25 +762,33 @@
                     maxWidth = Math.max(maxWidth, titleWidth, valueWidth);
                 });
 
-                // Calculate exact content height
-                const contentHeight = metrics.length * (titleFontSize + valueFontSize + spacing) - spacing; // Subtract last spacing
+                // Calculate content height
+                const totalHeight = metrics.length * (titleFontSize + valueFontSize + spacing) * dpr;
+                const padding = TEXT_PADDING * dpr;
                 
-                // Add minimal padding (10px converted to physical pixels)
-                const padding = 10 * dpr;
-                
-                // Calculate final dimensions
-                const finalWidth = maxWidth + (padding * 2);
-                const finalHeight = contentHeight * dpr + (padding * 2);
-                
-                // Center the crop box
-                const x = (canvasRef.width - finalWidth) / 2;
-                const y = (canvasRef.height - finalHeight) / 2;
+                // Calculate crop box position based on alignment
+                let x, width;
+                if (state.textAlign === 'left') {
+                    x = padding;
+                    width = maxWidth + padding * 2;
+                } else if (state.textAlign === 'right') {
+                    x = canvasRef.width - maxWidth - padding * 2;
+                    width = maxWidth + padding * 2;
+                } else {
+                    // center alignment
+                    x = (canvasRef.width - maxWidth) / 2 - padding;
+                    width = maxWidth + padding * 2;
+                }
+
+                // Vertical centering remains the same
+                const y = (canvasRef.height - totalHeight) / 2 - padding;
+                const height = totalHeight + padding * 2;
 
                 return {
                     x: Math.max(0, x),
                     y: Math.max(0, y),
-                    width: Math.min(canvasRef.width, finalWidth),
-                    height: Math.min(canvasRef.height, finalHeight)
+                    width: Math.min(canvasRef.width - x, width),
+                    height: Math.min(canvasRef.height - y, height)
                 };
             }
 
@@ -744,47 +815,6 @@
                     toast.classList.add('opacity-0');
                 }, 2000);
             }
-
-            // --- Event Listeners (Outside DOMContentLoaded, but referencing elements obtained within) ---
-
-            // Attach listeners only after DOM is ready and elements exist
-            // document.addEventListener('DOMContentLoaded', () => {
-            //     // Color Wheel listener - Update text color and redraw
-            //     colorWheel?.addEventListener('input', (e) => {
-            //         currentTextColor = e.target.value;
-            //         generateOverlay(); // Redraw with new color
-            //     });
-
-            //     // Metric buttons listener - Updated to match old file functionality
-            //     document.querySelectorAll('.overlay-option').forEach(button => {
-            //         button.addEventListener('click', () => {
-            //             if (!state.isAuthenticated) {
-            //                 console.warn('Please login to customize overlays');
-            //                 return;
-            //             }
-            //             if (!state.activityData) {
-            //                 console.warn('Please load an activity first to customize overlays');
-            //                 return;
-            //             }
-
-            //             const metric = button.dataset.metric;
-            //             console.log('CLICKING BUTTON')
-                        
-            //             if (button.classList.contains('bg-strava-orange')) {
-            //                 // Is selected -> Deselect
-            //                 button.classList.remove('bg-strava-orange');
-            //                 button.classList.add('bg-strava-gray');
-            //                 state.selectedMetrics = state.selectedMetrics.filter(m => m !== metric);
-            //             } else {
-            //                 // Is not selected -> Select
-            //                 button.classList.remove('bg-strava-gray');
-            //                 button.classList.add('bg-strava-orange');
-            //                 state.selectedMetrics.push(metric);
-            //             }
-
-            //             generateOverlay(); // Redraw canvas after selection changes
-            //         });
-            //     });
 
             // Update color wheel handler
             colorWheel.addEventListener('input', (e) => {
@@ -906,7 +936,103 @@
                     resizeCanvas(); // Initial size
                     window.addEventListener('resize', resizeCanvas);
                 }
+
+            // Move this inside DOMContentLoaded, after state is defined
+            document.querySelectorAll('.text-align-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const alignment = btn.dataset.align;
+                    
+                    // Update buttons
+                    document.querySelectorAll('.text-align-btn').forEach(b => {
+                        b.classList.toggle('active', b === btn);
+                    });
+                    
+                    // Update state and redraw
+                    state.textAlign = alignment;
+                    generateOverlay(StravaData);
+                });
             });
+
+            const sections = {
+                text: document.getElementById('textSection'),
+                maps: document.getElementById('mapsSection'),
+                graphs: document.getElementById('graphsSection')
+            };
+
+            // Add these event listeners after your existing ones
+            document.querySelectorAll('.section-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const sectionName = header.dataset.section;
+                    
+                    // Toggle active state on headers
+                    document.querySelectorAll('.section-header').forEach(h => {
+                        h.classList.toggle('bg-gray-200', h === header);
+                        h.classList.toggle('bg-gray-100', h !== header);
+                    });
+                    
+                    // Toggle sections
+                    Object.entries(sections).forEach(([name, element]) => {
+                        element.classList.toggle('hidden', name !== sectionName);
+                    });
+                });
+            });
+
+            // Add initial active state for text section
+            document.querySelector('[data-section="text"]').classList.add('bg-gray-200');
+            document.querySelector('[data-section="text"]').classList.remove('bg-gray-100');
+
+            // Add map style button handlers
+            document.querySelectorAll('.map-option').forEach(button => {
+                button.addEventListener('click', () => {
+                    const style = button.dataset.style;
+                    console.log(`Map style selected: ${style}`);
+                    
+                    // Remove active state from all map buttons
+                    document.querySelectorAll('.map-option').forEach(btn => {
+                        btn.classList.remove('bg-strava-orange');
+                        btn.classList.add('bg-strava-gray');
+                    });
+                    
+                    // Add active state to clicked button
+                    button.classList.remove('bg-strava-gray');
+                    button.classList.add('bg-strava-orange');
+                });
+            });
+
+            // Add graph button handlers
+            document.querySelectorAll('.graph-option').forEach(button => {
+                button.addEventListener('click', () => {
+                    const graphType = button.dataset.graph;
+                    console.log(`Graph type selected: ${graphType}`);
+                    
+                    // Remove active state from all graph buttons
+                    document.querySelectorAll('.graph-option').forEach(btn => {
+                        btn.classList.remove('bg-strava-orange');
+                        btn.classList.add('bg-strava-gray');
+                    });
+                    
+                    // Add active state to clicked button
+                    button.classList.remove('bg-strava-gray');
+                    button.classList.add('bg-strava-orange');
+                });
+            });
+
+            // Add after your existing event listeners
+            document.querySelectorAll('.text-align-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const alignment = btn.dataset.align;
+                    
+                    // Update buttons
+                    document.querySelectorAll('.text-align-btn').forEach(b => {
+                        b.classList.toggle('active', b === btn);
+                    });
+                    
+                    // Update state and redraw
+                    state.textAlign = alignment;
+                    generateOverlay(StravaData);
+                });
+            });
+        });
     </script>
 </body>
 </html>
