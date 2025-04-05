@@ -7,10 +7,31 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/@mapbox/polyline"></script> <!-- Polyline decoding library -->
+    <style>
+        /* Basic styling for the dropdown */
+        #map-selector {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000; /* Ensure it's above the map */
+            padding: 5px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
     <h1>Test Polyline on Map</h1>
-    <div id="map" style="width: 600px; height: 400px;"></div>
+    <div id="map" style="width: 600px; height: 400px; position: relative;"></div>
+
+    <select id="map-selector">
+        <option value="osm">Default Polyline (Transparent)</option>
+        <option value="positron">Positron (Light)</option>
+        <option value="positron_labels">Positron (Light + Labels)</option>
+        <option value="darkmatter">Dark Matter</option>
+        <option value="darkmatter_labels">Dark Matter + Labels</option>
+    </select>
 
     <script>
         // Example polyline string
@@ -21,17 +42,80 @@
 
         // Create the map
         const map = L.map('map').setView([decodedPolyline[0][0], decodedPolyline[0][1]], 13); // Center on the first point
+        const mapContainer = document.getElementById('map'); // Get the map container element
+        mapContainer.style.backgroundColor = 'transparent'; // Set initial background to transparent
 
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Define Tile Layers
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        });
+
+        const positronLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        });
+
+        const positronLabelsLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        });
+
+        const darkMatterLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        });
+
+        const darkMatterLabelsLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        });
+
+        // Add the default OSM layer initially
+        let currentLayer = null; // Keep track of the current layer, start with none
 
         // Convert array to Leaflet LatLng format
         const latLngs = decodedPolyline.map(point => L.latLng(point[0], point[1]));
 
         // Create the polyline and add it to the map
         L.polyline(latLngs, { color: 'blue' }).addTo(map);
+
+        // Add event listener to the dropdown
+        document.getElementById('map-selector').addEventListener('change', function(e) {
+            const selectedValue = e.target.value;
+
+            // Remove the current layer
+            if (currentLayer) {
+                map.removeLayer(currentLayer);
+            }
+
+            // Add the selected layer
+            if (selectedValue === 'osm') {
+                // No layer for the 'osm' option, just the polyline
+                currentLayer = null;
+                mapContainer.style.backgroundColor = 'transparent'; // Set background transparent
+            } else if (selectedValue === 'positron') {
+                currentLayer = positronLayer;
+                mapContainer.style.backgroundColor = ''; // Reset background for tile layers
+            } else if (selectedValue === 'positron_labels') {
+                currentLayer = positronLabelsLayer;
+                mapContainer.style.backgroundColor = ''; // Reset background for tile layers
+            } else if (selectedValue === 'darkmatter') {
+                currentLayer = darkMatterLayer;
+                mapContainer.style.backgroundColor = ''; // Reset background for tile layers
+            } else if (selectedValue === 'darkmatter_labels') {
+                currentLayer = darkMatterLabelsLayer;
+                mapContainer.style.backgroundColor = ''; // Reset background for tile layers
+            }
+
+            if (currentLayer) {
+                currentLayer.addTo(map);
+            }
+        });
+
     </script>
 </body>
 </html>
