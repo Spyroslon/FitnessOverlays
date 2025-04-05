@@ -2,7 +2,6 @@
 venv
 *venv/
 .env
-.tokens*
 *jpg
 *png
 __pycache__/
