@@ -680,21 +680,39 @@
                 const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
                 const columnWidth = availableWidth / columns;
                 
-                // Calculate dynamic font sizes based on available space
-                const maxFontBase = Math.min(
-                    logicalHeight / (itemsPerColumn * 4), // Increased division factor for better scaling
-                    columnWidth * 0.12, // Reduced width factor for better fit
-                    BASE_FONT_SIZE // Maximum size cap
-                );
+                // Calculate dynamic font sizes based on available space and number of metrics
+                const totalItems = metrics.length;
+                const minVerticalMargin = logicalHeight * 0.1; // 10% margin top and bottom
+                const availableHeight = logicalHeight - (minVerticalMargin * 2);
                 
+                // Calculate maximum possible item height considering spacing between items
+                const maxItemHeight = availableHeight / (itemsPerColumn + (itemsPerColumn - 1) * 0.5); // 0.5 is the spacing factor
+                
+                // Calculate font sizes based on available height
+                const maxFontBase = Math.min(
+                    maxItemHeight * 0.4, // Base size relative to item height
+                    columnWidth * 0.12, // Width constraint
+                    BASE_FONT_SIZE // Absolute maximum size
+                );
+
+                // Apply size multipliers while ensuring content fits
                 let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
                 let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
+
+                // Additional scaling if content still doesn't fit
+                const scaleFactor = Math.min(
+                    1,
+                    availableHeight / ((titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumn + (METRIC_GROUP_SPACING * (itemsPerColumn - 1)))
+                );
+
+                titleFontSize *= scaleFactor;
+                valueFontSize *= scaleFactor;
 
                 // Ensure minimum font size
                 titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
                 valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
 
-                // Calculate spacing
+                // Calculate final spacing
                 const itemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
                 const totalContentHeight = (itemHeight * itemsPerColumn) + 
                                         (METRIC_GROUP_SPACING * (Math.max(0, itemsPerColumn - 1)));
