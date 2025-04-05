@@ -56,11 +56,11 @@
             -webkit-appearance: none;
             appearance: none;
             background: none;
-            border: none;
             cursor: pointer;
-            padding: 0;
-            width: 48px;
-            height: 48px;
+            padding: 0; /* Remove padding */
+            width: 48px; /* Explicit size */
+            height: 48px; /* Explicit size */
+            border-radius: 0.5rem; /* Match button radius */
         }
 
         input[type="color"]::-webkit-color-swatch-wrapper {
@@ -71,10 +71,11 @@
             border: 2px solid #fc4c02;
             border-radius: 8px;
             padding: 0;
-            background: linear-gradient(135deg, 
-            #FFB3BA, #BAFFC9, #BAE1FF,
-            #FFD700, #FFB6C1, #98FF98,
-            #E6E6FA, #FFC0CB);
+            background: conic-gradient(
+                #FF3366, #FF6633, #FFCC33, 
+                #33CC66, #3399FF, #6633CC, 
+                #CC33FF, #FF3366
+            );
         }
 
         /* Firefox */
@@ -82,10 +83,11 @@
             border: 2px solid #fc4c02;
             border-radius: 8px;
             padding: 0;
-            background: linear-gradient(135deg,
-            #FFB3BA, #BAFFC9, #BAE1FF,
-            #FFD700, #FFB6C1, #98FF98,
-            #E6E6FA, #FFC0CB);
+            background: conic-gradient(
+                #FF3366, #FF6633, #FFCC33, 
+                #33CC66, #3399FF, #6633CC, 
+                #CC33FF, #FF3366
+            );
         }
 
         /* Update text alignment button styles - replace all previous .text-align-btn styles */
@@ -146,9 +148,7 @@
             display: flex;
             gap: 1rem;
             align-items: center;
-            background: #f8f8f8;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
+            /* Remove background/padding/border from the main container */
         }
 
         .size-controls-group {
@@ -171,9 +171,10 @@
             letter-spacing: 0.05em;
         }
 
-        /* Add column control button style */
-        .column-btn {
+        /* Style for Cycle Buttons (Align, Size, Column) */
+        .cycle-btn {
             display: flex;
+            flex-direction: column; /* Stack icon/text vertically */
             align-items: center;
             justify-content: center;
             border: 2px solid #fc4c02;
@@ -182,19 +183,38 @@
             border-radius: 0.5rem;
             transition: all 0.2s;
             font-weight: bold;
-            font-size: 0.75rem;
-            padding: 0.5rem;
-            gap: 0.25rem;
+            padding: 0.25rem; /* Reduced padding slightly */
+            gap: 0; /* Remove gap if stacking icon/text */
+            width: 48px; /* Explicit size */
+            height: 48px; /* Explicit size */
+            font-size: 0.875rem; /* Standardize font size */
+            text-align: center; /* Ensure text inside is centered */
+            line-height: 1; /* Adjust line height for better vertical centering */
         }
 
-        .column-btn:hover {
+        .cycle-btn:hover {
             background-color: #f3f4f6;
         }
 
-        .column-btn.active {
-            background-color: #fc4c02;
-            color: white;
+        /* REMOVED Specific width/size for alignment button */
+        /* #alignCycleBtn { ... } */
+        #alignCycleBtn svg {
+            width: 24px; 
+            height: 24px;
         }
+        
+        /* REMOVED Specific width/size/font for size buttons */
+        /* .size-cycle-btn { ... } */
+
+        /* Ensure column button SVG and text fit */
+        #columnToggle svg {
+            width: 20px; /* Slightly smaller icon */
+            height: 20px;
+        }
+         #columnToggle span {
+             font-size: 0.75rem; /* Smaller number */
+             line-height: 1; /* Adjust line height */
+         }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40">
@@ -266,7 +286,7 @@
                 </div>
 
                 <!-- Section Contents -->
-                <div id="textSection" class="section-content">
+                <div id="textSection" class="section-content space-y-4">
                     <div id="overlayOptions" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                         <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="distance">Distance</button>
                         <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="movingTime">Time</button>
@@ -278,61 +298,44 @@
                         <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="sufferScore">Suffer Score</button>
                     </div>
 
-                    <!-- Replace text controls container content -->
-                    <div class="flex items-center gap-6 mt-4">
-                        <div class="relative group">
-                            <input type="color" id="colorWheel" value="#ffffff" 
+                    <!-- Unified Controls Container -->
+                    <div class="flex justify-center items-end flex-wrap gap-4 mt-4">
+                        <!-- Color Picker -->
+                        <div class="flex flex-col items-center gap-1">
+                            <!-- <div class="size-label">Color</div> -->
+                            <input type="color" id="colorWheel" value="#ffffff"
                                 class="transition-transform hover:scale-105 focus:scale-105"
                                 title="Choose text color">
+                                <!-- Size set via CSS -->
                         </div>
-
-                        <!-- Text Alignment buttons -->
-                        <div class="flex gap-1">
-                            <button class="text-align-btn" data-align="left" title="Align Left">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h10M4 14h16M4 18h10" />
-                                </svg>
-                            </button>
-                            <button class="text-align-btn active" data-align="center" title="Center">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M7 10h10M4 14h16M7 18h10" />
-                                </svg>
-                            </button>
-                            <button class="text-align-btn" data-align="right" title="Align Right">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M10 10h10M4 14h16M10 18h10" />
-                                </svg>
+                        <!-- Alignment Cycle Button -->
+                         <div class="flex flex-col items-center gap-1">
+                            <!-- <div class="size-label">Align</div> -->
+                             <button id="alignCycleBtn" class="cycle-btn" title="Cycle Text Alignment">
+                                 <!-- SVG inserted by JS -->
+                             </button>
+                         </div>
+                        <!-- Label Size Cycle Button -->
+                         <div class="size-controls-group">
+                            <button id="labelSizeCycleBtn" class="cycle-btn" title="Cycle Label Size">
+                                <span id="labelSizeIndicator">M</span>
                             </button>
                         </div>
-
-                        <div class="size-controls">
-                            <div class="size-controls-group">
-                                <div class="size-label">Labels</div>
-                                <div class="size-buttons">
-                                    <button class="size-btn" data-label-size="small" title="Small Labels">S</button>
-                                    <button class="size-btn active" data-label-size="medium" title="Medium Labels">M</button>
-                                    <button class="size-btn" data-label-size="large" title="Large Labels">L</button>
-                                </div>
-                            </div>
-
-                            <div class="size-controls-group">
-                                <div class="size-label">Values</div>
-                                <div class="size-buttons">
-                                    <button class="size-btn" data-value-size="small" title="Small Values">S</button>
-                                    <button class="size-btn active" data-value-size="medium" title="Medium Values">M</button>
-                                    <button class="size-btn" data-value-size="large" title="Large Values">L</button>
-                                </div>
-                            </div>
-
-                            <div class="size-controls-group">
-                                <div class="size-label">Columns</div>
-                                <button class="column-btn active" id="columnToggle" title="Toggle number of columns">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125Z" />
-                                    </svg>
-                                    <span id="columnCount">1</span>
-                                </button>
-                            </div>
+                        <!-- Value Size Cycle Button -->
+                         <div class="size-controls-group">
+                            <button id="valueSizeCycleBtn" class="cycle-btn" title="Cycle Value Size">
+                                <span id="valueSizeIndicator">M</span>
+                            </button>
+                        </div>
+                        <!-- Columns Cycle Button -->
+                         <div class="size-controls-group">
+                            <button class="cycle-btn" id="columnToggle" title="Toggle number of columns">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="">
+                                    <!-- Size set via CSS -->
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125Z" />
+                                </svg>
+                                <span id="columnCount">1</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -418,9 +421,9 @@
                 selectedMapStyle: 'light', // Default map style
                 selectedGraphType: 'pace', // Default graph type
                 activeSection: 'text', // Track active section
-                labelSize: 'medium',
-                valueSize: 'medium',
-                columns: 1 // Add columns to state
+                labelSize: 'small', // Default small
+                valueSize: 'medium', // Default medium
+                columns: 1 
             };
 
             const SIZE_MULTIPLIERS = {
@@ -625,16 +628,68 @@
             const copyImageBtn = document.getElementById('copyImageBtn');
             const toast = document.getElementById('toast');
 
-            let currentTextColor = '#ffffff'; // Default text color (white, as per color wheel initial value)
+            // --- Define Cycle Orders --- 
+            const ALIGN_ORDER = ['left', 'center', 'right'];
+            const SIZE_ORDER = ['small', 'medium', 'large'];
+            const SIZE_DISPLAY = { small: 'S', medium: 'M', large: 'L' };
+            const ALIGN_ICONS = {
+                left: `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h10M4 14h16M4 18h10" />
+                    </svg>`,
+                center: `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M7 10h10M4 14h16M7 18h10" />
+                    </svg>`,
+                right: `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M10 10h10M4 14h16M10 18h10" />
+                    </svg>`
+            };
+
+            // --- Get Cycle Button Elements ---
+            const alignCycleBtn = document.getElementById('alignCycleBtn');
+            const labelSizeCycleBtn = document.getElementById('labelSizeCycleBtn');
+            const valueSizeCycleBtn = document.getElementById('valueSizeCycleBtn');
+            const labelSizeIndicator = document.getElementById('labelSizeIndicator');
+            const valueSizeIndicator = document.getElementById('valueSizeIndicator');
+            const columnToggleBtn = document.getElementById('columnToggle'); // Existing column button
+            const columnCountSpan = document.getElementById('columnCount'); // Existing column count span
+
+            // --- Helper functions to update button appearance ---
+            function updateAlignButton() {
+                if (alignCycleBtn) {
+                    // Use textContent and innerHTML carefully
+                    alignCycleBtn.innerHTML = ALIGN_ICONS[state.textAlign] || ALIGN_ICONS['center']; // Default to center icon if state is invalid
+                }
+            }
+
+            function updateLabelSizeButton() {
+                if (labelSizeIndicator) {
+                    labelSizeIndicator.textContent = SIZE_DISPLAY[state.labelSize] || 'M'; // Default to M
+                }
+            }
+
+            function updateValueSizeButton() {
+                if (valueSizeIndicator) {
+                    valueSizeIndicator.textContent = SIZE_DISPLAY[state.valueSize] || 'M'; // Default to M
+                }
+            }
+            
+            function updateColumnButton() {
+                 if (columnCountSpan) {
+                    columnCountSpan.textContent = state.columns;
+                }
+            }
 
             // --- Constants for Drawing ---
-            const BASE_FONT_SIZE = 24; // Reduced base size
-            const VALUE_FONT_SIZE_MULTIPLIER = 1.2; // Slightly reduced multiplier
-            const MIN_FONT_SIZE = 8; // Smaller minimum font size
-            const VERTICAL_PADDING_FACTOR = 0.85; // Slightly reduced to ensure content fits
+            const BASE_FONT_SIZE = 28; // Increased base size slightly
+            const VALUE_FONT_SIZE_MULTIPLIER = 1.2; 
+            const MIN_FONT_SIZE = 10; // Slightly larger minimum font size
+            const VERTICAL_PADDING_FACTOR = 0.9; // Use slightly more vertical space
             const METRIC_GROUP_SPACING = 40; // Increased space between metric groups
-            const LABEL_VALUE_SPACING = 6; // Reduced space between label and value
-            const HORIZONTAL_PADDING = 30; // Padding from canvas edges
+            const LABEL_VALUE_SPACING = 6; 
+            const HORIZONTAL_PADDING = 30; 
 
             function resizeCanvas() {
                 const container = canvas.parentElement;
@@ -668,100 +723,119 @@
 
                 if (metrics.length === 0) return;
 
+                const numItems = metrics.length;
+                const requestedColumns = state.columns;
+
+                // --- Font Size Calculation Logic (Based on Requested Columns) ---
+                // Determine columns for scaling: respect request, but not more than items
+                let actualColsForSizing = Math.min(requestedColumns, numItems);
+                if (numItems === 1) actualColsForSizing = 1;
+                actualColsForSizing = Math.max(1, actualColsForSizing);
+
+                // Calculate *maximum* items per column if distributed across requested columns (for scaling)
+                const itemsPerColumnForSizing = Math.ceil(numItems / actualColsForSizing);
+
                 const dpr = window.devicePixelRatio || 1;
                 const logicalWidth = overlayCanvas.width / dpr;
                 const logicalHeight = overlayCanvas.height / dpr;
-
-                // Calculate columns
-                const columns = Math.min(state.columns, metrics.length);
-                const itemsPerColumn = Math.ceil(metrics.length / columns);
-                
-                // Calculate available width per column with padding
                 const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
-                const columnWidth = availableWidth / columns;
-                
-                // Calculate dynamic font sizes based on available space and number of metrics
-                const totalItems = metrics.length;
-                const minVerticalMargin = logicalHeight * 0.1; // 10% margin top and bottom
+                const columnWidthForSizing = availableWidth / actualColsForSizing;
+                const minVerticalMargin = logicalHeight * 0.1;
                 const availableHeight = logicalHeight - (minVerticalMargin * 2);
-                
-                // Calculate maximum possible item height considering spacing between items
-                const maxItemHeight = availableHeight / (itemsPerColumn + (itemsPerColumn - 1) * 0.5); // 0.5 is the spacing factor
-                
-                // Calculate font sizes based on available height
+
+                // Estimate max item height based on available vertical space and itemsPerColumnForSizing
+                const estimatedSpacingFactor = 0.6;
+                const maxItemHeightDenominator = itemsPerColumnForSizing + Math.max(0, itemsPerColumnForSizing - 1) * estimatedSpacingFactor;
+                const maxItemHeight = availableHeight / Math.max(1, maxItemHeightDenominator);
+
                 const maxFontBase = Math.min(
-                    maxItemHeight * 0.4, // Base size relative to item height
-                    columnWidth * 0.12, // Width constraint
-                    BASE_FONT_SIZE // Absolute maximum size
+                    maxItemHeight * 0.45,       
+                    columnWidthForSizing * 0.15, 
+                    BASE_FONT_SIZE             
                 );
 
-                // Apply size multipliers while ensuring content fits
                 let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
                 let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
+                let dynamicGroupSpacing = titleFontSize * 1.6; 
 
-                // Additional scaling if content still doesn't fit
-                const scaleFactor = Math.min(
-                    1,
-                    availableHeight / ((titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumn + (METRIC_GROUP_SPACING * (itemsPerColumn - 1)))
-                );
+                let neededHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing +
+                                   (dynamicGroupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
+                const scaleFactor = Math.min(1, availableHeight / Math.max(1, neededHeight));
 
                 titleFontSize *= scaleFactor;
                 valueFontSize *= scaleFactor;
+                dynamicGroupSpacing *= scaleFactor;
 
-                // Ensure minimum font size
                 titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
                 valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
+                dynamicGroupSpacing = Math.max(dynamicGroupSpacing, LABEL_VALUE_SPACING * 0.5);
 
-                // Calculate final spacing
-                const itemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
-                const totalContentHeight = (itemHeight * itemsPerColumn) + 
-                                        (METRIC_GROUP_SPACING * (Math.max(0, itemsPerColumn - 1)));
+                const finalItemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
+                // --- End Font Size Calculation ---
 
-                // Center content vertically
-                const startY = (logicalHeight - totalContentHeight) / 2;
+                // --- Drawing Logic (Based on Actual Distribution) ---
+                // Determine the actual number of columns to draw into
+                const drawableColumns = Math.min(requestedColumns, numItems);
+                // Calculate the number of rows needed based on requested columns
+                const numRows = Math.ceil(numItems / requestedColumns);
 
-                // Draw metrics in columns
+                // Calculate the total content height based on the number of rows needed
+                const finalTotalContentHeight = (finalItemHeight * numRows) + 
+                                                (dynamicGroupSpacing * Math.max(0, numRows - 1));
+
+                const startY = (logicalHeight - finalTotalContentHeight) / 2;
+
+                context.textBaseline = 'middle';
                 metrics.forEach((metric, index) => {
-                    const columnIndex = Math.floor(index / itemsPerColumn);
-                    const itemIndex = index % itemsPerColumn;
-                    
-                    // Calculate x position based on alignment and columns
+                    // Determine column and row index based on HORIZONTAL filling across requested columns
+                    const columnIndex = index % requestedColumns;
+                    const rowIndex = Math.floor(index / requestedColumns);
+
+                    // Calculate x position based on the number of *drawable* columns and the column index
+                    const columnWidth = availableWidth / drawableColumns;
                     let xPos;
-                    if (columns === 1) {
-                        // Single column uses text alignment
+
+                    if (drawableColumns === 1) {
+                        context.textAlign = state.textAlign;
                         switch (state.textAlign) {
-                            case 'left':
-                                xPos = HORIZONTAL_PADDING;
-                                break;
-                            case 'right':
-                                xPos = logicalWidth - HORIZONTAL_PADDING;
-                                break;
-                            default: // center
-                                xPos = logicalWidth / 2;
+                            case 'left': xPos = HORIZONTAL_PADDING; break;
+                            case 'right': xPos = logicalWidth - HORIZONTAL_PADDING; break;
+                            default: xPos = logicalWidth / 2;
                         }
                     } else {
-                        // Multiple columns are always centered in their column
-                        xPos = HORIZONTAL_PADDING + (columnWidth * columnIndex) + (columnWidth / 2);
+                        // Multi-column: Apply alignment within the column slot
+                        context.textAlign = state.textAlign; // Set alignment based on state
+                        const slotLeft = HORIZONTAL_PADDING + (columnWidth * columnIndex);
+                        const slotCenter = slotLeft + (columnWidth / 2);
+                        const slotRight = slotLeft + columnWidth;
+
+                        switch (state.textAlign) {
+                            case 'left': 
+                                xPos = slotLeft;
+                                break;
+                            case 'right': 
+                                xPos = slotRight;
+                                break;
+                            default: // center
+                                xPos = slotCenter;
+                        }
                     }
 
-                    const yBase = startY + (itemIndex * (itemHeight + METRIC_GROUP_SPACING));
-
-                    // Set text alignment
-                    context.textAlign = columns === 1 ? state.textAlign : 'center';
+                    // Calculate the top Y based on the row index
+                    const itemSlotTopY = startY + (rowIndex * (finalItemHeight + dynamicGroupSpacing));
+                    const itemSlotCenterY = itemSlotTopY + finalItemHeight / 2;
                     context.fillStyle = state.textColor;
-                    
-                    // Draw label
-                    context.font = `${titleFontSize}px Roboto`;
-                    context.fillText(metric.name, xPos, yBase + titleFontSize/2);
 
-                    // Draw value
+                    const textPairHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
+                    const labelYOffset = -(textPairHeight / 2) + (titleFontSize / 2);
+                    const valueYOffset = (textPairHeight / 2) - (valueFontSize / 2);
+
+                    context.font = `${titleFontSize}px Roboto`;
+                    context.fillText(metric.name, xPos, itemSlotCenterY + labelYOffset);
                     context.font = `bold ${valueFontSize}px Roboto`;
-                    context.fillText(
-                        metric.value,
-                        xPos,
-                        yBase + titleFontSize + LABEL_VALUE_SPACING + valueFontSize/2
-                    );
+                    context.fillText(metric.value, xPos, itemSlotCenterY + valueYOffset);
                 });
+                context.textBaseline = 'alphabetic';
             }
 
             // Existing code
@@ -797,79 +871,6 @@
 
             // --- Ported getCroppedDimensions from old file, adapted for new drawing logic ---
             function getCroppedDimensions(data, context, canvasRef) {
-                if (!canvasRef) return { x: 0, y: 0, width: 0, height: 0 }; // Handle missing canvas
-
-                const metrics = state.selectedMetrics
-                    .map(key => ({
-                        name: getMetricLabel(key),
-                        value: data[key]
-                    }))
-                    .filter(metric => metric.value !== null && metric.value !== undefined);
-
-                if (metrics.length === 0) return { x: 0, y: 0, width: canvasRef.width, height: canvasRef.height }; // Return full canvas if empty
-
-                const dpr = window.devicePixelRatio || 1;
-                const canvasWidthLogical = canvasRef.width / dpr;
-                const canvasHeightLogical = canvasRef.height / dpr;
-                const maxHeightLogical = canvasHeightLogical * VERTICAL_PADDING_FACTOR;
-                const centerXLogical = canvasWidthLogical / 2;
-                const centerYLogical = canvasHeightLogical / 2;
-
-                // Recalculate font sizes exactly as in drawMetrics
-                let titleFontSize = BASE_FONT_SIZE;
-                let valueFontSize = BASE_FONT_SIZE * VALUE_FONT_SIZE_MULTIPLIER;
-                let spacing = ITEM_SPACING;
-                let totalHeightLogical;
-                do {
-                    const itemHeight = titleFontSize + valueFontSize + 5;
-                    const totalSpacing = (metrics.length - 1) * spacing;
-                    totalHeightLogical = (metrics.length * itemHeight) + totalSpacing;
-                    if (totalHeightLogical > maxHeightLogical && titleFontSize > MIN_FONT_SIZE) {
-                        titleFontSize *= 0.95;
-                        valueFontSize *= 0.95;
-                        spacing *= 0.95;
-                    } else {
-                        break;
-                    }
-                } while (true);
-
-                // Calculate content bounds (in physical pixels)
-                const contentHeightPhysical = totalHeightLogical * dpr;
-                const startYPhysical = (centerYLogical - (totalHeightLogical / 2)) * dpr;
-                const endYPhysical = startYPhysical + contentHeightPhysical;
-
-                // Calculate horizontal bounds based on the actual font sizes used (physical pixels)
-                let maxTextWidthPhysical = 0;
-                context.textAlign = 'center'; // Ensure context is set correctly for measurement
-                metrics.forEach(metric => {
-                    context.font = `normal ${titleFontSize * dpr}px Roboto`;
-                    const titleWidth = context.measureText(metric.name).width;
-                    context.font = `bold ${valueFontSize * dpr}px Roboto`;
-                    const valueWidth = context.measureText(metric.value).width;
-                    maxTextWidthPhysical = Math.max(maxTextWidthPhysical, titleWidth, valueWidth);
-                });
-
-                const centerXPhysical = canvasRef.width / 2;
-                const contentStartXPhysical = centerXPhysical - (maxTextWidthPhysical / 2);
-                // const contentEndXPhysical = centerXPhysical + (maxTextWidthPhysical / 2); // Not needed directly
-
-                const marginPhysical = 20 * dpr; // Margin in physical pixels
-
-                // Return dimensions in physical pixels, clamped to canvas bounds
-                const finalX = Math.max(0, contentStartXPhysical - marginPhysical);
-                const finalY = Math.max(0, startYPhysical - marginPhysical);
-                const finalWidth = Math.min(canvasRef.width - finalX, maxTextWidthPhysical + (2 * marginPhysical));
-                const finalHeight = Math.min(canvasRef.height - finalY, contentHeightPhysical + (2 * marginPhysical));
-
-                 return {
-                    x: finalX,
-                    y: finalY,
-                    width: finalWidth,
-                    height: finalHeight
-                };
-            }
-
-            function getCroppedDimensions(data, context, canvasRef) {
                 if (!canvasRef) return { x: 0, y: 0, width: 0, height: 0 };
                 
                 const metrics = state.selectedMetrics
@@ -879,60 +880,144 @@
                     }))
                     .filter(metric => metric.value !== null && metric.value !== undefined);
 
-                if (metrics.length === 0) return { x: 0, y: 0, width: canvasRef.width, height: canvasRef.height };
+                if (metrics.length === 0) return { x: 0, y: 0, width: canvasRef.width, height: canvasRef.height }; // Return full canvas if empty
 
+                const numItems = metrics.length;
+                const requestedColumns = state.columns;
                 const dpr = window.devicePixelRatio || 1;
-                const canvasWidthLogical = canvasRef.width / dpr;
-                const canvasHeightLogical = canvasRef.height / dpr;
 
-                // Calculate font sizes just like in drawMetrics
-                const baseFontSize = Math.min(canvasHeightLogical * 0.07, 40);
-                let titleFontSize = baseFontSize;
-                let valueFontSize = baseFontSize * 1.2;
-                let spacing = baseFontSize * 0.8;
+                // --- Replicate Font Size and Layout Calculations from drawMetrics --- 
+                // (This duplicates logic, but ensures the bounding box matches the drawing)
+                let actualColsForSizing = Math.min(requestedColumns, numItems);
+                if (numItems === 1) actualColsForSizing = 1;
+                actualColsForSizing = Math.max(1, actualColsForSizing);
+                const itemsPerColumnForSizing = Math.ceil(numItems / actualColsForSizing);
 
-                // Find the widest text
-                context.textAlign = 'center'; // Temporarily set to center for measurement
-                let maxWidth = 0;
-                metrics.forEach(metric => {
+                const logicalWidth = canvasRef.width / dpr;
+                const logicalHeight = canvasRef.height / dpr;
+                const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
+                const columnWidthForSizing = availableWidth / actualColsForSizing;
+                const minVerticalMargin = logicalHeight * 0.1;
+                const availableHeight = logicalHeight - (minVerticalMargin * 2);
+
+                const estimatedSpacingFactor = 0.6;
+                const maxItemHeightDenominator = itemsPerColumnForSizing + Math.max(0, itemsPerColumnForSizing - 1) * estimatedSpacingFactor;
+                const maxItemHeight = availableHeight / Math.max(1, maxItemHeightDenominator);
+                const maxFontBase = Math.min(maxItemHeight * 0.45, columnWidthForSizing * 0.15, BASE_FONT_SIZE);
+
+                let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
+                let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
+                let dynamicGroupSpacing = titleFontSize * 1.6;
+                let neededHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing +
+                                   (dynamicGroupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
+                const scaleFactor = Math.min(1, availableHeight / Math.max(1, neededHeight));
+
+                titleFontSize *= scaleFactor;
+                valueFontSize *= scaleFactor;
+                dynamicGroupSpacing *= scaleFactor;
+                titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
+                valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
+                dynamicGroupSpacing = Math.max(dynamicGroupSpacing, LABEL_VALUE_SPACING * 0.5);
+                const finalItemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
+
+                const drawableColumns = Math.min(requestedColumns, numItems);
+                const numRows = Math.ceil(numItems / requestedColumns);
+                const finalTotalContentHeight = (finalItemHeight * numRows) + (dynamicGroupSpacing * Math.max(0, numRows - 1));
+                const startY = (logicalHeight - finalTotalContentHeight) / 2;
+                // --- End Calculation Replication ---
+
+                // --- Calculate Bounding Box --- 
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                const margin = 10; // Pixel margin around content for cropping
+
+                metrics.forEach((metric, index) => {
+                    const columnIndex = index % requestedColumns;
+                    const rowIndex = Math.floor(index / requestedColumns);
+                    const columnWidth = availableWidth / drawableColumns;
+                    let xPos;
+                    let currentTextAlign = state.textAlign; // Use state alignment
+
+                    // Determine horizontal position based on alignment and columns
+                    const slotLeft = HORIZONTAL_PADDING + (columnWidth * columnIndex);
+                    const slotCenter = slotLeft + (columnWidth / 2);
+                    const slotRight = slotLeft + columnWidth;
+
+                    if (drawableColumns === 1) {
+                         // Single column uses state alignment
+                         switch (currentTextAlign) {
+                             case 'left': xPos = HORIZONTAL_PADDING; break;
+                             case 'right': xPos = logicalWidth - HORIZONTAL_PADDING; break;
+                             default: xPos = logicalWidth / 2;
+                         }
+                    } else {
+                         // Multi-column alignment within slot
+                         switch (currentTextAlign) {
+                             case 'left': xPos = slotLeft; break;
+                             case 'right': xPos = slotRight; break;
+                             default: xPos = slotCenter;
+                         }
+                    }
+                    
+                    // Calculate vertical position
+                    const itemSlotTopY = startY + (rowIndex * (finalItemHeight + dynamicGroupSpacing));
+                    const itemSlotCenterY = itemSlotTopY + finalItemHeight / 2;
+                    const textPairHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
+                    const labelY = itemSlotCenterY - (textPairHeight / 2) + (titleFontSize / 2);
+                    const valueY = itemSlotCenterY + (textPairHeight / 2) - (valueFontSize / 2);
+
+                    // Measure text widths (use physical pixels for context measurement)
+                    context.textAlign = currentTextAlign; // Ensure context alignment is set
                     context.font = `${titleFontSize * dpr}px Roboto`;
-                    const titleWidth = context.measureText(metric.name).width;
+                    const labelWidth = context.measureText(metric.name).width;
                     context.font = `bold ${valueFontSize * dpr}px Roboto`;
                     const valueWidth = context.measureText(metric.value).width;
-                    maxWidth = Math.max(maxWidth, titleWidth, valueWidth);
+
+                    // Calculate bounding box for this specific metric pair (in logical pixels first)
+                    let currentMinX, currentMaxX;
+                    const textTop = labelY - titleFontSize / 2; 
+                    const textBottom = valueY + valueFontSize / 2;
+
+                    switch(currentTextAlign) {
+                        case 'left':
+                            currentMinX = xPos;
+                            currentMaxX = xPos + Math.max(labelWidth / dpr, valueWidth / dpr); // Use logical width
+                            break;
+                        case 'right':
+                            currentMinX = xPos - Math.max(labelWidth / dpr, valueWidth / dpr);
+                            currentMaxX = xPos;
+                            break;
+                        default: // center
+                            const halfMaxWidth = Math.max(labelWidth / dpr, valueWidth / dpr) / 2;
+                            currentMinX = xPos - halfMaxWidth;
+                            currentMaxX = xPos + halfMaxWidth;
+                    }
+
+                    // Update overall bounds
+                    minX = Math.min(minX, currentMinX);
+                    minY = Math.min(minY, textTop); // Top of the label
+                    maxX = Math.max(maxX, currentMaxX);
+                    maxY = Math.max(maxY, textBottom); // Bottom of the value
                 });
 
-                // Calculate content height
-                const totalHeight = metrics.length * (titleFontSize + valueFontSize + spacing) * dpr;
-                const padding = TEXT_PADDING * dpr;
-                
-                // Calculate crop box position based on alignment
-                let x, width;
-                if (state.textAlign === 'left') {
-                    x = padding;
-                    width = maxWidth + padding * 2;
-                } else if (state.textAlign === 'right') {
-                    x = canvasRef.width - maxWidth - padding * 2;
-                    width = maxWidth + padding * 2;
-                } else {
-                    // center alignment
-                    x = (canvasRef.width - maxWidth) / 2 - padding;
-                    width = maxWidth + padding * 2;
+                // If no bounds found (e.g., error), return full canvas
+                if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+                    console.warn("Could not determine finite bounds for cropping.");
+                    return { x: 0, y: 0, width: canvasRef.width, height: canvasRef.height };
                 }
 
-                // Vertical centering remains the same
-                const y = (canvasRef.height - totalHeight) / 2 - padding;
-                const height = totalHeight + padding * 2;
+                // Convert final bounds to physical pixels and add margin
+                const finalX = Math.max(0, (minX * dpr) - margin * dpr);
+                const finalY = Math.max(0, (minY * dpr) - margin * dpr);
+                const finalWidth = Math.min(canvasRef.width - finalX, ((maxX - minX) * dpr) + 2 * margin * dpr);
+                const finalHeight = Math.min(canvasRef.height - finalY, ((maxY - minY) * dpr) + 2 * margin * dpr);
 
                 return {
-                    x: Math.max(0, x),
-                    y: Math.max(0, y),
-                    width: Math.min(canvasRef.width - x, width),
-                    height: Math.min(canvasRef.height - y, height)
+                    x: finalX,
+                    y: finalY,
+                    width: Math.max(1, finalWidth), // Ensure width is at least 1
+                    height: Math.max(1, finalHeight) // Ensure height is at least 1
                 };
             }
-
-            // --- End Ported getCroppedDimensions ---
 
             function getMetricLabel(metricKey) {
                 const labels = {
@@ -1265,13 +1350,40 @@
                 });
             });
 
-            // Add after existing event listeners
-            document.getElementById('columnToggle').addEventListener('click', () => {
-                // Cycle through 1, 2, 3, 4 columns
-                state.columns = (state.columns % 4) + 1;
-                document.getElementById('columnCount').textContent = state.columns;
+            // --- Cycle Button Event Listeners ---
+            alignCycleBtn?.addEventListener('click', () => {
+                const currentIndex = ALIGN_ORDER.indexOf(state.textAlign);
+                state.textAlign = ALIGN_ORDER[(currentIndex + 1) % ALIGN_ORDER.length];
+                updateAlignButton();
                 generateOverlay(StravaData);
             });
+
+            labelSizeCycleBtn?.addEventListener('click', () => {
+                const currentIndex = SIZE_ORDER.indexOf(state.labelSize);
+                state.labelSize = SIZE_ORDER[(currentIndex + 1) % SIZE_ORDER.length];
+                updateLabelSizeButton();
+                generateOverlay(StravaData);
+            });
+
+            valueSizeCycleBtn?.addEventListener('click', () => {
+                const currentIndex = SIZE_ORDER.indexOf(state.valueSize);
+                state.valueSize = SIZE_ORDER[(currentIndex + 1) % SIZE_ORDER.length];
+                updateValueSizeButton();
+                generateOverlay(StravaData);
+            });
+
+            columnToggleBtn?.addEventListener('click', () => {
+                // Cycle through 1, 2, 3, 4 columns
+                state.columns = (state.columns % 4) + 1;
+                updateColumnButton();
+                generateOverlay(StravaData);
+            });
+            
+            // --- Initial Button States ---
+            updateAlignButton();
+            updateLabelSizeButton();
+            updateValueSizeButton();
+            updateColumnButton(); 
         });
     </script>
 </body>
