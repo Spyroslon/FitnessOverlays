@@ -9,5 +9,6 @@ __pycache__/
 *.py[cod]
 *.pyc
 *.log
+logs/
 .cursor
 instance/

@@ -252,16 +252,19 @@ def logout():
 
 @app.route('/')
 def home():
-    return send_from_directory('.', 'index.html')
+    # Serve index.html from static/html
+    return send_from_directory('static/html', 'index.html')
 
 @app.before_request
 def require_authentication():
     """Serve the authentication required page for unauthenticated users."""
-    if request.path.startswith('/static/'):
-        return  # Allow Flask to serve static files
+    # Allow requests to static files, login, callback, and root path
+    if request.path.startswith('/static/') or request.path in ['/login', '/callback', '/']:
+        return
 
-    if request.path not in ['/', '/login', '/callback'] and 'athlete_id' not in session:
-        return send_from_directory('.', 'auth_required.html')
+    if 'athlete_id' not in session:
+        # Serve auth_required.html from static/html
+        return send_from_directory('static/html', 'auth_required.html')
 
 ALLOWED_EXTENSIONS = {
     '.css', '.js', '.png', '.jpg', '.jpeg', '.gif', 
@@ -672,7 +675,8 @@ def handle_ratelimit_error(e):
 @app.errorhandler(404)
 def page_not_found(e):
     """Handle 404 errors by serving our custom 404 page"""
-    return send_from_directory('.', '404.html'), 404
+    # Serve 404.html from static/html
+    return send_from_directory('static/html', '404.html'), 404
 
 def refresh_access_token(refresh_token):
     """Refresh the access token with robust error handling"""
@@ -755,8 +759,8 @@ def login_required(f):
 @login_required
 def input_activity():
     """Serve the page for inputting Strava activity ID/URL"""
-    # Use send_from_directory to serve from the root
-    return send_from_directory('.', 'input_activity.html')
+    # Serve input_activity.html from static/html
+    return send_from_directory('static/html', 'input_activity.html')
 
 @app.route('/generate_overlays')
 @login_required
@@ -765,7 +769,8 @@ def generate_overlays():
     if not session.get('access_token'):
         return redirect(url_for('login'))
     
-    return send_from_directory('.', 'generate_overlays.html')
+    # Serve generate_overlays.html from static/html
+    return send_from_directory('static/html', 'generate_overlays.html')
 
 if __name__ == '__main__':
     logging.info("Starting Flask application...") # Example log at startup

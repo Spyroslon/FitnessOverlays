@@ -51,7 +51,6 @@ FitOverlays is a sleek and easy-to-use web tool that transforms your Strava acti
 - **Elevation Gain** (e.g., `25 m`)
 - **Calories** (e.g., `809`)
 
-
 ### **Maps** (generated from `summary_polyline`)
 
 - **Light**
@@ -63,4 +62,4 @@ FitOverlays is a sleek and easy-to-use web tool that transforms your Strava acti
 ### **Graphs**
 
 - **Pace Graph** (from pace data if available)  
-- **Heart Rate Graph** (if heartrate data exists) 
+- **Heart Rate Graph** (if heartrate data exists)
