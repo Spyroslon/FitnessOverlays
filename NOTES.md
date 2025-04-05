@@ -29,6 +29,8 @@ pip install -r requirements.txt --upgrade
 
 # Generate requirements with versions
 pip freeze > requirements.txt
+
+npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --minify
 ```
 
 Important: Always test thoroughly after updates!
