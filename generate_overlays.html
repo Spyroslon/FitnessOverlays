@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="html:scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,10 +27,7 @@
         }
     </script>
     <style> 
-        html {
-            scroll-behavior: smooth;
-        }
-
+        /* Keep custom aspect ratio */
         .aspect-9-16 {
             aspect-ratio: 9/16;
             width: 100%;
@@ -39,7 +36,7 @@
             margin: 0 auto;
         }
 
-        /* Add dark checkerboard pattern */
+        /* Keep custom checkerboard */
         canvas.dark-checkerboard {
             background-image:
             linear-gradient(45deg, #333333 25%, transparent 25%),
@@ -51,18 +48,7 @@
             background-color: #4a4a4a;
         }
 
-        /* Style the color picker */
-        input[type="color"] {
-            -webkit-appearance: none;
-            appearance: none;
-            background: none;
-            cursor: pointer;
-            padding: 0; /* Remove padding */
-            width: 48px; /* Explicit size */
-            height: 48px; /* Explicit size */
-            border-radius: 0.5rem; /* Match button radius */
-        }
-
+        /* Keep color picker pseudo-elements */
         input[type="color"]::-webkit-color-swatch-wrapper {
             padding: 0;
         }
@@ -71,6 +57,7 @@
             border: 2px solid #fc4c02;
             border-radius: 8px;
             padding: 0;
+            /* Keep conic gradient background */
             background: conic-gradient(
                 #FF3366, #FF6633, #FFCC33, 
                 #33CC66, #3399FF, #6633CC, 
@@ -83,6 +70,7 @@
             border: 2px solid #fc4c02;
             border-radius: 8px;
             padding: 0;
+            /* Keep conic gradient background */
             background: conic-gradient(
                 #FF3366, #FF6633, #FFCC33, 
                 #33CC66, #3399FF, #6633CC, 
@@ -90,131 +78,6 @@
             );
         }
 
-        /* Update text alignment button styles - replace all previous .text-align-btn styles */
-        .text-align-btn {
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #fc4c02;
-            background-color: white;
-            color: #666666;
-            border-radius: 0.5rem;
-            transition: all 0.2s;
-        }
-
-        .text-align-btn:hover {
-            background-color: #f3f4f6;
-        }
-
-        .text-align-btn.active {
-            background-color: #fc4c02;
-            color: white;
-        }
-
-        .text-align-btn svg {
-            width: 24px;
-            height: 24px;
-        }
-
-        /* Add styles for size control buttons */
-        .size-btn {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #fc4c02;
-            background-color: white;
-            color: #666666;
-            border-radius: 0.5rem;
-            transition: all 0.2s;
-            font-weight: bold;
-            font-size: 0.875rem;
-        }
-
-        .size-btn:hover {
-            background-color: #f3f4f6;
-        }
-
-        .size-btn.active {
-            background-color: #fc4c02;
-            color: white;
-        }
-
-        /* Update size control buttons container style */
-        .size-controls {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            /* Remove background/padding/border from the main container */
-        }
-
-        .size-controls-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .size-controls-group .size-buttons {
-            display: flex;
-            gap: 0.25rem;
-        }
-
-        .size-label {
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: #666666;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        /* Style for Cycle Buttons (Align, Size, Column) */
-        .cycle-btn {
-            display: flex;
-            flex-direction: column; /* Stack icon/text vertically */
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #fc4c02;
-            background-color: white;
-            color: #666666;
-            border-radius: 0.5rem;
-            transition: all 0.2s;
-            font-weight: bold;
-            padding: 0.25rem; /* Reduced padding slightly */
-            gap: 0; /* Remove gap if stacking icon/text */
-            width: 48px; /* Explicit size */
-            height: 48px; /* Explicit size */
-            font-size: 0.875rem; /* Standardize font size */
-            text-align: center; /* Ensure text inside is centered */
-            line-height: 1; /* Adjust line height for better vertical centering */
-        }
-
-        .cycle-btn:hover {
-            background-color: #f3f4f6;
-        }
-
-        /* REMOVED Specific width/size for alignment button */
-        /* #alignCycleBtn { ... } */
-        #alignCycleBtn svg {
-            width: 24px; 
-            height: 24px;
-        }
-        
-        /* REMOVED Specific width/size/font for size buttons */
-        /* .size-cycle-btn { ... } */
-
-        /* Ensure column button SVG and text fit */
-        #columnToggle svg {
-            width: 20px; /* Slightly smaller icon */
-            height: 20px;
-        }
-         #columnToggle span {
-             font-size: 0.75rem; /* Smaller number */
-             line-height: 1; /* Adjust line height */
-         }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40">
@@ -304,37 +167,44 @@
                         <div class="flex flex-col items-center gap-1">
                             <!-- <div class="size-label">Color</div> -->
                             <input type="color" id="colorWheel" value="#ffffff"
-                                class="transition-transform hover:scale-105 focus:scale-105"
+                                class="appearance-none bg-transparent cursor-pointer p-0 w-12 h-12 rounded-lg transition-transform hover:scale-105 focus:scale-105"
                                 title="Choose text color">
                                 <!-- Size set via CSS -->
                         </div>
                         <!-- Alignment Cycle Button -->
                          <div class="flex flex-col items-center gap-1">
                             <!-- <div class="size-label">Align</div> -->
-                             <button id="alignCycleBtn" class="cycle-btn" title="Cycle Text Alignment">
-                                 <!-- SVG inserted by JS -->
+                             <button id="alignCycleBtn" 
+                                     class="flex flex-col items-center justify-center border-2 border-strava-orange bg-white text-strava-gray rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-gray-100"
+                                     title="Cycle Text Alignment">
+                                 <!-- SVG inserted by JS, size class will be added there -->
                              </button>
                          </div>
                         <!-- Label Size Cycle Button -->
-                         <div class="size-controls-group">
-                            <button id="labelSizeCycleBtn" class="cycle-btn" title="Cycle Label Size">
+                         <div class="flex flex-col items-center gap-2">
+                            <button id="labelSizeCycleBtn" 
+                                    class="flex items-center justify-center border-2 border-strava-orange bg-white text-strava-gray rounded-lg transition-all duration-200 font-bold p-1 w-12 h-12 text-sm text-center hover:bg-gray-100" 
+                                    title="Cycle Label Size">
                                 <span id="labelSizeIndicator">M</span>
                             </button>
                         </div>
                         <!-- Value Size Cycle Button -->
-                         <div class="size-controls-group">
-                            <button id="valueSizeCycleBtn" class="cycle-btn" title="Cycle Value Size">
+                         <div class="flex flex-col items-center gap-2">
+                            <button id="valueSizeCycleBtn" 
+                                    class="flex items-center justify-center border-2 border-strava-orange bg-white text-strava-gray rounded-lg transition-all duration-200 font-bold p-1 w-12 h-12 text-sm text-center hover:bg-gray-100" 
+                                    title="Cycle Value Size">
                                 <span id="valueSizeIndicator">M</span>
                             </button>
                         </div>
                         <!-- Columns Cycle Button -->
-                         <div class="size-controls-group">
-                            <button class="cycle-btn" id="columnToggle" title="Toggle number of columns">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="">
-                                    <!-- Size set via CSS -->
+                         <div class="flex flex-col items-center gap-2">
+                            <button id="columnToggle" 
+                                    class="flex flex-col items-center justify-center border-2 border-strava-orange bg-white text-strava-gray rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-gray-100" 
+                                    title="Toggle number of columns">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125Z" />
                                 </svg>
-                                <span id="columnCount">1</span>
+                                <span id="columnCount" class="text-xs leading-none">1</span>
                             </button>
                         </div>
                     </div>
@@ -421,7 +291,7 @@
                 selectedMapStyle: 'light', // Default map style
                 selectedGraphType: 'pace', // Default graph type
                 activeSection: 'text', // Track active section
-                labelSize: 'small', // Default small
+                labelSize: 'small', 
                 valueSize: 'medium', // Default medium
                 columns: 1 
             };
@@ -468,7 +338,7 @@
                     }
                     
                     if (data.authenticated) {
-                        console.log('User is authenticated:', data);  // Log authentication status
+                        console.log('User is authenticated:', data); 
                         // Show profile picture if available
                         if (data.athlete_profile) {
                             const profileContainer = document.getElementById('profile-container');
@@ -492,7 +362,7 @@
                             }
                         }
                     } else {
-                        console.log('User is not authenticated:', data);  // Log authentication status
+                        console.log('User is not authenticated:', data);
                         // Hide profile picture and create buttons when not authenticated
                         document.getElementById('profile-container').classList.add('hidden');
                         document.getElementById('create-overlay-header-btn').classList.add('hidden');
@@ -594,7 +464,6 @@
                 } catch (error) {
                     console.error('Error parsing activity data from sessionStorage:', error);
                     console.log("Corrupted data found:", storedActivity); // Log the problematic data
-                    // Clear corrupted data and redirect
                     sessionStorage.removeItem('currentActivity');
                     alert('Error loading activity data from storage. Please load the activity again.');
                 }
@@ -659,20 +528,21 @@
             // --- Helper functions to update button appearance ---
             function updateAlignButton() {
                 if (alignCycleBtn) {
-                    // Use textContent and innerHTML carefully
-                    alignCycleBtn.innerHTML = ALIGN_ICONS[state.textAlign] || ALIGN_ICONS['center']; // Default to center icon if state is invalid
+                    const iconSVG = ALIGN_ICONS[state.textAlign] || ALIGN_ICONS['center']; // Default to center icon if state is invalid
+                    // Inject SVG and add size class (w-6 h-6 corresponds to 24px)
+                    alignCycleBtn.innerHTML = iconSVG.replace('<svg ', '<svg class="w-6 h-6" ');
                 }
             }
 
             function updateLabelSizeButton() {
                 if (labelSizeIndicator) {
-                    labelSizeIndicator.textContent = SIZE_DISPLAY[state.labelSize] || 'M'; // Default to M
+                    labelSizeIndicator.textContent = SIZE_DISPLAY[state.labelSize] || 'S';
                 }
             }
 
             function updateValueSizeButton() {
                 if (valueSizeIndicator) {
-                    valueSizeIndicator.textContent = SIZE_DISPLAY[state.valueSize] || 'M'; // Default to M
+                    valueSizeIndicator.textContent = SIZE_DISPLAY[state.valueSize] || 'M';
                 }
             }
             
@@ -835,7 +705,7 @@
                     context.font = `bold ${valueFontSize}px Roboto`;
                     context.fillText(metric.value, xPos, itemSlotCenterY + valueYOffset);
                 });
-                context.textBaseline = 'alphabetic';
+                context.textBaseline = 'alphabetic'; // Reset baseline
             }
 
             // Existing code
