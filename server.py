@@ -1,23 +1,25 @@
 # FitOverlays - Copyright (c) 2025 Spyros Lontos
 # Licensed under AGPL-3.0
 
-from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response
+from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response, send_file
 import os
 import json
 import time
 import requests
 import logging
 import secrets
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_cors import CORS
 from requests_oauthlib import OAuth2Session
 from dotenv import load_dotenv
 from flask_limiter.errors import RateLimitExceeded
-from validators import validate_activity_input, validate_activity_id, validate_filename
 from werkzeug.utils import secure_filename, safe_join
 import re
+from functools import wraps
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime, timezone
 
 # Load environment variables from .env file
 load_dotenv()
@@ -32,23 +34,62 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.secret_key = os.urandom(24)
 
+# Configure SQLAlchemy
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///activities.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Recommended setting
+db = SQLAlchemy(app)
+
+# Define the ActivityCache model
+class ActivityCache(db.Model):
+    activity_id = db.Column(db.BigInteger, primary_key=True)
+    athlete_id = db.Column(db.BigInteger, index=True, nullable=False)
+    data = db.Column(db.JSON, nullable=False)
+    fetched_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<ActivityCache {self.athlete_id}:{self.activity_id}>'
+
+# Create database tables if they don't exist
+with app.app_context():
+    db.create_all()
+
 # Configure logging
 if not os.path.exists('logs'):
     os.makedirs('logs')
 
-logging.basicConfig(
-    handlers=[
-        RotatingFileHandler(
-            'logs/security.log',
-            maxBytes=10000000,  # 10MB
-            backupCount=5
-        ),
-        logging.StreamHandler()
-    ],
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+# Use TimedRotatingFileHandler for daily logs
+log_file = 'logs/app.log' # Base log filename
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
+# Configure TimedRotatingFileHandler for daily rotation at midnight, keeping 30 days of logs
+# Rotated files will have dates appended like app.log.YYYY-MM-DD
+timed_handler = TimedRotatingFileHandler(
+    log_file,
+    when='midnight', # Rotate daily at midnight
+    interval=1,      # Interval is 1 day
+    backupCount=30,  # Keep 30 days of backup logs
+    encoding='utf-8',# Use UTF-8 encoding
+    delay=False,     # Open file immediately
+    utc=False        # Use local time for rotation timestamp
+)
+timed_handler.setFormatter(formatter)
+timed_handler.setLevel(logging.INFO)
+
+# Configure StreamHandler for console output
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+stream_handler.setLevel(logging.INFO) # Or DEBUG if you want more verbose console output
+
+# Get the root logger and remove existing handlers (if any added by default)
+root_logger = logging.getLogger()
+root_logger.handlers.clear()
+
+# Add the configured handlers
+root_logger.addHandler(timed_handler)
+root_logger.addHandler(stream_handler)
+root_logger.setLevel(logging.INFO) # Set root logger level
+
+# Use the configured logger throughout the app
 logger = logging.getLogger(__name__)
 
 # Add CSP configuration function
@@ -56,17 +97,17 @@ def add_security_headers(response: Response) -> Response:
     """Add security headers including Content Security Policy"""
     csp = {
         'default-src': ["'self'"],
-        'script-src': ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],  # Added Tailwind CDN
-        'style-src': ["'self'", "'unsafe-inline'"],   # Required for inline styles
-        'img-src': ["'self'", "*.strava.com", "dgalywyr863hv.cloudfront.net", "data:"],  # Added Strava CDN
+        'script-src': ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
+        'style-src': ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],   # Added Google Fonts
+        'font-src': ["'self'", "fonts.gstatic.com"],  # Allow loading font files
+        'img-src': ["'self'", "*.strava.com", "dgalywyr863hv.cloudfront.net", "data:"],
         'connect-src': ["'self'", "www.strava.com", "strava.com"],
         'frame-ancestors': ["'none'"],
         'form-action': ["'self'"],
         'base-uri': ["'self'"],
-        'font-src': ["'self'"],
         'manifest-src': ["'self'"],
         'media-src': ["'self'"],
-        'object-src': ["'none'"],  # Prevent object injection attacks
+        'object-src': ["'none'"],
         'worker-src': ["'self'"]
     }
     
@@ -82,14 +123,10 @@ def add_security_headers(response: Response) -> Response:
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Permissions-Policy'] = (
-        'accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), '
-        'camera=(), cross-origin-isolated=(), display-capture=(), '
-        'document-domain=(), encrypted-media=(), execution-while-not-rendered=(), '
-        'execution-while-out-of-viewport=(), fullscreen=(), geolocation=(), '
-        'gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), '
-        'navigation-override=(), payment=(), picture-in-picture=(), '
-        'publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), '
-        'usb=(), web-share=(), xr-spatial-tracking=()'
+        'accelerometer=(), autoplay=(), camera=(), cross-origin-isolated=(), display-capture=(), '
+        'encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), keyboard-map=(), '
+        'magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), '
+        'screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()'
     )
     response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
@@ -132,11 +169,6 @@ limiter = Limiter(
     app=app,
     default_limits=["100 per day", "30 per hour"]  # More restrictive default limits
 )
-
-ACTIVITIES_DIR = "activities"
-
-if not os.path.exists(ACTIVITIES_DIR):
-    os.makedirs(ACTIVITIES_DIR)
 
 def generate_csrf_token():
     """Generate a new CSRF token"""
@@ -195,7 +227,13 @@ def callback():
         
         # Store athlete info in session
         athlete = token.get('athlete', {})
+        print(f'Athlete info: {athlete}')
+        # {'id': 107400053, 'username': 'spyros_lontos', 'resource_state': 2, 'firstname': 'Spyros', 'lastname': 'Lontos', 'bio': None, 'city': 'Düsseldorf', 'state': None, 'country': None, 'sex': 'M', 'premium': True, 'summit': True, 'created_at': '2022-08-25T15:33:02Z', 'updated_at': '2025-03-03T20:10:53Z', 'badge_type_id': 1, 'weight': 67.0, 'profile_medium': 'https://dgalywyr863hv.cloudfront.net/pictures/athletes/107400053/25413557/1/medium.jpg', 'profile': 'https://dgalywyr863hv.cloudfront.net/pictures/athletes/107400053/25413557/1/large.jpg', 'friend': None, 'follower': None}
+
         session['athlete_id'] = athlete.get('id')
+        session['athlete_username'] = athlete.get('username')
+        session['athlete_first_name'] = athlete.get('firstname')
+        session['athlete_last_name'] = athlete.get('lastname')
         session['athlete_profile'] = athlete.get('profile_medium')  # Store profile picture URL
         session['access_token'] = token['access_token']
         session['refresh_token'] = token['refresh_token']
@@ -214,7 +252,19 @@ def logout():
 
 @app.route('/')
 def home():
-    return send_from_directory('.', 'index.html')
+    # Serve index.html from static/html
+    return send_from_directory('static/html', 'index.html')
+
+@app.before_request
+def require_authentication():
+    """Serve the authentication required page for unauthenticated users."""
+    # Allow requests to static files, login, callback, and root path
+    if request.path.startswith('/static/') or request.path in ['/login', '/callback', '/']:
+        return
+
+    if 'athlete_id' not in session:
+        # Serve auth_required.html from static/html
+        return send_from_directory('static/html', 'auth_required.html')
 
 ALLOWED_EXTENSIONS = {
     '.css', '.js', '.png', '.jpg', '.jpeg', '.gif', 
@@ -255,53 +305,35 @@ def serve_static(path):
         logger.error(f'Error serving static file: {str(e)} - IP: {get_remote_address()} - Path: {path}')
         return jsonify({"error": "Error accessing file"}), 500
 
-@app.route('/activities/<path:filename>')
-def serve_activity(filename):
-    """Securely serve activity files only to authorized users"""
-    if 'athlete_id' not in session:
-        return jsonify({"error": "Not authenticated"}), 401
-
-    # Validate filename with athlete_id check
-    is_valid, error = validate_filename(filename, session.get('athlete_id'))
-    if not is_valid:
-        return jsonify({"error": error}), 400
-    
+def save_or_update_activity(athlete_id, activity_id, data):
+    """Save or update activity data in the database"""
     try:
-        # Sanitize filename and ensure it's within ACTIVITIES_DIR
-        safe_filename = secure_filename(filename)
-        if safe_filename != filename:
-            return jsonify({"error": "Invalid filename"}), 400
-            
-        # Use safe_join to prevent directory traversal
-        file_path = safe_join(ACTIVITIES_DIR, safe_filename)
-        if not file_path:
-            return jsonify({"error": "Invalid file path"}), 400
+        existing_activity = db.session.get(ActivityCache, activity_id) # Use db.session.get for primary key lookup
+        if existing_activity:
+            # Verify athlete ID match before updating
+            if existing_activity.athlete_id != athlete_id:
+                 logger.warning(f'Attempt to update activity {activity_id} belonging to athlete {existing_activity.athlete_id} by athlete {athlete_id}')
+                 return False, jsonify({"error": "Unauthorized access to update activity"}), 403
 
-        # Get absolute paths for comparison
-        activities_abs_path = os.path.abspath(ACTIVITIES_DIR)
-        file_abs_path = os.path.abspath(file_path)
-        
-        # Additional check: Ensure file path starts with activities directory
-        # This prevents symbolic link attacks and ensures we stay within ACTIVITIES_DIR
-        if not file_abs_path.startswith(activities_abs_path):
-            logger.warning(f'Directory traversal attempt detected - IP: {get_remote_address()} - Path: {filename}')
-            return jsonify({"error": "Invalid file path"}), 403
-
-        # Check if file exists after all validations
-        if not os.path.exists(file_abs_path):
-            return jsonify({"error": "Activity not found"}), 404
-
-        return send_from_directory(ACTIVITIES_DIR, safe_filename)
+            existing_activity.data = data
+            existing_activity.fetched_at = datetime.now(timezone.utc)
+            db.session.commit()
+            logger.info(f'Updated activity {activity_id} for athlete {athlete_id} in DB')
+            return True, jsonify(data), 200
+        else:
+            new_activity = ActivityCache(
+                athlete_id=athlete_id,
+                activity_id=activity_id,
+                data=data
+            )
+            db.session.add(new_activity)
+            db.session.commit()
+            logger.info(f'Saved new activity {activity_id} for athlete {athlete_id} to DB')
+            return True, jsonify(data), 200
     except Exception as e:
-        logger.error(f'Error serving activity: {str(e)} - IP: {get_remote_address()} - File: {filename}')
-        return jsonify({"error": "Error accessing activity data"}), 500
-
-def save_activity_response(athlete_id, activity_id, data, status_code=200):
-    """Save activity data or error response to file"""
-    filename = f'response_{athlete_id}_{activity_id}.json'
-    with open(os.path.join(ACTIVITIES_DIR, filename), 'w') as outfile:
-        json.dump(data, outfile, indent=4)
-    return jsonify(data), status_code
+        db.session.rollback() # Rollback on error
+        logger.error(f"Database error saving/updating activity {activity_id} for athlete {athlete_id}: {str(e)}")
+        return False, jsonify({"error": "Database error saving activity data"}), 500
 
 def resolve_strava_link(link):
     """Resolve a Strava deep link to get the actual activity ID"""
@@ -368,60 +400,187 @@ def resolve_strava_link(link):
 @app.route('/fetch_activity/<athlete_id>/<path:activity_input>', methods=['POST'])
 @limiter.limit("5 per minute;20 per hour;100 per day")
 def get_activity(athlete_id, activity_input):
-    """Fetch activity with input validation for both athlete and activity IDs/links"""
+    """Fetch activity from DB or Strava, with validation"""
     if 'athlete_id' not in session:
-        logger.warning(f'Unauthenticated access attempt - IP: {get_remote_address()}')
-        return jsonify({"error": "Not authenticated"}), 401
+        logger.warning(f'Unauthenticated access attempt - URL athlete {athlete_id}, session athlete {session_athlete_id} - IP: {get_remote_address()}')
+        return jsonify({"error": "Unauthorized access"}), 403
 
     try:
-        if int(athlete_id) != session['athlete_id']:
-            logger.warning(f'Unauthorized athlete access attempt - IP: {get_remote_address()}')
+        # Validate athlete_id from URL against session
+        session_athlete_id = session['athlete_id']
+        if int(athlete_id) != session_athlete_id:
+            logger.warning(f'Unauthorized athlete access attempt - URL athlete {athlete_id}, session athlete {session_athlete_id} - IP: {get_remote_address()}')
             return jsonify({"error": "Unauthorized access"}), 403
-    except ValueError:
-        return jsonify({"error": "Invalid athlete ID"}), 400
+    except (ValueError, KeyError):
+        return jsonify({"error": "Invalid athlete ID or session"}), 400
 
-    # First check if input is a URL or ID
+    final_activity_id = None
+    is_link = False
+
+    # Resolve link if necessary
     deep_link_pattern = r'^(?:https?:\/\/)?strava\.app\.link\/[A-Za-z0-9_-]+$'
-    if re.match(deep_link_pattern, activity_input):
+    direct_link_pattern = r'^(?:https?:\/\/)?(?:www\.)?strava\.com\/activities\/\d+'
+    if re.match(deep_link_pattern, activity_input) or re.match(direct_link_pattern, activity_input):
+        is_link = True
         resolved_id = resolve_strava_link(activity_input)
         if not resolved_id:
-            logger.warning(f'Could not resolve Strava deep link: {activity_input}')
-            return jsonify({"error": "Could not resolve Strava deep link"}), 400
-        activity_input = resolved_id
-        logger.info(f'Resolved deep link to activity ID: {activity_input}')
+            logger.warning(f'Could not resolve Strava link: {activity_input}')
+            return jsonify({"error": "Could not resolve Strava link"}), 400
+        final_activity_id = resolved_id
+        logger.info(f'Resolved link {activity_input} to activity ID: {final_activity_id}')
+    else:
+        # Assume it's a direct ID
+        final_activity_id = activity_input
 
-    # Now validate the activity ID (either direct or resolved from deep link)
-    is_valid, error = validate_activity_id(activity_input)
+    # Validate the final activity ID
+    is_valid, error = validate_activity_id(final_activity_id)
     if not is_valid:
-        return jsonify({"error": error}), 400
+        return jsonify({"error": error or "Invalid activity ID"}), 400
 
-    filename = f'response_{athlete_id}_{activity_input}.json'
-    
-    # Validate generated filename
-    is_valid, error = validate_filename(filename, athlete_id)
-    if not is_valid:
-        return jsonify({"error": error}), 400
-
-    json_path = os.path.join(ACTIVITIES_DIR, filename)
-    
     try:
-        # If file exists, read and return its contents
-        if os.path.exists(json_path):
-            with open(json_path, 'r') as f:
-                data = json.load(f)
-                if 'error' in data:
-                    return jsonify(data), data.get('status', 500)
-                # Verify athlete_id in data matches session
-                if data.get('athlete', {}).get('id') == session['athlete_id']:
-                    return jsonify(data)
-                return jsonify({"error": "Unauthorized access"}), 403
-
-        # Fetch new activity data
-        return fetch_activity(activity_input)
+        # 1. Check Database Cache
+        # Convert final_activity_id to int for DB lookup
+        try:
+            db_activity_id = int(final_activity_id)
+        except (ValueError, TypeError):
+             # This should have been caught by validate_activity_id, but belts and braces
+            return jsonify({"error": "Invalid activity ID format for lookup"}), 400
             
+        cached_activity = db.session.get(ActivityCache, db_activity_id)
+        if cached_activity:
+            # Verify athlete ID match
+            if cached_activity.athlete_id != session_athlete_id:
+                logger.warning(f'Unauthorized DB access attempt - Activity {final_activity_id} belongs to {cached_activity.athlete_id}, requested by {session_athlete_id}')
+                return jsonify({"error": "Unauthorized access"}), 403
+            
+            # Optional: Add cache expiry logic here if needed
+            # e.g., if datetime.now(timezone.utc) - cached_activity.fetched_at > timedelta(hours=1): fetch new
+            
+            logger.info(f"Serving activity {final_activity_id} for athlete {session_athlete_id} from DB cache.")
+            
+            # Check if the cached data indicates 'not found'
+            cached_data = cached_activity.data
+            if isinstance(cached_data, dict) and cached_data.get('error') == 'not_found':
+                logger.info(f"Activity {final_activity_id} previously determined as not found (cached).")
+                return jsonify({"error": "Activity not found (cached)"}), 404
+                
+            return jsonify(cached_data)
+
+        # 2. If not in cache or expired, fetch from Strava
+        logger.info(f"Activity {final_activity_id} for athlete {session_athlete_id} not in cache, fetching from Strava.")
+        return fetch_activity_from_strava(final_activity_id) # Call the renamed function
+
     except Exception as e:
-        logger.error(f'Activity fetch error details: {str(e)} - IP: {get_remote_address()} - Activity: {activity_input}')
+        logger.error(f'Activity lookup/fetch error: {str(e)} - IP: {get_remote_address()} - Activity Input: {activity_input}, Resolved ID: {final_activity_id}')
         return jsonify({"error": "Unable to process request. Please try again later."}), 500
+
+def validate_activity_id(activity_id):
+    """
+    Validate Strava activity ID.
+    Returns (is_valid: bool, error_message: str)
+    """
+    print('INSIDE THE validate_activity_id FUNCTION')
+    if not activity_id:
+        return False, "Activity ID is required"
+    
+    print(f'activity_id: {activity_id}')
+    try:
+        # Convert to integer
+        activity_id = int(activity_id)
+        
+        # Check if positive and within reasonable bounds
+        if activity_id <= 0:
+            return False, "Activity ID must be positive"
+        
+        # Add strict regex validation for activity ID format
+        if not re.match(r'^[1-9]\d{0,19}$', str(activity_id)):
+            return False, "Invalid activity ID format"
+            
+        return True, None
+        
+    except (ValueError, TypeError):
+        return False, "Activity ID must be a number"
+
+# Rename original fetch_activity to avoid conflict and clarify purpose
+def fetch_activity_from_strava(activity_id):
+    """Fetch Strava activity data from API and save to DB"""
+    if 'access_token' not in session or 'athlete_id' not in session:
+        # This check is technically redundant due to get_activity caller, but good for safety
+        logger.warning(f'Unauthenticated Strava fetch attempt - IP: {get_remote_address()} - Activity: {activity_id}')
+        return jsonify({"error": "Not authenticated"}), 401
+
+    # Session check should happen before this function is called, but double check anyway
+    session_athlete_id = session['athlete_id']
+
+    # Check token expiry before making request
+    if "expires_at" in session and time.time() > session["expires_at"]:
+        logger.info(f'Session expired before Strava fetch - Athlete ID: {session_athlete_id} - IP: {get_remote_address()}')
+        session.clear()
+        return jsonify({
+            "error": "Session expired. Please log in again.",
+            "require_login": True
+        }), 401
+
+    # Activity ID validation already done by caller (get_activity)
+
+    try:
+        response = requests.get(
+            f"https://www.strava.com/api/v3/activities/{activity_id}",
+            headers={"Authorization": f"Bearer {session['access_token']}"},
+            timeout=15 # Added timeout
+        )
+
+        # Handle error cases before attempting JSON decode
+        if not response.ok:
+            error_message = f"Failed to load activity {activity_id}. Status: {response.status_code}"
+            # Specific handling for 404 Not Found to cache it
+            if response.status_code == 404:
+                logger.warning(f"Activity {activity_id} not found on Strava for athlete {session_athlete_id}.")
+                not_found_data = {"error": "not_found", "status": 404}
+                # Save the 'not found' status to the DB
+                save_or_update_activity(session_athlete_id, int(activity_id), not_found_data)
+                return jsonify({"error": "Activity not found"}), 404
+                
+            # Handle other errors (don't cache these specific errors unless desired)
+            try:
+                # Try to get more specific error from Strava
+                strava_error = response.json().get('message', 'Unknown Strava API error')
+                error_message += f". Reason: {strava_error}"
+            except ValueError: # Handle cases where response is not JSON
+                error_message += f". Response: {response.text[:100]}" # Log part of the response
+            
+            logger.error(error_message)
+            # Don't save API errors to DB unless specifically needed. Return error directly.
+            status_code = response.status_code if response.status_code in [401, 403, 404] else 500
+            return jsonify({"error": f"Failed to load activity from Strava (Status: {response.status_code})."}), status_code
+
+        response_json = response.json()
+
+        # Verify activity belongs to authenticated user *before saving*
+        if response_json.get('athlete', {}).get('id') != session_athlete_id:
+            logger.warning(f'Unauthorized Strava activity access - IP: {get_remote_address()} - ' \
+                         f'Athlete: {session_athlete_id} - Activity: {activity_id}')
+            return jsonify({"error": "Unauthorized access to this Strava activity"}), 403
+
+        # Save successful response to DB
+        success, result, status = save_or_update_activity(session_athlete_id, int(activity_id), response_json)
+        if not success:
+             logger.error(f"Failed to save activity {activity_id} to DB after fetching from Strava.")
+             # Return the fetched data even if DB save failed, or return the DB error?
+             # Returning the fetched data might be better UX for this request.
+             return jsonify(response_json), 200 # Return fetched data, maybe log the DB error more prominently
+        
+        return result, status # Return from save_or_update_activity
+
+    except requests.exceptions.Timeout:
+        logger.error(f'Strava API request timed out for activity {activity_id}')
+        return jsonify({"error": "Strava API request timed out. Please try again."}), 504
+    except requests.exceptions.RequestException as e:
+        logger.error(f'Strava API network error: {str(e)} - IP: {get_remote_address()} - Activity: {activity_id}')
+        return jsonify({"error": "Unable to connect to Strava API. Please try again later."}), 503
+    except Exception as e: # Catch broader exceptions during fetch/save
+         logger.error(f'Unexpected error during Strava fetch/DB save for activity {activity_id}: {str(e)}')
+         return jsonify({"error": "An unexpected error occurred."}), 500
 
 @app.route("/status")
 @limiter.limit("30 per minute")  # Add specific limit for status endpoint
@@ -483,6 +642,9 @@ def status():
             return jsonify({
                 "authenticated": True,
                 "athlete_id": session.get("athlete_id"),
+                "athlete_username": session.get("athlete_username"),
+                "athlete_first_name": session.get("athlete_first_name"),
+                "athlete_last_name": session.get("athlete_last_name"),
                 "athlete_profile": session.get("athlete_profile"),  # Include profile picture URL
                 "expires_at": session.get("expires_at"),
                 "csrf_token": csrf_token
@@ -509,6 +671,12 @@ def handle_ratelimit_error(e):
         "error": "Rate limit exceeded. Please wait before trying again.",
         "status": 429
     }), 429
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """Handle 404 errors by serving our custom 404 page"""
+    # Serve 404.html from static/html
+    return send_from_directory('static/html', '404.html'), 404
 
 def refresh_access_token(refresh_token):
     """Refresh the access token with robust error handling"""
@@ -577,52 +745,33 @@ def refresh_access_token(refresh_token):
         logger.error(f'Unexpected error during token refresh: {str(e)}')
         return None
 
-def fetch_activity(activity_id):
-    """Fetch Strava activity data with validation"""
-    if 'access_token' not in session or 'athlete_id' not in session:
-        logger.warning(f'Unauthenticated activity access attempt - IP: {get_remote_address()} - Activity: {activity_id}')
-        return jsonify({"error": "Not authenticated"}), 401
+# Add login_required decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'athlete_id' not in session:
+            # Redirect to login page if not authenticated
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
-    # Check token expiry before making request
-    if "expires_at" in session and time.time() > session["expires_at"]:
-        logger.info(f'Session expired - Athlete ID: {session.get("athlete_id")} - IP: {get_remote_address()}')
-        session.clear()
-        return jsonify({
-            "error": "Session expired. Please log in again.",
-            "require_login": True
-        }), 401
+@app.route('/input_activity')
+@login_required
+def input_activity():
+    """Serve the page for inputting Strava activity ID/URL"""
+    # Serve input_activity.html from static/html
+    return send_from_directory('static/html', 'input_activity.html')
 
-    # Validate activity_id
-    is_valid, error = validate_activity_id(activity_id)
-    if not is_valid:
-        return jsonify({"error": error}), 400
-
-    try:
-        response = requests.get(
-            f"https://www.strava.com/api/v3/activities/{activity_id}",
-            headers={"Authorization": f"Bearer {session['access_token']}"}
-        )
-        
-        # Handle error cases
-        if not response.ok:
-            error_data = {"error": "Failed to load activity. Activity ID not found"}
-            return save_activity_response(session['athlete_id'], activity_id, error_data, response.status_code)
-            
-        response_json = response.json()
-        
-        # Verify activity belongs to authenticated user
-        if response_json.get('athlete', {}).get('id') != session['athlete_id']:
-            logger.warning(f'Unauthorized activity access attempt - IP: {get_remote_address()} - ' \
-                         f'Athlete: {session["athlete_id"]} - Activity: {activity_id}')
-            return jsonify({"error": "Unauthorized access"}), 403
-        
-        # Store and return successful activity data
-        return save_activity_response(session['athlete_id'], activity_id, response_json)
-            
-    except requests.exceptions.RequestException as e:
-        logger.error(f'Strava API error details: {str(e)} - IP: {get_remote_address()} - Activity: {activity_id}')
-        return jsonify({"error": "Unable to fetch activity data. Please try again later."}), 500
+@app.route('/generate_overlays')
+@login_required
+def generate_overlays():
+    """Serve the generate overlays page for authenticated users"""
+    if not session.get('access_token'):
+        return redirect(url_for('login'))
+    
+    # Serve generate_overlays.html from static/html
+    return send_from_directory('static/html', 'generate_overlays.html')
 
 if __name__ == '__main__':
+    logging.info("Starting Flask application...") # Example log at startup
     app.run(debug=True, port=5000)
-    # app.run(host='0.0.0.0', debug=True, port=5000)

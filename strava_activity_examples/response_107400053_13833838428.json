@@ -1,0 +1,1857 @@
+{
+    "resource_state": 3,
+    "athlete": {
+        "id": 107400053,
+        "resource_state": 1
+    },
+    "name": "Week 8 - Fast Finish Long Run",
+    "distance": 21146.9,
+    "moving_time": 7314,
+    "elapsed_time": 7330,
+    "total_elevation_gain": 38.3,
+    "type": "Run",
+    "sport_type": "Run",
+    "workout_type": 2,
+    "id": 13833838428,
+    "start_date": "2025-03-09T11:53:34Z",
+    "start_date_local": "2025-03-09T12:53:34Z",
+    "timezone": "(GMT+01:00) Europe/Berlin",
+    "utc_offset": 3600.0,
+    "location_city": null,
+    "location_state": null,
+    "location_country": null,
+    "achievement_count": 4,
+    "kudos_count": 3,
+    "comment_count": 0,
+    "athlete_count": 1,
+    "photo_count": 0,
+    "map": {
+        "id": "a13833838428",
+        "polyline": "_upwHa{mh@\\@PC^SRQh@YPAX^VLNBl@AZIt@EJDFAPHHC\\FRA\\EH?FC^g@Pa@FYBM@g@?qAJsATgA@QDQLWLMHe@@eFOuAAo@@]`@m@@MEy@@]C{@FkAJs@BC@OEsBEYDICSBSHWFu@As@@MEW?yABKAc@Hs@EqA?k@H{AC@AA?}@DgA@eAHyB?m@@GFIL?HBJAPBR@h@AxAJVC@CBBFCXLPDNCD@DDNAx@FFEBMAWDk@C[BiBF]FIDAJDNIZSNGVCj@JBH^RTHn@DBCNA^Av@`@R@BBXETMLAJSNOHAl@_@TELJFXJL^`AF@Z\\r@Zn@dALd@LRf@~@f@fCLd@RxBPzADPFHHBLIhBoBZURy@Xi@FSz@i@F?NOf@y@HYb@eAf@y@PQj@GZKVSl@q@Vy@\\i@TUZq@L{@A{BCa@Ie@Qc@o@mAY}@GCI?MEc@_@OIa@B[CQGO?QIi@GIAGBWAOM[G_A@MOQg@GE]DSPIVGp@KTWv@[b@AHOHQTGPMVONYP?^IXC|@@TCj@CJIDQ?G@EAE@ACYEYAWDK?OEOBSLIBKNe@b@i@Va@F[LKH_@b@KHOFk@Ko@YQ?SDa@@u@KKAYSAIa@OQ?KDQ@KFEFYLI@ICw@@g@Ac@CCCI@q@CQEEF_@]K?UKKAOFc@VO?QKOa@CWBc@ASGMGAUP[Hg@TC?KDKCKBWCMDo@ZOLKh@EF?NGVGLGDI\\q@f@E@i@p@FfAOj@E\\RjAOh@_@d@IDKPUt@WT[b@If@C^Kt@CjB@n@AXIVCVAtAMlA?j@BDAZIr@?hAEj@CH?x@Gh@BXGl@@f@E\\IvACjCIvAEnBGj@EN@d@CP@p@Gr@GCDHHBFFBFj@HZADDLTPd@RZDL?TS`Ba@|@DTDBFJNFDGn@FDCLA`@ILBVAHFJ@FAp@JR?NAFCTOPWZu@DSNu@Am@CO@_@JoANc@?MH]T[Jc@@c@EIHa@@eC@a@EWKw@@o@A_@@ILMLWBWI[CmAC??GBQ?m@Dk@VmACcAEICUAg@T}ABcBDa@Bm@CG@y@CWDWAOBo@G_@Am@Dk@BKCmALwEAE?w@AKFa@BCH?JKRD`BAhAFDBFCP?\\RJ@d@CXBRCL@LAH_ACUDk@CqAFOFCVEd@]RIH?JGT@`@LPLRFP?^F\\C\\?fAd@H@\\?F?^i@n@g@TKPEPHFH`@jAH\\HDPPn@Z?FNFHJP\\NNjA|Br@~D@XLp@J~ABNJPHDD?LEZWr@y@r@m@JUNq@Tk@z@i@XYP[ZgAz@sARIVCJIl@Od@a@b@s@h@uAf@i@Xe@TcA@{@EWIuAa@uAIICO[k@Ws@IEG@WWa@OcAGQGW?]Ke@?]GQIa@EE@SAi@?IOQk@EAQBQF[`B]`A}@`A[n@_@PKJIh@ArCIRaB?O@IDm@EUJIP]TQZUDEFQBe@LOLE?MHSZ[R]@k@S]Sm@DIAC@WCE@KAOKWGa@YSGK@EBEAE@q@XODO?SCI@u@GUDc@@y@Q[KIKECM?[MQ?IC]`@QBWSA[GQBSCK?e@MMOPe@P_@TWFUCW@c@TSFMLMVWxAS`@[TORc@PSVDbACH?RCLGPP`BA@ECKh@ELa@h@k@nAUTKTSdAOl@ILJnBA^Cd@Ip@A\\?ZCN@HGh@EPBdAE`@CFGFARAfA@h@Al@CV@JCdBEb@@p@CH?XE^AbBMrAIzCMrBCFDPDZAHH\\HRNPPDPCF@NLP`@JB@HHp@ATEDEdAKf@Q`@CZ@FFJ^HF?PEN@JAHERAV@ZGD?LLd@FPFf@KTILKf@y@Jk@FMHm@?SIU?s@Di@DGTuADG?KDCDQRQBM@}@BMEu@Dk@Aw@KaBAkAHUJOF]?y@GcA?WDeARy@DiAMyAFy@Lc@HuAEg@Bs@BWCIAg@FqAMmCDYAOBGEYHqA@gBDgAAk@@G@o@FGHCTDDAVBJCb@BRAj@Hz@@PDRLLBRC\\@^GVBFEDSHsAA[@eB@IHGN?TKn@_@X?PDFHz@j@JAHBL@DCP?RGT@^NPFPJVFTCFEd@i@HEBIJCVQZGNKF@Nn@Rp@HJ@LTPJPVHJHXLNNPVL\\PVPz@PNHPJZ@ZJ\\`@bCTnBFLAPDXL`@N?ZYFOLSz@{@DIZUHUJk@JSPe@RGh@a@DAJO\\_@\\w@\\}@d@{@XOb@CD@PEb@]^i@HSNs@JOd@c@b@o@P_A@aAIoAO}@IWe@}@KIWy@KQQA[OOUMEE@EKMDyA?GGOG{@AUMS?QEK@_@AO@IKEOGEEQECO?QHINObAMb@CPMZmAlAKTE?IJa@XEb@Cv@@vAARCDIFU@IGOFc@Ia@BMCc@?[d@GBSXWRKHECMLOCQBm@h@MRM?KDSCU@o@]SEYDi@@MBKG]@KIa@Q[WSEi@RGFSJOAM@KDaAK]Ak@BWCKEQ?k@W[WO@GAULU\\K@KCMKEKCMCg@Dq@GMGEyAv@MBa@?OBsAp@KTKnACRGLIH_@XSJEDE@UJCFKN?JDRB^MvANjAOb@y@~@Ud@ERe@f@Or@MdAEt@?fADZA`@Mx@Er@@`@Ef@?\\CL?~@Kl@BtAAXBNGf@?n@G^@FEl@KfCMvB@JCPAd@AJIxBER?j@CD@DCfAEr@?ZAJ?D@CBAAKBIDCLv@LLNDH?HFL@T^FXR\\?ZEnAEHUz@E@EFAJDTPPTJPCNFJEBGHFFINBLED@NA^Bf@NV@x@SNIR[Xo@LcAA{ADY@q@La@D]l@qBBmAAeABeAOmDDMX_@DO?o@I_ABEGs@@e@ZcBAOBU?QMcAA[FW?ONq@Bc@?k@Cc@D}ACq@Hi@?QEUEoDDQDi@?{AH{B@eA@WDOHA\\?x@JRA`AFbA@RJJBXAj@DNCJFHAHQDo@?q@F{AASF[@AN@JEn@c@TCf@Fl@\\d@N`@@LAN?FCL@j@\\NFRB\\CJGFOJEBELKNWl@SBEXBHDFLZx@Rp@HFXVj@RXZHPHH@FRb@NRLf@RXZ`BPlABVHR?RFPBb@HV?VDHAFBF?TDFDNBBNC^Q^k@p@u@JED?JGHOP}@R_@FYN?NIHKVO\\a@d@{@Rm@Zu@@GJO\\[PAH@TC`@OD@ZW`@cAFGLe@R]f@i@DYNc@Du@EoACUCm@I]Ma@y@{AGYMUKEKBQOYQEAGIO@_@CM@MGM?UBIEUAOK]CG?GBMQM@ME[BWEUSKUIIKAECEBOHCBMf@Kj@_@fAOVOJEJYZYd@_@ZOZEZChA@NCH@XG\\MDEAIEQBIDM@EGYAS@MEc@FMHSX]\\UHEDq@JSJ]V]h@OHQD[CSEa@]KCO@WLYIM@]Eg@Ua@YM@GAMDQBQLMFuAIm@@c@AKDKE]?UGQKQEMKOAEC]BMDOL[?IGM[AyAAKECI?QJYJWNQFMLK@IC]?uAt@MZKjAM\\SJIJUHw@n@ARLr@Cf@EJCVDp@FXCRCLQX[^IDKNKd@EBOVSRKVMhAS`A@dBDX?LEd@ITG^BPAR@f@Kl@ClAGx@CtABDGlAAH?XGl@@f@E|@@~@Mt@CfBIt@@`AEZ@p@GNAb@Kb@CnAB\\Jn@HXPPFEJBZC",
+        "resource_state": 3,
+        "summary_polyline": "_upwHa{mh@n@A|A_ArAn@hGG`AgBP{EbAwD@eFQeC@]b@{@GsCXsCIkDTaBBoPZgIdKf@JSBiENg@dBe@dBr@bBAnAf@xAy@lAg@`AtBvAz@rB~Dt@lDd@tEV^rCoCt@wBrAy@|BsExAe@dAeAnBcED{AK_C_B{DsAs@qHm@o@{@i@Tu@vC_CxCSdEiD?oAdAgBl@gA~@{Ae@}BCiAo@eBf@eFKaAi@oA\\a@m@AoAOOyAp@mCp@s@jCaBzAFfAUhARjAOh@_ClDY|BAzC_@lFmAda@On@Z\\lALx@dBSvBa@|@\\j@pBMhCTl@Ur@aBNu@FmDz@oCHwFQ_D`@gAQqBHkBVmAOkCT}ALsDG_GViMXO~EJxCPFsElAw@~@OfAb@lBBnBf@~BcBXRj@hBdBnAlBjDr@~D^zDZVpCeCp@sBtAcAl@cBz@sAjCiAlAiC`AoAV_COmBcBoEkAk@gIs@a@}@c@Jy@bDyApBk@\\UpEiD@oAnAsA^sAfAgBe@eB@}Au@_Bd@}CAkD_Ao@d@WSIsBMMuAx@eADeAj@y@rCcBrADbAO|@P`BiCzEm@`CHnC_@fFBdASdAWfPi@jJ\\hBjAb@f@jAKvB_@tAFb@rFRf@KjAoAXsA?{C`@qB^i@HwAOgI\\cAGuC^iEMyA^sDBwFMmCVsLbH^hBELYHuEJQnBk@tAz@dBEzAj@tByAr@Qn@zBnBtAp@lAl@|A|AbKL`@N?nCyCr@{BlB{A`BqDtAWbAgAXgAtAcBRaCYmC_BkDwAw@sH]]s@UC[Xo@tCkChCMlEqD?oAvAaAR{@|@cABcAc@{BD}Ay@oBl@aES_Bo@w@l@_@[AgBOSyC~@qAl@e@jCoBzAH~@MvANjAkCdEc@nDBdCg@pID~BqAfZLYLv@~@\\p@vAEjBi@zAHZb@VpF?n@Ur@cBLsEbA_EBkEOmDd@}@MiD^oDOqBZ}BFiGKwE`@cKdKh@\\_GlAi@|@BrAl@tAAnAh@h@Kt@_AjAU`A~BhBnAzA|Cz@zEl@dEn@UnBoBv@gC~AgAbBwDrCeAv@qBz@gAZeCW_D}AmDqAo@kHo@}@y@YPy@zCcCzCWdEmDB_A`AaBf@wAnAcBi@mB@iAo@uA^}EI}Ak@wAVWc@IiBaDz@oAn@m@jCkBpAJfAMjAH~AgA|Au@tAm@bDFlCWzASbGS`L]bJYfDXfB`AJ"
+    },
+    "trainer": false,
+    "commute": false,
+    "manual": false,
+    "private": false,
+    "visibility": "everyone",
+    "flagged": false,
+    "gear_id": "g15807746",
+    "start_latlng": [
+        51.208641,
+        6.793618
+    ],
+    "end_latlng": [
+        51.207803,
+        6.795455
+    ],
+    "average_speed": 2.891,
+    "max_speed": 4.98,
+    "has_heartrate": true,
+    "average_heartrate": 165.8,
+    "max_heartrate": 181.0,
+    "heartrate_opt_out": false,
+    "display_hide_heartrate_option": true,
+    "elev_high": 41.5,
+    "elev_low": 36.9,
+    "upload_id": 14765370519,
+    "upload_id_str": "14765370519",
+    "external_id": "B99FDFCC-7371-4DA7-9DCE-077473A74B25-activity.fit",
+    "from_accepted_tag": false,
+    "pr_count": 1,
+    "total_photo_count": 0,
+    "has_kudoed": false,
+    "suffer_score": 224.0,
+    "description": "8KM - Easy Run(~6:10)\n10KM - Goal Marathon Pace (~5:35)\n3KM - @10K pace (~5:15)",
+    "calories": 1744.7,
+    "perceived_exertion": 6.0,
+    "prefer_perceived_exertion": false,
+    "segment_efforts": [
+        {
+            "id": 3333817332520469250,
+            "resource_state": 2,
+            "name": "Volksgarten S\u00fcd",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 319,
+            "moving_time": 313,
+            "start_date": "2025-03-09T11:55:17Z",
+            "start_date_local": "2025-03-09T12:55:17Z",
+            "distance": 860.775,
+            "start_index": 103,
+            "end_index": 422,
+            "device_watts": false,
+            "average_heartrate": 160.5,
+            "max_heartrate": 165.0,
+            "segment": {
+                "id": 1755716,
+                "resource_state": 2,
+                "name": "Volksgarten S\u00fcd",
+                "activity_type": "Run",
+                "distance": 860.775,
+                "average_grade": 0.2,
+                "maximum_grade": 30.0,
+                "elevation_high": 65.1,
+                "elevation_low": 33.3,
+                "start_latlng": [
+                    51.2059984728744,
+                    6.793854620550148
+                ],
+                "end_latlng": [
+                    51.205138712478174,
+                    6.805759255384921
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": null,
+            "achievements": [],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332519452418,
+            "resource_state": 2,
+            "name": "Hauptstra\u00dfe",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 201,
+            "moving_time": 198,
+            "start_date": "2025-03-09T12:02:40Z",
+            "start_date_local": "2025-03-09T13:02:40Z",
+            "distance": 533.4,
+            "start_index": 546,
+            "end_index": 747,
+            "device_watts": false,
+            "average_heartrate": 160.0,
+            "max_heartrate": 165.0,
+            "segment": {
+                "id": 28433488,
+                "resource_state": 2,
+                "name": "Hauptstra\u00dfe",
+                "activity_type": "Run",
+                "distance": 533.4,
+                "average_grade": 0.7,
+                "maximum_grade": 4.9,
+                "elevation_high": 41.9,
+                "elevation_low": 37.6,
+                "start_latlng": [
+                    51.202848,
+                    6.806909
+                ],
+                "end_latlng": [
+                    51.198748,
+                    6.805114
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": null,
+            "achievements": [
+                {
+                    "type_id": 7,
+                    "type": "segment_effort_count_leader",
+                    "rank": 1,
+                    "effort_count": 54
+                }
+            ],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332520944386,
+            "resource_state": 2,
+            "name": "Deichsee > AKKi",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 253,
+            "moving_time": 250,
+            "start_date": "2025-03-09T12:14:38Z",
+            "start_date_local": "2025-03-09T13:14:38Z",
+            "distance": 666.071,
+            "start_index": 1264,
+            "end_index": 1517,
+            "device_watts": false,
+            "average_heartrate": 158.6,
+            "max_heartrate": 164.0,
+            "segment": {
+                "id": 914686,
+                "resource_state": 2,
+                "name": "Deichsee > AKKi",
+                "activity_type": "Run",
+                "distance": 666.071,
+                "average_grade": 0.2,
+                "maximum_grade": 3.8,
+                "elevation_high": 38.1,
+                "elevation_low": 33.4,
+                "start_latlng": [
+                    51.19910530672354,
+                    6.807569309087727
+                ],
+                "end_latlng": [
+                    51.20485436018591,
+                    6.807107456471779
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": null,
+            "achievements": [
+                {
+                    "type_id": 7,
+                    "type": "segment_effort_count_leader",
+                    "rank": 1,
+                    "effort_count": 46
+                }
+            ],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332518504194,
+            "resource_state": 2,
+            "name": "Ballonwiese Nord",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 176,
+            "moving_time": 176,
+            "start_date": "2025-03-09T12:21:25Z",
+            "start_date_local": "2025-03-09T13:21:25Z",
+            "distance": 469.375,
+            "start_index": 1671,
+            "end_index": 1847,
+            "device_watts": false,
+            "average_heartrate": 157.1,
+            "max_heartrate": 161.0,
+            "segment": {
+                "id": 914718,
+                "resource_state": 2,
+                "name": "Ballonwiese Nord",
+                "activity_type": "Run",
+                "distance": 469.375,
+                "average_grade": 1.0,
+                "maximum_grade": 4.1,
+                "elevation_high": 41.7,
+                "elevation_low": 36.0,
+                "start_latlng": [
+                    51.206715862009354,
+                    6.804887620400031
+                ],
+                "end_latlng": [
+                    51.20800958569771,
+                    6.799006348284135
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": null,
+            "achievements": [],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332518631170,
+            "resource_state": 2,
+            "name": "Volksgarten S\u00fcd",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 328,
+            "moving_time": 316,
+            "start_date": "2025-03-09T12:28:29Z",
+            "start_date_local": "2025-03-09T13:28:29Z",
+            "distance": 860.775,
+            "start_index": 2095,
+            "end_index": 2423,
+            "device_watts": false,
+            "average_heartrate": 157.2,
+            "max_heartrate": 164.0,
+            "segment": {
+                "id": 1755716,
+                "resource_state": 2,
+                "name": "Volksgarten S\u00fcd",
+                "activity_type": "Run",
+                "distance": 860.775,
+                "average_grade": 0.2,
+                "maximum_grade": 30.0,
+                "elevation_high": 65.1,
+                "elevation_low": 33.3,
+                "start_latlng": [
+                    51.2059984728744,
+                    6.793854620550148
+                ],
+                "end_latlng": [
+                    51.205138712478174,
+                    6.805759255384921
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": null,
+            "achievements": [],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332520155906,
+            "resource_state": 2,
+            "name": "Hauptstra\u00dfe",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 201,
+            "moving_time": 197,
+            "start_date": "2025-03-09T12:36:07Z",
+            "start_date_local": "2025-03-09T13:36:07Z",
+            "distance": 533.4,
+            "start_index": 2553,
+            "end_index": 2754,
+            "device_watts": false,
+            "average_heartrate": 159.2,
+            "max_heartrate": 164.0,
+            "segment": {
+                "id": 28433488,
+                "resource_state": 2,
+                "name": "Hauptstra\u00dfe",
+                "activity_type": "Run",
+                "distance": 533.4,
+                "average_grade": 0.7,
+                "maximum_grade": 4.9,
+                "elevation_high": 41.9,
+                "elevation_low": 37.6,
+                "start_latlng": [
+                    51.202848,
+                    6.806909
+                ],
+                "end_latlng": [
+                    51.198748,
+                    6.805114
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": null,
+            "achievements": [
+                {
+                    "type_id": 7,
+                    "type": "segment_effort_count_leader",
+                    "rank": 1,
+                    "effort_count": 54
+                }
+            ],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332518539010,
+            "resource_state": 2,
+            "name": "Deichsee > AKKi",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 225,
+            "moving_time": 223,
+            "start_date": "2025-03-09T12:47:36Z",
+            "start_date_local": "2025-03-09T13:47:36Z",
+            "distance": 666.071,
+            "start_index": 3242,
+            "end_index": 3467,
+            "device_watts": false,
+            "average_heartrate": 168.6,
+            "max_heartrate": 174.0,
+            "segment": {
+                "id": 914686,
+                "resource_state": 2,
+                "name": "Deichsee > AKKi",
+                "activity_type": "Run",
+                "distance": 666.071,
+                "average_grade": 0.2,
+                "maximum_grade": 3.8,
+                "elevation_high": 38.1,
+                "elevation_low": 33.4,
+                "start_latlng": [
+                    51.19910530672354,
+                    6.807569309087727
+                ],
+                "end_latlng": [
+                    51.20485436018591,
+                    6.807107456471779
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": null,
+            "achievements": [
+                {
+                    "type_id": 7,
+                    "type": "segment_effort_count_leader",
+                    "rank": 1,
+                    "effort_count": 46
+                }
+            ],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332519649026,
+            "resource_state": 2,
+            "name": "Ballonwiese Nord",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 150,
+            "moving_time": 147,
+            "start_date": "2025-03-09T12:53:36Z",
+            "start_date_local": "2025-03-09T13:53:36Z",
+            "distance": 469.375,
+            "start_index": 3602,
+            "end_index": 3752,
+            "device_watts": false,
+            "average_heartrate": 171.4,
+            "max_heartrate": 175.0,
+            "segment": {
+                "id": 914718,
+                "resource_state": 2,
+                "name": "Ballonwiese Nord",
+                "activity_type": "Run",
+                "distance": 469.375,
+                "average_grade": 1.0,
+                "maximum_grade": 4.1,
+                "elevation_high": 41.7,
+                "elevation_low": 36.0,
+                "start_latlng": [
+                    51.206715862009354,
+                    6.804887620400031
+                ],
+                "end_latlng": [
+                    51.20800958569771,
+                    6.799006348284135
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": 2,
+            "achievements": [
+                {
+                    "type_id": 3,
+                    "type": "pr",
+                    "rank": 2
+                }
+            ],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332520910594,
+            "resource_state": 2,
+            "name": "Volksgarten S\u00fcd",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 293,
+            "moving_time": 288,
+            "start_date": "2025-03-09T12:59:38Z",
+            "start_date_local": "2025-03-09T13:59:38Z",
+            "distance": 860.775,
+            "start_index": 3964,
+            "end_index": 4257,
+            "device_watts": false,
+            "average_heartrate": 168.4,
+            "max_heartrate": 174.0,
+            "segment": {
+                "id": 1755716,
+                "resource_state": 2,
+                "name": "Volksgarten S\u00fcd",
+                "activity_type": "Run",
+                "distance": 860.775,
+                "average_grade": 0.2,
+                "maximum_grade": 30.0,
+                "elevation_high": 65.1,
+                "elevation_low": 33.3,
+                "start_latlng": [
+                    51.2059984728744,
+                    6.793854620550148
+                ],
+                "end_latlng": [
+                    51.205138712478174,
+                    6.805759255384921
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": null,
+            "achievements": [],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332520017666,
+            "resource_state": 2,
+            "name": "Hauptstra\u00dfe",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 182,
+            "moving_time": 181,
+            "start_date": "2025-03-09T13:06:23Z",
+            "start_date_local": "2025-03-09T14:06:23Z",
+            "distance": 533.4,
+            "start_index": 4369,
+            "end_index": 4551,
+            "device_watts": false,
+            "average_heartrate": 168.6,
+            "max_heartrate": 172.0,
+            "segment": {
+                "id": 28433488,
+                "resource_state": 2,
+                "name": "Hauptstra\u00dfe",
+                "activity_type": "Run",
+                "distance": 533.4,
+                "average_grade": 0.7,
+                "maximum_grade": 4.9,
+                "elevation_high": 41.9,
+                "elevation_low": 37.6,
+                "start_latlng": [
+                    51.202848,
+                    6.806909
+                ],
+                "end_latlng": [
+                    51.198748,
+                    6.805114
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": null,
+            "achievements": [
+                {
+                    "type_id": 7,
+                    "type": "segment_effort_count_leader",
+                    "rank": 1,
+                    "effort_count": 54
+                }
+            ],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332521740034,
+            "resource_state": 2,
+            "name": "Deichsee > AKKi",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 221,
+            "moving_time": 217,
+            "start_date": "2025-03-09T13:16:59Z",
+            "start_date_local": "2025-03-09T14:16:59Z",
+            "distance": 666.071,
+            "start_index": 5005,
+            "end_index": 5226,
+            "device_watts": false,
+            "average_heartrate": 171.7,
+            "max_heartrate": 176.0,
+            "segment": {
+                "id": 914686,
+                "resource_state": 2,
+                "name": "Deichsee > AKKi",
+                "activity_type": "Run",
+                "distance": 666.071,
+                "average_grade": 0.2,
+                "maximum_grade": 3.8,
+                "elevation_high": 38.1,
+                "elevation_low": 33.4,
+                "start_latlng": [
+                    51.19910530672354,
+                    6.807569309087727
+                ],
+                "end_latlng": [
+                    51.20485436018591,
+                    6.807107456471779
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": null,
+            "achievements": [
+                {
+                    "type_id": 7,
+                    "type": "segment_effort_count_leader",
+                    "rank": 1,
+                    "effort_count": 46
+                }
+            ],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332520123138,
+            "resource_state": 2,
+            "name": "Ballonwiese Nord",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 161,
+            "moving_time": 159,
+            "start_date": "2025-03-09T13:22:57Z",
+            "start_date_local": "2025-03-09T14:22:57Z",
+            "distance": 469.375,
+            "start_index": 5363,
+            "end_index": 5524,
+            "device_watts": false,
+            "average_heartrate": 168.8,
+            "max_heartrate": 173.0,
+            "segment": {
+                "id": 914718,
+                "resource_state": 2,
+                "name": "Ballonwiese Nord",
+                "activity_type": "Run",
+                "distance": 469.375,
+                "average_grade": 1.0,
+                "maximum_grade": 4.1,
+                "elevation_high": 41.7,
+                "elevation_low": 36.0,
+                "start_latlng": [
+                    51.206715862009354,
+                    6.804887620400031
+                ],
+                "end_latlng": [
+                    51.20800958569771,
+                    6.799006348284135
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": null,
+            "achievements": [],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332519578370,
+            "resource_state": 2,
+            "name": "Volksgarten S\u00fcd",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 286,
+            "moving_time": 281,
+            "start_date": "2025-03-09T13:29:11Z",
+            "start_date_local": "2025-03-09T14:29:11Z",
+            "distance": 860.775,
+            "start_index": 5737,
+            "end_index": 6023,
+            "device_watts": false,
+            "average_heartrate": 170.5,
+            "max_heartrate": 176.0,
+            "segment": {
+                "id": 1755716,
+                "resource_state": 2,
+                "name": "Volksgarten S\u00fcd",
+                "activity_type": "Run",
+                "distance": 860.775,
+                "average_grade": 0.2,
+                "maximum_grade": 30.0,
+                "elevation_high": 65.1,
+                "elevation_low": 33.3,
+                "start_latlng": [
+                    51.2059984728744,
+                    6.793854620550148
+                ],
+                "end_latlng": [
+                    51.205138712478174,
+                    6.805759255384921
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": 2,
+            "achievements": [
+                {
+                    "type_id": 3,
+                    "type": "pr",
+                    "rank": 2
+                }
+            ],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332519954178,
+            "resource_state": 2,
+            "name": "Hauptstra\u00dfe",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 183,
+            "moving_time": 182,
+            "start_date": "2025-03-09T13:35:49Z",
+            "start_date_local": "2025-03-09T14:35:49Z",
+            "distance": 533.4,
+            "start_index": 6135,
+            "end_index": 6317,
+            "device_watts": false,
+            "average_heartrate": 170.6,
+            "max_heartrate": 176.0,
+            "segment": {
+                "id": 28433488,
+                "resource_state": 2,
+                "name": "Hauptstra\u00dfe",
+                "activity_type": "Run",
+                "distance": 533.4,
+                "average_grade": 0.7,
+                "maximum_grade": 4.9,
+                "elevation_high": 41.9,
+                "elevation_low": 37.6,
+                "start_latlng": [
+                    51.202848,
+                    6.806909
+                ],
+                "end_latlng": [
+                    51.198748,
+                    6.805114
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": null,
+            "achievements": [
+                {
+                    "type_id": 7,
+                    "type": "segment_effort_count_leader",
+                    "rank": 1,
+                    "effort_count": 54
+                }
+            ],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332521558786,
+            "resource_state": 2,
+            "name": "Deichsee > AKKi",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 205,
+            "moving_time": 205,
+            "start_date": "2025-03-09T13:46:12Z",
+            "start_date_local": "2025-03-09T14:46:12Z",
+            "distance": 666.071,
+            "start_index": 6757,
+            "end_index": 6962,
+            "device_watts": false,
+            "average_heartrate": 177.8,
+            "max_heartrate": 181.0,
+            "segment": {
+                "id": 914686,
+                "resource_state": 2,
+                "name": "Deichsee > AKKi",
+                "activity_type": "Run",
+                "distance": 666.071,
+                "average_grade": 0.2,
+                "maximum_grade": 3.8,
+                "elevation_high": 38.1,
+                "elevation_low": 33.4,
+                "start_latlng": [
+                    51.19910530672354,
+                    6.807569309087727
+                ],
+                "end_latlng": [
+                    51.20485436018591,
+                    6.807107456471779
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": 1,
+            "achievements": [
+                {
+                    "type_id": 3,
+                    "type": "pr",
+                    "rank": 1
+                },
+                {
+                    "type_id": 7,
+                    "type": "segment_effort_count_leader",
+                    "rank": 1,
+                    "effort_count": 46
+                }
+            ],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        },
+        {
+            "id": 3333817332521077506,
+            "resource_state": 2,
+            "name": "Ballonwiese Nord",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 150,
+            "moving_time": 149,
+            "start_date": "2025-03-09T13:51:49Z",
+            "start_date_local": "2025-03-09T14:51:49Z",
+            "distance": 469.375,
+            "start_index": 7094,
+            "end_index": 7244,
+            "device_watts": false,
+            "average_heartrate": 175.8,
+            "max_heartrate": 179.0,
+            "segment": {
+                "id": 914718,
+                "resource_state": 2,
+                "name": "Ballonwiese Nord",
+                "activity_type": "Run",
+                "distance": 469.375,
+                "average_grade": 1.0,
+                "maximum_grade": 4.1,
+                "elevation_high": 41.7,
+                "elevation_low": 36.0,
+                "start_latlng": [
+                    51.206715862009354,
+                    6.804887620400031
+                ],
+                "end_latlng": [
+                    51.20800958569771,
+                    6.799006348284135
+                ],
+                "elevation_profile": null,
+                "elevation_profiles": null,
+                "climb_category": 0,
+                "city": "D\u00fcsseldorf",
+                "state": "Nordrhein-Westfalen",
+                "country": "Germany",
+                "private": false,
+                "hazardous": false,
+                "starred": false
+            },
+            "pr_rank": 3,
+            "achievements": [
+                {
+                    "type_id": 3,
+                    "type": "pr",
+                    "rank": 3
+                }
+            ],
+            "visibility": "everyone",
+            "kom_rank": null,
+            "hidden": false
+        }
+    ],
+    "splits_metric": [
+        {
+            "distance": 1001.9,
+            "elapsed_time": 356,
+            "elevation_difference": -0.3,
+            "moving_time": 356,
+            "split": 1,
+            "average_speed": 2.81,
+            "average_grade_adjusted_speed": 2.82,
+            "average_heartrate": 158.53257790368272,
+            "pace_zone": 3
+        },
+        {
+            "distance": 998.4,
+            "elapsed_time": 371,
+            "elevation_difference": 0.9,
+            "moving_time": 368,
+            "split": 2,
+            "average_speed": 2.71,
+            "average_grade_adjusted_speed": 2.73,
+            "average_heartrate": 159.72252747252747,
+            "pace_zone": 3
+        },
+        {
+            "distance": 1001.0,
+            "elapsed_time": 378,
+            "elevation_difference": -2.5,
+            "moving_time": 378,
+            "split": 3,
+            "average_speed": 2.65,
+            "average_grade_adjusted_speed": 2.64,
+            "average_heartrate": 160.2127659574468,
+            "pace_zone": 2
+        },
+        {
+            "distance": 999.1,
+            "elapsed_time": 379,
+            "elevation_difference": 0.6,
+            "moving_time": 379,
+            "split": 4,
+            "average_speed": 2.64,
+            "average_grade_adjusted_speed": 2.64,
+            "average_heartrate": 158.42933333333335,
+            "pace_zone": 2
+        },
+        {
+            "distance": 1000.9,
+            "elapsed_time": 383,
+            "elevation_difference": 0.9,
+            "moving_time": 383,
+            "split": 5,
+            "average_speed": 2.61,
+            "average_grade_adjusted_speed": 2.62,
+            "average_heartrate": 157.6121372031662,
+            "pace_zone": 2
+        },
+        {
+            "distance": 1000.3,
+            "elapsed_time": 384,
+            "elevation_difference": -0.5,
+            "moving_time": 381,
+            "split": 6,
+            "average_speed": 2.63,
+            "average_grade_adjusted_speed": 2.63,
+            "average_heartrate": 157.10840108401084,
+            "pace_zone": 2
+        },
+        {
+            "distance": 999.9,
+            "elapsed_time": 381,
+            "elevation_difference": -0.4,
+            "moving_time": 378,
+            "split": 7,
+            "average_speed": 2.65,
+            "average_grade_adjusted_speed": 2.65,
+            "average_heartrate": 158.37874659400546,
+            "pace_zone": 2
+        },
+        {
+            "distance": 1001.4,
+            "elapsed_time": 376,
+            "elevation_difference": 0.9,
+            "moving_time": 376,
+            "split": 8,
+            "average_speed": 2.66,
+            "average_grade_adjusted_speed": 2.69,
+            "average_heartrate": 161.73497267759564,
+            "pace_zone": 2
+        },
+        {
+            "distance": 998.2,
+            "elapsed_time": 338,
+            "elevation_difference": -1.7,
+            "moving_time": 338,
+            "split": 9,
+            "average_speed": 2.95,
+            "average_grade_adjusted_speed": 2.95,
+            "average_heartrate": 168.3026706231454,
+            "pace_zone": 3
+        },
+        {
+            "distance": 1000.6,
+            "elapsed_time": 331,
+            "elevation_difference": 1.2,
+            "moving_time": 331,
+            "split": 10,
+            "average_speed": 3.02,
+            "average_grade_adjusted_speed": 3.03,
+            "average_heartrate": 168.25382262996942,
+            "pace_zone": 4
+        },
+        {
+            "distance": 1000.9,
+            "elapsed_time": 335,
+            "elevation_difference": 1.4,
+            "moving_time": 335,
+            "split": 11,
+            "average_speed": 2.99,
+            "average_grade_adjusted_speed": 3.0,
+            "average_heartrate": 168.77507598784194,
+            "pace_zone": 3
+        },
+        {
+            "distance": 997.4,
+            "elapsed_time": 335,
+            "elevation_difference": -1.4,
+            "moving_time": 335,
+            "split": 12,
+            "average_speed": 2.98,
+            "average_grade_adjusted_speed": 2.97,
+            "average_heartrate": 167.92447129909365,
+            "pace_zone": 3
+        },
+        {
+            "distance": 1001.5,
+            "elapsed_time": 331,
+            "elevation_difference": -1.6,
+            "moving_time": 331,
+            "split": 13,
+            "average_speed": 3.03,
+            "average_grade_adjusted_speed": 3.03,
+            "average_heartrate": 167.62996941896026,
+            "pace_zone": 4
+        },
+        {
+            "distance": 1000.5,
+            "elapsed_time": 328,
+            "elevation_difference": 1.0,
+            "moving_time": 328,
+            "split": 14,
+            "average_speed": 3.05,
+            "average_grade_adjusted_speed": 3.06,
+            "average_heartrate": 168.27300613496934,
+            "pace_zone": 4
+        },
+        {
+            "distance": 999.6,
+            "elapsed_time": 329,
+            "elevation_difference": 0.5,
+            "moving_time": 329,
+            "split": 15,
+            "average_speed": 3.04,
+            "average_grade_adjusted_speed": 3.05,
+            "average_heartrate": 171.09597523219813,
+            "pace_zone": 4
+        },
+        {
+            "distance": 1001.6,
+            "elapsed_time": 341,
+            "elevation_difference": 1.5,
+            "moving_time": 334,
+            "split": 16,
+            "average_speed": 3.0,
+            "average_grade_adjusted_speed": 3.01,
+            "average_heartrate": 168.48493975903614,
+            "pace_zone": 3
+        },
+        {
+            "distance": 998.0,
+            "elapsed_time": 327,
+            "elevation_difference": -0.7,
+            "moving_time": 327,
+            "split": 17,
+            "average_speed": 3.05,
+            "average_grade_adjusted_speed": 3.05,
+            "average_heartrate": 170.1086956521739,
+            "pace_zone": 4
+        },
+        {
+            "distance": 999.5,
+            "elapsed_time": 337,
+            "elevation_difference": 1.1,
+            "moving_time": 337,
+            "split": 18,
+            "average_speed": 2.97,
+            "average_grade_adjusted_speed": 2.99,
+            "average_heartrate": 171.21492537313432,
+            "pace_zone": 3
+        },
+        {
+            "distance": 1001.4,
+            "elapsed_time": 313,
+            "elevation_difference": -2.7,
+            "moving_time": 313,
+            "split": 19,
+            "average_speed": 3.2,
+            "average_grade_adjusted_speed": 3.19,
+            "average_heartrate": 174.91318327974275,
+            "pace_zone": 4
+        },
+        {
+            "distance": 998.1,
+            "elapsed_time": 315,
+            "elevation_difference": 0.8,
+            "moving_time": 315,
+            "split": 20,
+            "average_speed": 3.17,
+            "average_grade_adjusted_speed": 3.18,
+            "average_heartrate": 176.48701298701297,
+            "pace_zone": 4
+        },
+        {
+            "distance": 1003.6,
+            "elapsed_time": 323,
+            "elevation_difference": 0.8,
+            "moving_time": 323,
+            "split": 21,
+            "average_speed": 3.11,
+            "average_grade_adjusted_speed": 3.11,
+            "average_heartrate": 174.95268138801262,
+            "pace_zone": 4
+        },
+        {
+            "distance": 143.1,
+            "elapsed_time": 39,
+            "elevation_difference": 0.6,
+            "moving_time": 39,
+            "split": 22,
+            "average_speed": 3.67,
+            "average_grade_adjusted_speed": 3.7,
+            "average_heartrate": 180.44736842105263,
+            "pace_zone": 6
+        }
+    ],
+    "splits_standard": [
+        {
+            "distance": 1612.0,
+            "elapsed_time": 583,
+            "elevation_difference": -2.3,
+            "moving_time": 580,
+            "split": 1,
+            "average_speed": 2.78,
+            "average_grade_adjusted_speed": 2.78,
+            "average_heartrate": 158.7704347826087,
+            "pace_zone": 3
+        },
+        {
+            "distance": 1608.6,
+            "elapsed_time": 607,
+            "elevation_difference": 0.0,
+            "moving_time": 607,
+            "split": 2,
+            "average_speed": 2.65,
+            "average_grade_adjusted_speed": 2.66,
+            "average_heartrate": 160.08457711442787,
+            "pace_zone": 2
+        },
+        {
+            "distance": 1609.0,
+            "elapsed_time": 612,
+            "elevation_difference": 1.6,
+            "moving_time": 612,
+            "split": 3,
+            "average_speed": 2.63,
+            "average_grade_adjusted_speed": 2.64,
+            "average_heartrate": 158.08278145695365,
+            "pace_zone": 2
+        },
+        {
+            "distance": 1609.4,
+            "elapsed_time": 614,
+            "elevation_difference": 0.4,
+            "moving_time": 611,
+            "split": 4,
+            "average_speed": 2.63,
+            "average_grade_adjusted_speed": 2.64,
+            "average_heartrate": 157.2972972972973,
+            "pace_zone": 2
+        },
+        {
+            "distance": 1610.2,
+            "elapsed_time": 606,
+            "elevation_difference": -0.6,
+            "moving_time": 603,
+            "split": 5,
+            "average_speed": 2.67,
+            "average_grade_adjusted_speed": 2.68,
+            "average_heartrate": 160.77079796264854,
+            "pace_zone": 2
+        },
+        {
+            "distance": 1608.6,
+            "elapsed_time": 546,
+            "elevation_difference": -0.2,
+            "moving_time": 546,
+            "split": 6,
+            "average_speed": 2.95,
+            "average_grade_adjusted_speed": 2.95,
+            "average_heartrate": 168.0110497237569,
+            "pace_zone": 3
+        },
+        {
+            "distance": 1607.9,
+            "elapsed_time": 533,
+            "elevation_difference": 0.2,
+            "moving_time": 533,
+            "split": 7,
+            "average_speed": 3.02,
+            "average_grade_adjusted_speed": 3.02,
+            "average_heartrate": 168.66347992351817,
+            "pace_zone": 3
+        },
+        {
+            "distance": 1609.1,
+            "elapsed_time": 533,
+            "elevation_difference": -1.4,
+            "moving_time": 533,
+            "split": 8,
+            "average_speed": 3.02,
+            "average_grade_adjusted_speed": 3.03,
+            "average_heartrate": 168.18371212121212,
+            "pace_zone": 4
+        },
+        {
+            "distance": 1609.6,
+            "elapsed_time": 529,
+            "elevation_difference": 0.8,
+            "moving_time": 529,
+            "split": 9,
+            "average_speed": 3.04,
+            "average_grade_adjusted_speed": 3.05,
+            "average_heartrate": 169.1087786259542,
+            "pace_zone": 4
+        },
+        {
+            "distance": 1610.4,
+            "elapsed_time": 541,
+            "elevation_difference": 1.8,
+            "moving_time": 534,
+            "split": 10,
+            "average_speed": 3.02,
+            "average_grade_adjusted_speed": 3.02,
+            "average_heartrate": 169.17424242424244,
+            "pace_zone": 3
+        },
+        {
+            "distance": 1610.3,
+            "elapsed_time": 535,
+            "elevation_difference": -1.5,
+            "moving_time": 535,
+            "split": 11,
+            "average_speed": 3.01,
+            "average_grade_adjusted_speed": 3.01,
+            "average_heartrate": 170.2784090909091,
+            "pace_zone": 3
+        },
+        {
+            "distance": 1611.1,
+            "elapsed_time": 520,
+            "elevation_difference": -0.3,
+            "moving_time": 520,
+            "split": 12,
+            "average_speed": 3.1,
+            "average_grade_adjusted_speed": 3.11,
+            "average_heartrate": 174.21526418786692,
+            "pace_zone": 4
+        },
+        {
+            "distance": 1605.7,
+            "elapsed_time": 508,
+            "elevation_difference": 1.1,
+            "moving_time": 508,
+            "split": 13,
+            "average_speed": 3.16,
+            "average_grade_adjusted_speed": 3.17,
+            "average_heartrate": 176.17330677290838,
+            "pace_zone": 4
+        },
+        {
+            "distance": 225.0,
+            "elapsed_time": 63,
+            "elevation_difference": 0.8,
+            "moving_time": 63,
+            "split": 14,
+            "average_speed": 3.57,
+            "average_grade_adjusted_speed": 3.6,
+            "average_heartrate": 178.0,
+            "pace_zone": 6
+        }
+    ],
+    "laps": [
+        {
+            "id": 49005982419,
+            "resource_state": 2,
+            "name": "Lap 1",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 7329,
+            "moving_time": 7329,
+            "start_date": "2025-03-09T11:53:34Z",
+            "start_date_local": "2025-03-09T12:53:34Z",
+            "distance": 21146.9,
+            "average_speed": 2.89,
+            "max_speed": 4.98,
+            "lap_index": 1,
+            "split": 1,
+            "start_index": 0,
+            "end_index": 7329,
+            "total_elevation_gain": 38.3,
+            "device_watts": false,
+            "average_heartrate": 165.8,
+            "max_heartrate": 181.0,
+            "pace_zone": 3
+        }
+    ],
+    "best_efforts": [
+        {
+            "id": 58428609125,
+            "resource_state": 2,
+            "name": "400m",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 119,
+            "moving_time": 119,
+            "start_date": "2025-03-09T11:53:34Z",
+            "start_date_local": "2025-03-09T12:53:34Z",
+            "distance": 400,
+            "pr_rank": null,
+            "achievements": [],
+            "start_index": 4886,
+            "end_index": 5005
+        },
+        {
+            "id": 58428609126,
+            "resource_state": 2,
+            "name": "1/2 mile",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 247,
+            "moving_time": 247,
+            "start_date": "2025-03-09T11:53:34Z",
+            "start_date_local": "2025-03-09T12:53:34Z",
+            "distance": 805,
+            "pr_rank": null,
+            "achievements": [],
+            "start_index": 6738,
+            "end_index": 6985
+        },
+        {
+            "id": 58428609127,
+            "resource_state": 2,
+            "name": "1K",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 309,
+            "moving_time": 309,
+            "start_date": "2025-03-09T11:53:34Z",
+            "start_date_local": "2025-03-09T12:53:34Z",
+            "distance": 1000,
+            "pr_rank": null,
+            "achievements": [],
+            "start_index": 6738,
+            "end_index": 7047
+        },
+        {
+            "id": 58428609117,
+            "resource_state": 2,
+            "name": "1 mile",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 501,
+            "moving_time": 501,
+            "start_date": "2025-03-09T11:53:34Z",
+            "start_date_local": "2025-03-09T12:53:34Z",
+            "distance": 1609,
+            "pr_rank": null,
+            "achievements": [],
+            "start_index": 6825,
+            "end_index": 7326
+        },
+        {
+            "id": 58428609118,
+            "resource_state": 2,
+            "name": "2 mile",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 1013,
+            "moving_time": 1013,
+            "start_date": "2025-03-09T11:53:34Z",
+            "start_date_local": "2025-03-09T12:53:34Z",
+            "distance": 3219,
+            "pr_rank": 2,
+            "achievements": [
+                {
+                    "type_id": 3,
+                    "type": "pr",
+                    "rank": 2
+                }
+            ],
+            "start_index": 6315,
+            "end_index": 7328
+        },
+        {
+            "id": 58428609119,
+            "resource_state": 2,
+            "name": "5K",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 1607,
+            "moving_time": 1607,
+            "start_date": "2025-03-09T11:53:34Z",
+            "start_date_local": "2025-03-09T12:53:34Z",
+            "distance": 5000,
+            "pr_rank": 2,
+            "achievements": [
+                {
+                    "type_id": 3,
+                    "type": "pr",
+                    "rank": 2
+                }
+            ],
+            "start_index": 5722,
+            "end_index": 7328
+        },
+        {
+            "id": 58428609120,
+            "resource_state": 2,
+            "name": "10K",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 3268,
+            "moving_time": 3268,
+            "start_date": "2025-03-09T11:53:34Z",
+            "start_date_local": "2025-03-09T12:53:34Z",
+            "distance": 10000,
+            "pr_rank": 1,
+            "achievements": [
+                {
+                    "type_id": 3,
+                    "type": "pr",
+                    "rank": 1
+                }
+            ],
+            "start_index": 4061,
+            "end_index": 7328
+        },
+        {
+            "id": 58428609121,
+            "resource_state": 2,
+            "name": "15K",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 5025,
+            "moving_time": 5025,
+            "start_date": "2025-03-09T11:53:34Z",
+            "start_date_local": "2025-03-09T12:53:34Z",
+            "distance": 15000,
+            "pr_rank": 1,
+            "achievements": [
+                {
+                    "type_id": 3,
+                    "type": "pr",
+                    "rank": 1
+                }
+            ],
+            "start_index": 2303,
+            "end_index": 7327
+        },
+        {
+            "id": 58428609122,
+            "resource_state": 2,
+            "name": "10 mile",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 5441,
+            "moving_time": 5441,
+            "start_date": "2025-03-09T11:53:34Z",
+            "start_date_local": "2025-03-09T12:53:34Z",
+            "distance": 16090,
+            "pr_rank": 1,
+            "achievements": [
+                {
+                    "type_id": 3,
+                    "type": "pr",
+                    "rank": 1
+                }
+            ],
+            "start_index": 1887,
+            "end_index": 7327
+        },
+        {
+            "id": 58428609123,
+            "resource_state": 2,
+            "name": "20K",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 6919,
+            "moving_time": 6919,
+            "start_date": "2025-03-09T11:53:34Z",
+            "start_date_local": "2025-03-09T12:53:34Z",
+            "distance": 20000,
+            "pr_rank": 1,
+            "achievements": [
+                {
+                    "type_id": 3,
+                    "type": "pr",
+                    "rank": 1
+                }
+            ],
+            "start_index": 410,
+            "end_index": 7328
+        },
+        {
+            "id": 58428609124,
+            "resource_state": 2,
+            "name": "Half-Marathon",
+            "activity": {
+                "id": 13833838428,
+                "visibility": "everyone",
+                "resource_state": 1
+            },
+            "athlete": {
+                "id": 107400053,
+                "resource_state": 1
+            },
+            "elapsed_time": 7314,
+            "moving_time": 7314,
+            "start_date": "2025-03-09T11:53:34Z",
+            "start_date_local": "2025-03-09T12:53:34Z",
+            "distance": 21097,
+            "pr_rank": 1,
+            "achievements": [
+                {
+                    "type_id": 3,
+                    "type": "pr",
+                    "rank": 1
+                }
+            ],
+            "start_index": 14,
+            "end_index": 7327
+        }
+    ],
+    "gear": {
+        "id": "g15807746",
+        "primary": false,
+        "name": "Nike Zoom Fly 5",
+        "nickname": null,
+        "resource_state": 2,
+        "retired": false,
+        "distance": 547445,
+        "converted_distance": 547.4
+    },
+    "photos": {
+        "primary": null,
+        "count": 0
+    },
+    "stats_visibility": [
+        {
+            "type": "heart_rate",
+            "visibility": "everyone"
+        },
+        {
+            "type": "pace",
+            "visibility": "everyone"
+        },
+        {
+            "type": "power",
+            "visibility": "everyone"
+        },
+        {
+            "type": "speed",
+            "visibility": "everyone"
+        },
+        {
+            "type": "calories",
+            "visibility": "everyone"
+        }
+    ],
+    "hide_from_home": false,
+    "device_name": "Strava iPhone App",
+    "embed_token": "e8d64a792053440fc4db58d8719abacfb80260b6",
+    "private_note": "Gels felt great!!\nNeed more leg strength\u2026\nWater bottle placement was good.",
+    "similar_activities": {
+        "effort_count": 2,
+        "average_speed": 2.7617145831313032,
+        "min_average_speed": 2.6454869734179542,
+        "mid_average_speed": 2.762932655350022,
+        "max_average_speed": 2.8912907288248566,
+        "pr_rank": 1,
+        "frequency_milestone": null,
+        "trend": {
+            "speeds": [
+                2.6454869734179542,
+                2.762932655350022
+            ],
+            "current_activity_index": 1,
+            "min_speed": 2.6454869734179542,
+            "mid_speed": 2.762932655350022,
+            "max_speed": 2.8912907288248566,
+            "direction": 1
+        },
+        "resource_state": 2
+    },
+    "available_zones": [
+        "heartrate",
+        "pace"
+    ]
+}

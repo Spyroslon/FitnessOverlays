@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+    <meta name="copyright" content="FitOverlays - Copyright (c) 2025 Spyros Lontos">
+    <meta name="license" content="AGPL-3.0">
+    <title>FitnessOverlays - Share Your Strava Activities</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Roboto', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        /* Add custom styles or overrides here if needed */
+        html {
+            scroll-behavior: smooth;
+        }
+        /* Style for the scrollbar in the carousel (optional, browser-specific) */
+        .carousel::-webkit-scrollbar {
+            height: 4px; /* Adjust height */
+        }
+        .carousel::-webkit-scrollbar-thumb {
+            background-color: #fc4c02; /* Strava orange */
+            border-radius: 10px;
+        }
+        .carousel::-webkit-scrollbar-track {
+            background-color: #e2e8f0; /* Tailwind gray-200 */
+        }
+        /* Style for Firefox scrollbar */
+        .carousel {
+            scrollbar-width: thin;
+            scrollbar-color: #fc4c02 #e2e8f0; /* thumb color track color */
+        }
+    </style>
+    </head>
+<body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40">
+
+    <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
+        <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center max-w-[900px]">
+            <div class="flex justify-start min-w-[40px]">
+                <div id="profile-container" class="hidden">
+                    <img id="profile-picture" 
+                         src="" 
+                         alt="Profile" 
+                         class="w-8 h-8 rounded-full object-cover border border-gray-200/50">
+                </div>
+            </div>
+
+            <div class="text-center flex justify-center items-center">
+                <a href="/" class="text-3xl font-bold hover:opacity-80 transition-opacity">
+                    <span class="text-[#fc4c02]">Fitness</span><span class="text-gray-900">Overlays</span>
+                </a>
+            </div>
+
+            <div class="flex justify-end min-w-[40px]">
+                <a href="/input_activity" id="create-overlay-header-btn" 
+                   class="hidden w-8 h-8 bg-[#fc4c02] text-white rounded-full 
+                          flex items-center justify-center
+                          transform hover:scale-110 transition-all duration-200 
+                          drop-shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 md:py-12">
+
+        <section class="text-center mb-12 md:mb-16 relative z-10">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4 text-gray-900">Bring Your Strava Activities to Life</h2>
+                <p class="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                    Connect your Strava account, pick an activity, and generate stunning, shareable overlays for your Instagram Stories in seconds.
+                </p>
+                <div id="connect-strava" class="inline-block transform hover:scale-110 transition-transform duration-200 cursor-pointer">
+                    <img src="/static/images/btn_strava_connect_with_orange_x2.svg" alt="Connect with Strava" class="h-12 drop-shadow-lg rounded-lg">
+                </div>
+                <div id="create-overlay-btn" class="hidden flex justify-center">
+                    <a href="/input_activity" 
+                       class="bg-[#fc4c02] text-white font-bold py-3 px-8 rounded-lg
+                              transform hover:scale-110 transition-all duration-200 
+                              drop-shadow-lg
+                              flex items-center space-x-2">
+                        <span>Create Your Overlay</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" 
+                             class="h-5 w-5" 
+                             viewBox="0 0 20 20" 
+                             fill="currentColor">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                </div>
+             </section>
+
+        <section class="mb-12 md:mb-16 relative z-10">
+            <h3 class="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8 text-gray-900">See What You Can Create</h3>
+            <div class="max-w-[900px] mx-auto">
+                <div class="flex space-x-4 overflow-x-auto pb-4 carousel snap-x snap-mandatory scroll-smooth backdrop-blur-sm p-4 rounded-lg">
+                    <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200 drop-shadow-lg"> 
+                        <img src="/static/images/overlays_dummy_example.png" alt="Example Overlay 1" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    </div>
+                    <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200 drop-shadow-lg">
+                        <img src="/static/images/overlays_dummy_example.png" alt="Example Overlay 2" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    </div>
+                    <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200 drop-shadow-lg">
+                        <img src="/static/images/overlays_dummy_example.png" alt="Example Overlay 3" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    </div>
+                    <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200 drop-shadow-lg">
+                        <img src="/static/images/overlays_dummy_example.png" alt="Example Overlay 4" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    </div>
+                    <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200 drop-shadow-lg">
+                        <img src="/static/images/overlays_dummy_example.png" alt="Example Overlay 5" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    </div>
+                    <div class="flex-shrink-0 w-60 md:w-64 snap-center transform hover:scale-105 transition-transform duration-200 drop-shadow-lg">
+                        <img src="/static/images/overlays_dummy_example.png" alt="Example Overlay 5" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    </div>
+                </div>
+            </div>
+            <p class="text-center text-sm text-gray-600 mt-2">Scroll or swipe to see more examples &rarr;</p>
+        </section>
+
+        <section id="guide" class="mb-12 md:mb-16 bg-white/80 backdrop-blur-sm p-6 md:p-8 rounded-lg shadow-lg border border-gray-200/50 relative z-10">
+             <h3 class="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8 text-gray-900">Simple Steps to Awesome Stories</h3>
+             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 text-center">
+                <div class="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                    <div class="bg-[#fc4c02] text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mb-3 shadow-md">1</div>
+                    <h4 class="font-semibold mb-1 text-lg text-gray-800">Connect</h4>
+                    <p class="text-gray-600 text-sm">Securely connect your Strava account.</p>
+                </div>
+                 <div class="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                    <div class="bg-[#fc4c02] text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mb-3 shadow-md">2</div>
+                    <h4 class="font-semibold mb-1 text-lg text-gray-800">Choose & Customize</h4>
+                    <p class="text-gray-600 text-sm">Select your activity and personalize your overlay.</p>
+                </div>
+                 <div class="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                    <div class="bg-[#fc4c02] text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mb-3 shadow-md">3</div>
+                    <h4 class="font-semibold mb-1 text-lg text-gray-800">Copy</h4>
+                    <p class="text-gray-600 text-sm">Copy the generated transparent overlay image.</p>
+                </div>
+                 <div class="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                    <div class="bg-[#fc4c02] text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mb-3 shadow-md">4</div>
+                    <h4 class="font-semibold mb-1 text-lg text-gray-800">Paste & Share</h4>
+                    <p class="text-gray-600 text-sm">Paste it directly into your Instagram Story!</p>
+                </div>
+             </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-900/80 backdrop-blur-sm text-gray-300 text-sm py-6 border-t border-gray-700/50">
+        <div class="container mx-auto px-4 flex flex-col items-center space-y-4">
+            <div class="text-center">
+                &copy; 2025 FitnessOverlays - Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
+                   target="_blank" 
+                   class="hover:text-strava-orange transition-colors">
+                    AGPL-3.0
+                </a>
+            </div>
+            <div>
+                <img src="/static/images/api_logo_pwrdBy_strava_horiz_white.svg" 
+                     alt="Powered by Strava" 
+                     class="h-4 width-auto mx-auto">
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add CSRF token management
+            let csrfToken = '';
+
+            // Helper function to add CSRF token to fetch options
+            function addCSRFToken(options = {}) {
+                return {
+                    ...options,
+                    headers: {
+                        ...options.headers,
+                        'X-CSRF-Token': csrfToken
+                    }
+                };
+            }
+
+            // Update checkAuth function to store CSRF token
+            async function checkAuth() {
+                try {
+                    const response = await fetch("/status", {
+                        credentials: "include"
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    csrfToken = data.csrf_token;  // Store CSRF token
+                    
+                    // Handle require_login flag
+                    if (data.require_login) {
+                        window.location.href = "/login";
+                        return;
+                    }
+                    
+                    if (data.authenticated) {
+                        console.log('User is authenticated:', data);  // Log authentication status
+                        // Show profile picture if available
+                        if (data.athlete_profile) {
+                            const profileContainer = document.getElementById('profile-container');
+                            const profilePicture = document.getElementById('profile-picture');
+                            profilePicture.src = data.athlete_profile;
+                            profileContainer.classList.remove('hidden');
+                        }
+                        // Hide connect button and show create overlay buttons
+                        document.getElementById('connect-strava').classList.add('hidden');
+                        document.getElementById('create-overlay-btn').classList.remove('hidden');
+                        document.getElementById('create-overlay-header-btn').classList.remove('hidden');
+                        // Start token expiry check timer
+                        if (data.expires_at) {
+                            const timeToExpiry = data.expires_at - (Date.now() / 1000);
+                            if (timeToExpiry > 0) {
+                                // Check auth status 5 minutes before expiry
+                                setTimeout(checkAuth, (timeToExpiry - 300) * 1000);
+                            }
+                        }
+                    } else {
+                        console.log('User is not authenticated:', data);  // Log authentication status
+                        // Hide profile picture and create buttons when not authenticated
+                        document.getElementById('profile-container').classList.add('hidden');
+                        document.getElementById('create-overlay-header-btn').classList.add('hidden');
+                        // Show connect button when not authenticated
+                        document.getElementById('connect-strava').classList.remove('hidden');
+                        document.getElementById('create-overlay-btn').classList.add('hidden');
+                    }
+                } catch (error) {
+                    console.error("Auth check failed:", error);
+                }
+            }
+
+            // Add click handler for Strava connect button
+            document.getElementById("connect-strava").addEventListener("click", function() {
+                window.location.href = "/login";
+            });
+
+            // Add click handler for create overlay button
+            document.getElementById("create-overlay-btn").addEventListener("click", function(e) {
+                window.location.href = "/input_activity";
+            });
+
+            // Add click handler for header create overlay button
+            document.getElementById("create-overlay-header-btn").addEventListener("click", function(e) {
+                window.location.href = "/input_activity";
+            });
+
+            // Check auth status on load
+            checkAuth();
+        });
+    </script>
+
+</body>
+</html>

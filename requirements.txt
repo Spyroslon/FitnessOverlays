@@ -3,6 +3,8 @@ flask
 flask-limiter # Rate limiting for security
 flask-cors # Secure cross-origin handling
 Flask-WTF # Form handling and CSRF protection
+Flask-SQLAlchemy>=3.0
+Werkzeug>=2.0 # Ensure compatible Werkzeug version
 
 # API and OAuth dependencies
 requests
