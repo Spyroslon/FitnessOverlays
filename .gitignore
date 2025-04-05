@@ -1,5 +1,6 @@
 .venv
 venv
+*venv/
 .env
 .tokens*
 *jpg
@@ -9,3 +10,4 @@ __pycache__/
 *.pyc
 *.log
 .cursor
+instance/

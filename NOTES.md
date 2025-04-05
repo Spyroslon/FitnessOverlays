@@ -4,9 +4,8 @@
 
 ```bash
 # Development setup
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+python -m venv .fitnessoverlays-venv
+source .fitnessoverlays-venv/Scripts/activate  # Git Bash
 
 # Install dependencies
 pip install -r requirements.txt

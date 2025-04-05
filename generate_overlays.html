@@ -135,19 +135,6 @@
 
             <!-- Options Card -->
             <div class="bg-white rounded-xl shadow-lg p-6 space-y-4">
-                <!-- Section Headers -->
-                <div class="flex space-x-2">
-                    <button class="section-header flex-1 p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" data-section="text">
-                        <span class="font-medium text-strava-text">Text Overlay</span>
-                    </button>
-                    <button class="section-header flex-1 p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" data-section="maps">
-                        <span class="font-medium text-strava-text">Map Styles</span>
-                    </button>
-                    <button class="section-header flex-1 p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" data-section="graphs">
-                        <span class="font-medium text-strava-text">Activity Graphs</span>
-                    </button>
-                </div>
-
                 <!-- Section Contents -->
                 <div id="textSection" class="section-content space-y-4">
                     <div id="overlayOptions" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
@@ -210,25 +197,8 @@
                     </div>
                 </div>
 
-                <div id="mapsSection" class="section-content hidden">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        <button class="map-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-style="light">Light</button>
-                        <button class="map-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-style="dark">Dark</button>
-                        <button class="map-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-style="outdoors">Outdoors</button>
-                        <button class="map-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-style="satellite">Satellite</button>
-                        <button class="map-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-style="minimal">Minimal</button>
-                    </div>
-                </div>
-
-                <div id="graphsSection" class="section-content hidden">
-                    <div class="grid grid-cols-2 gap-2">
-                        <button class="graph-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-graph="pace">Pace Graph</button>
-                        <button class="graph-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-graph="heartrate">Heart Rate Graph</button>
-                    </div>
-                </div>
-
                 <!-- Copy Buttons -->
-                <div id="copyButtonsContainer" class="flex flex-col sm:flex-row gap-2 mt-6">
+                <div id="copyButtonsContainer" class="flex flex-col sm:flex-row gap-2 mt-6 justify-center">
                     <div id="copyTextContainer" class="flex-1 flex flex-col items-center gap-1">
                         <button id="copyTextBtn" 
                                 class="w-14 h-14 bg-strava-text hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
@@ -288,12 +258,9 @@
                 isAuthenticated: false,
                 textColor: '#ffffff',
                 textAlign: 'center', // Default center alignment
-                selectedMapStyle: 'light', // Default map style
-                selectedGraphType: 'pace', // Default graph type
-                activeSection: 'text', // Track active section
-                labelSize: 'small', 
+                labelSize: 'small',
                 valueSize: 'medium', // Default medium
-                columns: 1 
+                columns: 1
             };
 
             const SIZE_MULTIPLIERS = {
@@ -1033,155 +1000,6 @@
                 }
 
             // Move this inside DOMContentLoaded, after state is defined
-            document.querySelectorAll('.text-align-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const alignment = btn.dataset.align;
-                    
-                    // Update buttons
-                    document.querySelectorAll('.text-align-btn').forEach(b => {
-                        b.classList.toggle('active', b === btn);
-                    });
-                    
-                    // Update state and redraw
-                    state.textAlign = alignment;
-                    generateOverlay(StravaData);
-                });
-            });
-
-            const sections = {
-                text: document.getElementById('textSection'),
-                maps: document.getElementById('mapsSection'),
-                graphs: document.getElementById('graphsSection')
-            };
-
-            // Add these event listeners after your existing ones
-            document.querySelectorAll('.section-header').forEach(header => {
-                header.addEventListener('click', () => {
-                    const sectionName = header.dataset.section;
-                    state.activeSection = sectionName;
-                    
-                    // Toggle active state on headers
-                    document.querySelectorAll('.section-header').forEach(h => {
-                        h.classList.toggle('bg-gray-400', h === header);
-                        h.classList.toggle('bg-gray-100', h !== header);
-                    });
-                    
-                    // Toggle sections
-                    Object.entries(sections).forEach(([name, element]) => {
-                        element.classList.toggle('hidden', name !== sectionName);
-                    });
-
-                    // Handle copy buttons visibility and layout
-                    const copyTextContainer = document.getElementById('copyTextContainer');
-                    const copyImageContainer = document.getElementById('copyImageContainer');
-                    const copyButtonsContainer = document.getElementById('copyButtonsContainer');
-
-                    if (sectionName === 'text') {
-                        copyTextContainer.style.display = 'flex';
-                        copyButtonsContainer.classList.remove('justify-center');
-                        copyImageContainer.classList.remove('flex-none');
-                    } else {
-                        copyTextContainer.style.display = 'none';
-                        copyButtonsContainer.classList.add('justify-center');
-                        copyImageContainer.classList.add('flex-none');
-                    }
-                });
-            });
-
-            // Set initial copy button states
-            if (state.activeSection !== 'text') {
-                document.getElementById('copyTextContainer').style.display = 'none';
-                document.getElementById('copyButtonsContainer').classList.add('justify-center');
-                document.getElementById('copyImageContainer').classList.add('flex-none');
-            }
-
-            // Set initial active states for map styles and graphs
-            document.querySelector(`[data-style="${state.selectedMapStyle}"]`)?.classList.add('bg-strava-orange');
-            document.querySelector(`[data-style="${state.selectedMapStyle}"]`)?.classList.remove('bg-strava-gray');
-            
-            document.querySelector(`[data-graph="${state.selectedGraphType}"]`)?.classList.add('bg-strava-orange');
-            document.querySelector(`[data-graph="${state.selectedGraphType}"]`)?.classList.remove('bg-strava-gray');
-
-            // Update map style handlers to store selection in state
-            document.querySelectorAll('.map-option').forEach(button => {
-                button.addEventListener('click', () => {
-                    const style = button.dataset.style;
-                    state.selectedMapStyle = style;
-                    console.log(`Map style selected: ${style}`);
-                    
-                    document.querySelectorAll('.map-option').forEach(btn => {
-                        btn.classList.remove('bg-strava-orange');
-                        btn.classList.add('bg-strava-gray');
-                    });
-                    
-                    button.classList.remove('bg-strava-gray');
-                    button.classList.add('bg-strava-orange');
-                });
-            });
-
-            // Update graph handlers to store selection in state
-            document.querySelectorAll('.graph-option').forEach(button => {
-                button.addEventListener('click', () => {
-                    const graphType = button.dataset.graph;
-                    state.selectedGraphType = graphType;
-                    console.log(`Graph type selected: ${graphType}`);
-                    
-                    document.querySelectorAll('.graph-option').forEach(btn => {
-                        btn.classList.remove('bg-strava-orange');
-                        btn.classList.add('bg-strava-gray');
-                    });
-                    
-                    button.classList.remove('bg-strava-gray');
-                    button.classList.add('bg-strava-orange');
-                });
-            });
-
-            // Hide text copy button initially if not in text section
-            if (state.activeSection !== 'text') {
-                copyTextBtn.style.display = 'none';
-            }
-
-            // Add initial active state for text section
-            document.querySelector('[data-section="text"]').classList.add('bg-gray-400');
-            document.querySelector('[data-section="text"]').classList.remove('bg-gray-100');
-
-            // Add map style button handlers
-            document.querySelectorAll('.map-option').forEach(button => {
-                button.addEventListener('click', () => {
-                    const style = button.dataset.style;
-                    console.log(`Map style selected: ${style}`);
-                    
-                    // Remove active state from all map buttons
-                    document.querySelectorAll('.map-option').forEach(btn => {
-                        btn.classList.remove('bg-strava-orange');
-                        btn.classList.add('bg-strava-gray');
-                    });
-                    
-                    // Add active state to clicked button
-                    button.classList.remove('bg-strava-gray');
-                    button.classList.add('bg-strava-orange');
-                });
-            });
-
-            // Add graph button handlers
-            document.querySelectorAll('.graph-option').forEach(button => {
-                button.addEventListener('click', () => {
-                    const graphType = button.dataset.graph;
-                    console.log(`Graph type selected: ${graphType}`);
-                    
-                    // Remove active state from all graph buttons
-                    document.querySelectorAll('.graph-option').forEach(btn => {
-                        btn.classList.remove('bg-strava-orange');
-                        btn.classList.add('bg-strava-gray');
-                    });
-                    
-                    // Add active state to clicked button
-                    button.classList.remove('bg-strava-gray');
-                    button.classList.add('bg-strava-orange');
-                });
-            });
-
-            // Add after your existing event listeners
             document.querySelectorAll('.text-align-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const alignment = btn.dataset.align;
