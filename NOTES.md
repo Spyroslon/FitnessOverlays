@@ -36,6 +36,10 @@ pip install -r requirements.txt
 # Copy the example file
 cp .env.example .env
 # --> EDIT .env with your Strava Client ID, Secret, etc. <--
+# --> Ensure RATELIMIT_STORAGE_URI=redis://localhost:6379/0 is set in .env <--
+
+# Install Redis client for Python (if not in requirements.txt)
+pip install redis
 
 # Initialize/Update database schema (if needed after model changes)
 # Run this from the Flask shell or a dedicated script if created
@@ -50,69 +54,101 @@ flask run
 # or python server.py
 ```
 
+### Local Redis Setup (Docker)
+
+Required for rate limiting persistence during development. Ensure Docker Desktop is installed and running.
+
+```bash
+# 1. Run Redis container (first time or if removed)
+#    - Maps port 6379, runs detached, names container 'my-redis-dev'
+docker run --name my-redis-dev -d -p 6379:6379 redis
+
+# 2. Check if container is running
+docker ps
+
+# 3. Verify Redis is responding inside the container
+docker exec my-redis-dev redis-cli ping
+# Expected output: PONG
+
+# --- Other useful commands ---
+
+# Stop the container
+docker stop my-redis-dev
+
+# Start the stopped container
+docker start my-redis-dev
+
+# View container logs
+docker logs my-redis-dev
+
+# Stop and remove the container (if you want to start fresh)
+docker stop my-redis-dev
+docker rm my-redis-dev
+```
+
 ## Backend (`server.py`) Key Features
 
 - **Flask Application:** Standard Flask setup (`app = Flask(__name__)`).
 - **Database:**
-    - Uses Flask-SQLAlchemy with SQLite (`activities.db`).
-    - `ActivityCache` model stores fetched activity data (keyed by `activity_id`, includes `athlete_id` for authorization).
+  - Uses Flask-SQLAlchemy with SQLite (`activities.db`).
+  - `ActivityCache` model stores fetched activity data (keyed by `activity_id`, includes `athlete_id` for authorization).
 - **Authentication (Strava OAuth2):**
-    - `/login`: Initiates OAuth flow.
-    - `/callback`: Handles Strava redirect, fetches token, stores user info and tokens in session.
-    - `/logout`: Clears the session.
-    - `refresh_access_token()`: Refreshes expired access tokens using the refresh token.
-    - Session stores: `athlete_id`, `access_token`, `refresh_token`, `expires_at`, profile info.
+  - `/login`: Initiates OAuth flow.
+  - `/callback`: Handles Strava redirect, fetches token, stores user info and tokens in session.
+  - `/logout`: Clears the session.
+  - `refresh_access_token()`: Refreshes expired access tokens using the refresh token.
+  - Session stores: `athlete_id`, `access_token`, `refresh_token`, `expires_at`, profile info.
 - **Activity Fetching (`/fetch_activity/<athlete_id>/<activity_input>` POST):**
-    - Requires authentication (`athlete_id` in session must match URL).
-    - Accepts activity ID or Strava URL (standard or `strava.app.link`).
-    - `resolve_strava_link()`: Handles deep link resolution via HEAD requests.
-    - `validate_activity_id()`: Basic validation for IDs.
-    - Checks `ActivityCache` (SQLite DB) first. Verifies `athlete_id` match.
-    - If not cached, calls `fetch_activity_from_strava()`:
-        - Checks token expiry (refreshes if needed via `/status` check).
-        - Fetches from `https://www.strava.com/api/v3/activities/{activity_id}`.
-        - Verifies fetched activity's athlete ID matches the session `athlete_id`.
-        - Caches successful fetches *and 404s* in `ActivityCache` via `save_or_update_activity()`.
+  - Requires authentication (`athlete_id` in session must match URL).
+  - Accepts activity ID or Strava URL (standard or `strava.app.link`).
+  - `resolve_strava_link()`: Handles deep link resolution via HEAD requests.
+  - `validate_activity_id()`: Basic validation for IDs.
+  - Checks `ActivityCache` (SQLite DB) first. Verifies `athlete_id` match.
+  - If not cached, calls `fetch_activity_from_strava()`:
+    - Checks token expiry (refreshes if needed via `/status` check).
+    - Fetches from `https://www.strava.com/api/v3/activities/{activity_id}`.
+    - Verifies fetched activity's athlete ID matches the session `athlete_id`.
+    - Caches successful fetches *and 404s* in `ActivityCache` via `save_or_update_activity()`.
 - **Status Check (`/status` GET):**
-    - Checks authentication state (`athlete_id` in session).
-    - Returns auth status, user info (incl. profile pic URL), CSRF token.
-    - Triggers token refresh if access token is close to expiry (< 300s).
+  - Checks authentication state (`athlete_id` in session).
+  - Returns auth status, user info (incl. profile pic URL), CSRF token.
+  - Triggers token refresh if access token is close to expiry (< 300s).
 - **Routing & Views:**
-    - `/`: Serves `index.html`.
-    - `/input_activity`: Serves `input_activity.html` (requires login).
-    - `/generate_overlays`: Serves `generate_overlays.html` (requires login).
-    - Serves custom `404.html` and `auth_required.html`.
+  - `/`: Serves `index.html`.
+  - `/input_activity`: Serves `input_activity.html` (requires login).
+  - `/generate_overlays`: Serves `generate_overlays.html` (requires login).
+  - Serves custom `404.html` and `auth_required.html`.
 - **Security:**
-    - **CSRF Protection:** Uses `session['csrf_token']` generated by `generate_csrf_token()` and validated in `@app.before_request` via `X-CSRF-Token` header for POST/PUT/DELETE/PATCH.
-    - **Rate Limiting:** Uses `Flask-Limiter` based on remote address for key endpoints (`/login`, `/callback`, `/fetch_activity`, `/status`).
-    - **Security Headers:** `add_security_headers()` in `@app.after_request` adds CSP, HSTS, X-Frame-Options, etc.
-    - **Cache Control:** `add_cache_control_headers()` applies `no-store` to sensitive endpoints and allows caching for `/static`.
-    - **Static File Serving:** `/static/<path:path>` validates extensions and uses `safe_join` to prevent traversal.
-    - **Logging:** Uses `TimedRotatingFileHandler` for daily logs in `logs/app.log`, keeping 30 days. Also logs to console.
+  - **CSRF Protection:** Uses `session['csrf_token']` generated by `generate_csrf_token()` and validated in `@app.before_request` via `X-CSRF-Token` header for POST/PUT/DELETE/PATCH.
+  - **Rate Limiting:** Uses `Flask-Limiter` based on remote address for key endpoints (`/login`, `/callback`, `/fetch_activity`, `/status`).
+  - **Security Headers:** `add_security_headers()` in `@app.after_request` adds CSP, HSTS, X-Frame-Options, etc.
+  - **Cache Control:** `add_cache_control_headers()` applies `no-store` to sensitive endpoints and allows caching for `/static`.
+  - **Static File Serving:** `/static/<path:path>` validates extensions and uses `safe_join` to prevent traversal.
+  - **Logging:** Uses `TimedRotatingFileHandler` for daily logs in `logs/app.log`, keeping 30 days. Also logs to console.
 - **Error Handling:** Custom handlers for `RateLimitExceeded` (429) and `404`.
 
 ## Frontend (`static/html/` & JS) Key Features
 
 - **Pages:**
-    - `index.html`: Landing page, "Connect with Strava" button or "Create Overlay" if logged in. Displays example overlays.
-    - `input_activity.html`: Form to input Strava activity URL/ID. Validates input format client-side. Sends POST request to `/fetch_activity/...`. Stores result in `sessionStorage['currentActivity']` on success and redirects to `/generate_overlays`.
-    - `generate_overlays.html`:
-        - Loads activity data from `sessionStorage['currentActivity']`.
-        - Displays activity name and link.
-        - Uses HTML Canvas (`overlayCanvas`) to draw the overlay.
-        - Allows selecting/deselecting metrics (buttons enabled/disabled based on data availability).
-        - Customization options: Text Color, Alignment (cycle), Label Size (cycle), Value Size (cycle), Columns (cycle 1-4).
-        - Options trigger redraw (`generateOverlay()` -> `drawMetrics()`).
-        - "Copy as Text" button: Copies selected metric labels and values to clipboard.
-        - "Copy as Image" button: Copies the *cropped* content of the canvas as a transparent PNG to the clipboard using `getCroppedDimensions()` and the Clipboard API (`ClipboardItem`).
+  - `index.html`: Landing page, "Connect with Strava" button or "Create Overlay" if logged in. Displays example overlays.
+  - `input_activity.html`: Form to input Strava activity URL/ID. Validates input format client-side. Sends POST request to `/fetch_activity/...`. Stores result in `sessionStorage['currentActivity']` on success and redirects to `/generate_overlays`.
+  - `generate_overlays.html`:
+    - Loads activity data from `sessionStorage['currentActivity']`.
+    - Displays activity name and link.
+    - Uses HTML Canvas (`overlayCanvas`) to draw the overlay.
+    - Allows selecting/deselecting metrics (buttons enabled/disabled based on data availability).
+    - Customization options: Text Color, Alignment (cycle), Label Size (cycle), Value Size (cycle), Columns (cycle 1-4).
+    - Options trigger redraw (`generateOverlay()` -> `drawMetrics()`).
+    - "Copy as Text" button: Copies selected metric labels and values to clipboard.
+    - "Copy as Image" button: Copies the *cropped* content of the canvas as a transparent PNG to the clipboard using `getCroppedDimensions()` and the Clipboard API (`ClipboardItem`).
     - `auth_required.html`: Shown when trying to access protected pages without being logged in.
     - `404.html`: Custom page not found.
 - **Authentication Handling (Client-Side):**
-    - All pages call `/status` on load (`checkAuth()`).
-    - Updates UI based on `authenticated` flag (shows profile pic, connect/create buttons).
-    - Stores `csrfToken` from `/status` response for subsequent POST requests.
-    - Redirects to `/login` if `/status` indicates `require_login` or not authenticated when needed.
-    - Handles token refresh logic initiated by `/status`.
+  - All pages call `/status` on load (`checkAuth()`).
+  - Updates UI based on `authenticated` flag (shows profile pic, connect/create buttons).
+  - Stores `csrfToken` from `/status` response for subsequent POST requests.
+  - Redirects to `/login` if `/status` indicates `require_login` or not authenticated when needed.
+  - Handles token refresh logic initiated by `/status`.
 - **Styling:** Tailwind CSS via CDN. Custom styles in `<style>` blocks for specific elements (checkerboard, color picker).
 - **Data Flow:**
     1. User logs in (`/login` -> `/callback`). Session cookies set.
@@ -172,3 +208,105 @@ npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --minify
 
 - Monitor rate limits
 - Keep OAuth flow secure
+
+## Docker Troubleshooting (Local Development)
+
+Common steps when the Dockerized application isn't working as expected:
+
+**1. Check Container Status:**
+
+```bash
+# See RUNNING containers (check if 'fitnessoverlays-web' and 'my-redis-dev' are listed)
+docker ps
+
+# See ALL containers (including STOPPED ones - check STATUS column for errors)
+docker ps -a
+```
+
+**2. Check Application Container Logs:**
+
+This is usually the most helpful step for application errors (like Python tracebacks or Gunicorn issues).
+
+```bash
+# View logs of the Flask app container
+docker logs fitnessoverlays-web
+
+# Follow logs in real-time (press Ctrl+C to stop)
+docker logs -f fitnessoverlays-web
+```
+
+**3. Check Redis Connectivity:**
+
+```bash
+# Verify the Redis container is running (from step 1)
+docker ps
+
+# Ping Redis from within its container
+docker exec my-redis-dev redis-cli ping
+# Expected output: PONG
+
+# Verify the RATELIMIT_STORAGE_URI in your .env file is correct
+# For Docker Desktop on Windows/Mac, it should typically be:
+# RATELIMIT_STORAGE_URI=redis://host.docker.internal:6379/0
+# (Ensure the Flask container was restarted after changing .env)
+```
+
+**4. Rebuild Image After Code Changes:**
+
+If you change Python code (`server.py`), static files (`.html`, `.js`, etc.), or dependencies (`requirements.txt`), you MUST rebuild the image because these files are copied into the image using `COPY . .` during the build process. Changes made after the build won't be reflected in running containers unless you rebuild.
+
+The standard workflow for testing code changes is:
+
+1. Make code changes.
+2. `docker build -t fitnessoverlays-app .`
+3. `docker stop fitnessoverlays-web`
+4. `docker rm fitnessoverlays-web`
+5. `docker run -p 5000:8000 --name fitnessoverlays-web -d --env-file .env fitnessoverlays-app`
+
+```bash
+# Rebuild the Flask app image
+docker build -t fitnessoverlays-app .
+```
+
+**Development Optimization (Optional - Volumes):**
+
+To avoid constant rebuilding during *local development only*, you can mount your local code directory directly into the container using a volume. Changes made locally will then be reflected inside the running container, often picked up automatically by Gunicorn/Flask's reloader (though you might need to configure the reloader).
+
+```bash
+# Example: Mount local code (replace C:/Developments/FitOverlays with your actual path)
+# Note the change in container name (e.g., -dev) to avoid conflicts if the regular one exists
+docker run -p 5000:8000 \
+           --name fitnessoverlays-web-dev \
+           -d \
+           --env-file .env \
+           -v "C:/Developments/FitOverlays:/app" \
+           fitnessoverlays-app
+
+# If using Git Bash or WSL, the path might look like:
+# -v "/c/Developments/FitOverlays:/app" 
+```
+
+**Important:** Volumes are for **local development speed only**. The final image built for staging/production *must* have the code copied using the `COPY` instruction in the Dockerfile to be self-contained and portable. Do not rely on volumes for production deployments.
+
+**5. Restart Containers:**
+
+Sometimes a clean restart helps.
+
+```bash
+# Stop containers (order doesn't usually matter here)
+docker stop fitnessoverlays-web
+docker stop my-redis-dev
+
+# Optional: Remove the Flask container if you want a fresh start (e.g., after build)
+docker rm fitnessoverlays-web
+
+# Start containers (Redis first is good practice, though not strictly required)
+docker start my-redis-dev
+docker run -p 5000:8000 --name fitnessoverlays-web -d --env-file .env fitnessoverlays-app
+# (Use `docker start fitnessoverlays-web` if you didn't remove it and just want to restart)
+```
+
+**6. URL / Port Issues:**
+
+- Access the app via the *host* port you mapped (e.g., `http://localhost:5000`), not the *internal* container port (8000). This is set by the `-p 5000:8000` flag in `docker run`.
+- Ensure no other application on your host machine is already using port 5000.

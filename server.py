@@ -1,4 +1,4 @@
-# FitOverlays - Copyright (c) 2025 Spyros Lontos
+# FitnessOverlays - Copyright (c) 2025 Spyros Lontos
 # Licensed under AGPL-3.0
 
 from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response, send_file
@@ -21,22 +21,34 @@ from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 
+# Add this log line right at the top
+logging.basicConfig(level=logging.INFO) # Basic config if logger not set up yet
+logging.info("--- server.py script started execution ---")
+
 # Load environment variables from .env file
 load_dotenv()
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 AUTH_BASE_URL = os.getenv("AUTH_BASE_URL")
 TOKEN_URL = os.getenv("TOKEN_URL")
+RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://") # Default to memory if not set
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Allow OAuth without HTTPS in development
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-app.secret_key = os.urandom(24)
+
+# Use a consistent secret key from environment variables
+app.secret_key = os.getenv("SECRET_KEY")
+if not app.secret_key:
+    # Optionally, log an error or provide a default for local dev (not recommended for prod)
+    # For production, it's better to fail fast if the key is missing.
+    raise ValueError("SECRET_KEY environment variable not set. Cannot run application securely.")
 
 # Configure SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///activities.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Recommended setting
+app.config['RATELIMIT_STORAGE_URI'] = RATELIMIT_STORAGE_URI
 db = SQLAlchemy(app)
 
 # Define the ActivityCache model
@@ -55,7 +67,8 @@ with app.app_context():
 
 # Configure logging
 if not os.path.exists('logs'):
-    os.makedirs('logs')
+    # Use exist_ok=True to prevent errors if the directory already exists
+    os.makedirs('logs', exist_ok=True)
 
 # Use TimedRotatingFileHandler for daily logs
 log_file = 'logs/app.log' # Base log filename
@@ -163,11 +176,11 @@ def after_request(response):
     
     return response
 
-# Setup rate limiter (stores limits in memory by default)
+# Setup rate limiter (NOW uses the storage URI from config)
 limiter = Limiter(
-    get_remote_address,  # Uses IP address for limiting
+    get_remote_address,
     app=app,
-    default_limits=["100 per day", "30 per hour"]  # More restrictive default limits
+    default_limits=["100 per day", "30 per hour"]
 )
 
 def generate_csrf_token():
@@ -196,9 +209,13 @@ def csrf_protect():
 def login():
     """Handle the login process using Strava OAuth"""
     try:
+        # Generate the dynamic callback URL
+        callback_url = url_for('callback', _external=True)
+        logger.info(f"Generated dynamic callback URL: {callback_url}") # Log the generated URL for debugging
+
         oauth = OAuth2Session(
             CLIENT_ID,
-            redirect_uri="http://127.0.0.1:5000/callback",  # Update to match exact local URL
+            redirect_uri=callback_url, # Use the dynamic URL
             scope=["activity:read_all"]
         )
         authorization_url, state = oauth.authorization_url(AUTH_BASE_URL)
@@ -213,15 +230,19 @@ def login():
 def callback():
     """Handle the OAuth callback from Strava"""
     try:
+        # Generate the dynamic callback URL consistently
+        callback_url = url_for('callback', _external=True)
+        logger.info(f"Using dynamic callback URL in callback handler: {callback_url}") # Log for debugging
+
         oauth = OAuth2Session(
             CLIENT_ID,
             state=session.get('oauth_state'),
-            redirect_uri="http://127.0.0.1:5000/callback"  # Update to match exact local URL
+            redirect_uri=callback_url # Use the dynamic URL here as well
         )
         token = oauth.fetch_token(
             TOKEN_URL,
             client_secret=CLIENT_SECRET,
-            authorization_response=request.url,
+            authorization_response=request.url, # Keep using request.url here, it contains the code from Strava
             include_client_id=True
         )
         
@@ -586,6 +607,7 @@ def fetch_activity_from_strava(activity_id):
 @limiter.limit("30 per minute")  # Add specific limit for status endpoint
 def status():
     """Check if user is authenticated, provide CSRF token and handle token refresh"""
+    logger.info(f"Status endpoint called - Session: {session}")
     try:
         if "access_token" in session:
             csrf_token = generate_csrf_token()
@@ -773,5 +795,6 @@ def generate_overlays():
     return send_from_directory('static/html', 'generate_overlays.html')
 
 if __name__ == '__main__':
+    logging.info("--- Preparing to run Flask app ---") # Add this log line
     logging.info("Starting Flask application...") # Example log at startup
     app.run(debug=True, port=5000)
