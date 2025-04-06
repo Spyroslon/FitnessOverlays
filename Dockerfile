@@ -33,7 +33,7 @@
     #    -w 4: Use 4 worker processes (adjust based on your server CPU cores)
     #    -b 0.0.0.0:8000: Bind to all network interfaces on port 8000
     #    server:app: Run the 'app' object from the 'server.py' module
-    CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "--log-level", "debug", "--error-logfile", "-", "--access-logfile", "-", "server:app"]
-
+    CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "server:app"]
+    
     # TEMPORARY change for debugging
-    # CMD ["python", "server.py"]
+    # CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "--log-level", "debug", "--error-logfile", "-", "--access-logfile", "-", "server:app"]
