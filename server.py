@@ -3,7 +3,6 @@
 
 from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response, send_file
 import os
-import json
 import time
 import requests
 import logging
@@ -31,6 +30,7 @@ CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 AUTH_BASE_URL = os.getenv("AUTH_BASE_URL")
 TOKEN_URL = os.getenv("TOKEN_URL")
+SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
 RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://") # Default to memory if not set
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Allow OAuth without HTTPS in development
@@ -46,7 +46,7 @@ if not app.secret_key:
     raise ValueError("SECRET_KEY environment variable not set. Cannot run application securely.")
 
 # Configure SQLAlchemy
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///activities.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Recommended setting
 app.config['RATELIMIT_STORAGE_URI'] = RATELIMIT_STORAGE_URI
 db = SQLAlchemy(app)

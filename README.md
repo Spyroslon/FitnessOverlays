@@ -1,66 +1,57 @@
 # FitnessOverlays 🚴
 
-## 📌 **Turn Your Strava Activities into Stunning Overlays**
+## Turn Your Strava Activities into Awesome Overlays
 
-FitnessOverlays is a sleek and easy-to-use web tool that transforms your Strava activities into stylish, shareable overlays. Perfectly optimized for Instagram Stories.
-
----
-
-## 🌟 **Features**
-
-✅ **Instant Strava Integration** – Just paste your Strava activity link, and we handle the rest.  
-🎨 **Multiple Overlay Styles** – Choose from a variety of designs that match your personal aesthetic.  
-📏 **Instagram-Optimized** – Transparent, high-resolution overlays sized for Instagram Stories.  
-⚡ **No Hassle** – No sign-ups, no downloads. Simply copy your overlay and share.  
-🔄 **Customization Options** – Adjust colors, text size, and layout for a personal touch.  
+FitnessOverlays lets you quickly create stylish overlays from your Strava activities, ready to share on Instagram Stories or wherever you like.
 
 ---
 
-## 🚀 **How It Works**
+## Features
 
-1. **Authenticate** with Strava
-2. **Copy** the link to your Strava activity.
-3. **Paste** it into FitnessOverlays.
-4. **Customize** your overlay metrics.
-5. **Copy** your overlay and add directly to your Instagram Stories or other social platforms.
-
----
-
-### 💡 **Why FitnessOverlays?**
-
-- **Sleek & Modern**: Designed with aesthetics in mind.
-- **Fast & User-Friendly**: No complex setup—just instant results.
-- **Built for Athletes**: Whether you run, cycle, or swim, FitnessOverlays helps you flex your achievements in style.
-
-🏆 **Powered by Strava**  
-🔥 Start sharing your workouts with style—Try FitnessOverlays today! 🔥
+* **Easy Strava Connect**: Securely link your account.
+* **Paste & Go**: Just drop in your Strava activity link.
+* **Multiple Styles**: Pick an overlay design that fits your vibe.
+* **Story-Ready**: Get transparent, high-res overlays sized perfectly.
+* **No Fuss**: No extra sign-ups needed. Copy, paste, done.
+* **Customize It**: Tweak metrics and appearance (more options coming!).
 
 ---
 
-## **List of the best parameters for an overlay**  
+## How It Works - Quick Steps
 
-### **Metrics**  
+1. **Connect**: Hit the button to securely link your Strava account.
+2. **Input Activity**: Head to the input page and paste your Strava activity link.
+3. **Customize**: Choose your favorite overlay style and tweak the stats you want to show.
+4. **Copy & Share**: Grab the transparent overlay image and drop it straight into your Story.
 
-- **Distance** (e.g., `11.01 km`)  
-- **Moving Time** (formatted as `1h 5m 52s`)  
-- **Pace** (calculated from moving time & distance, e.g., `5:58 min/km`)  
-- **Average Heart Rate** (if available, e.g., `159 bpm`)  
-- **Max Heart Rate** (e.g., `169 bpm`)  
-- **Calories Burned** (e.g., `910 kcal`)  
-- **Suffer Score** (if relevant for effort-based overlays, e.g., `98`)  
-- **Elevation Gain** (e.g., `25 m`)
-- **Calories** (e.g., `809`)
+---
 
-## To be added*
+## Overlay Data Options
 
-### **Maps** (generated from `summary_polyline`)
+### Key Metrics
 
-- **Minimal**
-- **Light**
-- **Dark**
-- **Satelite**
+* **Distance** (e.g., `11.01 km`)
+* **Moving Time** (e.g., `1h 5m 52s`)
+* **Pace** (e.g., `5:58 min/km`)
+* **Avg/Max Heart Rate** (e.g., `159 bpm` / `169 bpm`)
+* **Calories** (e.g., `809`)
+* **Elevation Gain** (e.g., `25 m`)
+* **Suffer Score** (when available)
 
-### **Graphs**
+### *Coming Soon*
 
-- **Pace Graph** (from pace data if available)  
-- **Heart Rate Graph** (if heartrate data exists)
+#### Map Styles (from `summary_polyline`)
+
+* Minimal
+* Light
+* Dark
+* Satellite
+
+#### Data Graphs
+
+* Pace Graph
+* Heart Rate Graph
+
+---
+
+![Powered by Strava](static/images/api_logo_pwrdBy_strava_horiz_orange.svg)

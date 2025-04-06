@@ -1,13 +1,24 @@
-.venv
-venv
-*venv/
+# Environment
+/.venv/
+/venv/
 .env
-*jpg
-*png
-__pycache__/
+
+# Python
+/__pycache__/
 *.py[cod]
-*.pyc
+
+# Logs
+/logs/
 *.log
-logs/
-.cursor
-instance/
+
+# Media files
+*.jpg
+*.png
+
+# Editor/IDE specific
+/.cursor/
+/vscode/
+/.idea/
+
+# Flask instance folder
+/instance/
