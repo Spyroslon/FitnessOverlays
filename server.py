@@ -18,7 +18,7 @@ from werkzeug.utils import secure_filename, safe_join
 import re
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 # Add this log line right at the top
 logging.basicConfig(level=logging.INFO) # Basic config if logger not set up yet
@@ -26,6 +26,26 @@ logging.info("--- server.py script started execution ---")
 
 # Load environment variables from .env file
 load_dotenv()
+
+# --- Environment Variable Validation ---
+def check_env_vars():
+    required_vars = [
+        "CLIENT_ID",
+        "CLIENT_SECRET",
+        "AUTH_BASE_URL",
+        "TOKEN_URL",
+        "SQLALCHEMY_DATABASE_URI",
+        "SECRET_KEY",
+        "RATELIMIT_STORAGE_URI",
+        "ENVIRONMENT"
+    ]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    if missing_vars:
+        raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
+
+check_env_vars() # Execute validation immediately
+# --- End Validation ---
+
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 AUTH_BASE_URL = os.getenv("AUTH_BASE_URL")
@@ -33,7 +53,17 @@ TOKEN_URL = os.getenv("TOKEN_URL")
 SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
 RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://") # Default to memory if not set
 
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Allow OAuth without HTTPS in development
+# Environment-based configuration
+ENVIRONMENT = os.getenv("ENVIRONMENT", "prod").lower()  # Default to prod if not set
+if ENVIRONMENT == "dev":
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Allow OAuth without HTTPS in development
+    DEBUG_MODE = True
+else:
+    # In production, we don't set OAUTHLIB_INSECURE_TRANSPORT at all
+    # This ensures HTTPS is required
+    if 'OAUTHLIB_INSECURE_TRANSPORT' in os.environ:
+        del os.environ['OAUTHLIB_INSECURE_TRANSPORT']
+    DEBUG_MODE = False
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -49,6 +79,16 @@ if not app.secret_key:
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Recommended setting
 app.config['RATELIMIT_STORAGE_URI'] = RATELIMIT_STORAGE_URI
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    PERMANENT_SESSION_LIFETIME=timedelta(days=1)
+)
+if ENVIRONMENT != "prod":
+    app.config.update(
+        SESSION_COOKIE_SECURE=False
+    )
 db = SQLAlchemy(app)
 
 # Define the ActivityCache model
@@ -111,8 +151,8 @@ def add_security_headers(response: Response) -> Response:
     csp = {
         'default-src': ["'self'"],
         'script-src': ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
-        'style-src': ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],   # Added Google Fonts
-        'font-src': ["'self'", "fonts.gstatic.com"],  # Allow loading font files
+        'style-src': ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
+        'font-src': ["'self'", "fonts.gstatic.com"],
         'img-src': ["'self'", "*.strava.com", "dgalywyr863hv.cloudfront.net", "data:"],
         'connect-src': ["'self'", "www.strava.com", "strava.com"],
         'frame-ancestors': ["'none'"],
@@ -123,6 +163,11 @@ def add_security_headers(response: Response) -> Response:
         'object-src': ["'none'"],
         'worker-src': ["'self'"]
     }
+    
+    # In production, we'll use a compiled Tailwind CSS file instead of CDN
+    if ENVIRONMENT == "prod":
+        csp['script-src'].remove("cdn.tailwindcss.com")
+        csp['style-src'].append("/static/css/tailwind.css")  # Add path to compiled CSS
     
     csp_string = '; '.join([
         f"{key} {' '.join(value)}" 
@@ -797,4 +842,4 @@ def generate_overlays():
 if __name__ == '__main__':
     logging.info("--- Preparing to run Flask app ---") # Add this log line
     logging.info("Starting Flask application...") # Example log at startup
-    app.run(debug=True, port=5000)
+    app.run(debug=DEBUG_MODE, port=5000)
