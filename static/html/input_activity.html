@@ -37,11 +37,23 @@
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
         <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center max-w-[900px]">
             <div class="flex justify-start min-w-[40px]">
-                <div id="profile-container" class="hidden">
-                    <img id="profile-picture" 
-                         src="" 
-                         alt="Profile" 
-                         class="w-8 h-8 rounded-full object-cover border border-gray-200/50">
+                <!-- Profile Dropdown Container -->
+                <div id="profile-dropdown-container" class="relative hidden">
+                    <!-- Profile Picture Trigger -->
+                    <div id="profile-picture-trigger" class="cursor-pointer">
+                         <img id="profile-picture" 
+                              src="" 
+                              alt="Profile" 
+                              class="w-8 h-8 rounded-full object-cover border border-gray-200/50">
+                    </div>
+                    <!-- Dropdown Menu -->
+                    <div id="profile-dropdown-menu" 
+                         class="hidden absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 ring-1 ring-black ring-opacity-5">
+                        <button id="logout-button" 
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            Logout
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -198,9 +210,9 @@
                     
                     athleteId = data.athlete_id; // Store athlete ID
                     
-                    // Show profile picture if available
+                    // Show profile picture dropdown if available
                     if (data.athlete_profile) {
-                        document.getElementById('profile-container').classList.remove('hidden');
+                        document.getElementById('profile-dropdown-container').classList.remove('hidden');
                         document.getElementById('profile-picture').src = data.athlete_profile;
                     }
                     document.getElementById('create-overlay-header-btn').classList.remove('hidden');
@@ -293,6 +305,49 @@
                 loadActivityBtn.click();
                 }
             });
+
+            // --- Profile Dropdown Logic ---
+            const profileDropdownContainer = document.getElementById('profile-dropdown-container');
+            const profilePictureTrigger = document.getElementById('profile-picture-trigger');
+            const profileDropdownMenu = document.getElementById('profile-dropdown-menu');
+            const logoutButton = document.getElementById('logout-button');
+
+            // Toggle dropdown on picture click
+            profilePictureTrigger?.addEventListener('click', (event) => {
+                event.stopPropagation(); // Prevent click from immediately closing the dropdown
+                profileDropdownMenu?.classList.toggle('hidden');
+            });
+
+            // Close dropdown if clicked outside
+            document.addEventListener('click', (event) => {
+                if (profileDropdownContainer && !profileDropdownContainer.contains(event.target)) {
+                    profileDropdownMenu?.classList.add('hidden');
+                }
+            });
+
+            // Logout button action
+            logoutButton?.addEventListener('click', async () => {
+                 if (!csrfToken) {
+                    console.error("CSRF token not available for logout");
+                    return;
+                }
+                try {
+                    const response = await fetch('/logout', addCSRFToken({ 
+                        method: 'POST',
+                        credentials: 'include' 
+                    }));
+                    
+                    if (response.ok) {
+                        window.location.href = '/'; // Redirect to home on successful logout
+                    } else {
+                        console.error('Logout failed:', response.status, await response.text());
+                    }
+                } catch (error) {
+                    console.error('Error during logout:', error);
+                }
+                profileDropdownMenu?.classList.add('hidden'); // Hide dropdown after action
+            });
+            // --- End Profile Dropdown Logic ---
         });
     </script>
 </body>

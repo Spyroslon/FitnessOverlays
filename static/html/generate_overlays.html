@@ -85,11 +85,23 @@
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
         <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center max-w-[900px]">
             <div class="flex justify-start min-w-[40px]">
-                <div id="profile-container" class="hidden">
-                    <img id="profile-picture" 
-                         src="" 
-                         alt="Profile" 
-                         class="w-8 h-8 rounded-full object-cover border border-gray-200/50">
+                <!-- Profile Dropdown Container -->
+                <div id="profile-dropdown-container" class="relative hidden">
+                    <!-- Profile Picture Trigger -->
+                    <div id="profile-picture-trigger" class="cursor-pointer">
+                         <img id="profile-picture" 
+                              src="" 
+                              alt="Profile" 
+                              class="w-8 h-8 rounded-full object-cover border border-gray-200/50">
+                    </div>
+                    <!-- Dropdown Menu -->
+                    <div id="profile-dropdown-menu" 
+                         class="hidden absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 ring-1 ring-black ring-opacity-5">
+                        <button id="logout-button" 
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            Logout
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -217,6 +229,15 @@
                         </button>
                         <span class="text-sm text-strava-text">Copy to Clipboard as Image</span>
                     </div>
+                    <div id="saveImageContainer" class="flex-1 flex flex-col items-center gap-1">
+                        <button id="saveImageBtn" 
+                                class="w-14 h-14 bg-strava-text hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                        </button>
+                        <span class="text-sm text-strava-text">Save as Image</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -308,10 +329,10 @@
                         console.log('User is authenticated:', data); 
                         // Show profile picture if available
                         if (data.athlete_profile) {
-                            const profileContainer = document.getElementById('profile-container');
+                            const profileDropdownContainer = document.getElementById('profile-dropdown-container');
                             const profilePicture = document.getElementById('profile-picture');
                             profilePicture.src = data.athlete_profile;
-                            profileContainer.classList.remove('hidden');
+                            profileDropdownContainer.classList.remove('hidden');
                         }
                         state.isAuthenticated = true;
                         state.athleteId = data.athlete_id;  // Store athlete_id in state
@@ -331,7 +352,7 @@
                     } else {
                         console.log('User is not authenticated:', data);
                         // Hide profile picture and create buttons when not authenticated
-                        document.getElementById('profile-container').classList.add('hidden');
+                        document.getElementById('profile-dropdown-container').classList.add('hidden');
                         document.getElementById('create-overlay-header-btn').classList.add('hidden');
                     }
                 } catch (error) {
@@ -993,6 +1014,72 @@
                     }
                 });
 
+                // Add save image button handler
+                document.getElementById('saveImageBtn')?.addEventListener('click', async () => {
+                    if (!state.activityData || state.selectedMetrics.length === 0) {
+                        console.warn('No activity data or selected metrics to save.');
+                        return;
+                    }
+                    if (!canvas) {
+                        console.error("Canvas element not found for saving image.");
+                        return;
+                    }
+                    const checkerboard = canvas.previousElementSibling;
+
+                    try {
+                        // Temporarily hide the checkerboard background
+                        if (checkerboard && checkerboard.classList.contains('checkerboard')) {
+                            checkerboard.style.opacity = '0';
+                        }
+
+                        // Get dimensions of the drawn content
+                        const bbox = getCroppedDimensions(StravaData, ctx, canvas);
+
+                        if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
+                            console.warn("No content detected on canvas or invalid bounding box.", bbox);
+                            if (checkerboard) checkerboard.style.opacity = '';
+                            showToast('Nothing to save');
+                            return;
+                        }
+
+                        // Create a temporary canvas sized to the bounding box
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCanvas.width = bbox.width;
+                        tempCanvas.height = bbox.height;
+
+                        // Draw the relevant part of the original canvas onto the temporary canvas
+                        tempCtx.drawImage(
+                            canvas,
+                            bbox.x, bbox.y, bbox.width, bbox.height,
+                            0, 0, bbox.width, bbox.height
+                        );
+
+                        // Create a download link
+                        const link = document.createElement('a');
+                        link.download = `strava-overlay-${state.activityId || 'activity'}.png`;
+                        
+                        // Convert canvas to blob and create object URL
+                        tempCanvas.toBlob((blob) => {
+                            if (!blob) {
+                                throw new Error("Canvas toBlob failed");
+                            }
+                            const url = URL.createObjectURL(blob);
+                            link.href = url;
+                            link.click();
+                            URL.revokeObjectURL(url);
+                            showToast('Image saved!');
+                        }, 'image/png');
+
+                    } catch (err) {
+                        console.error('Error saving image: ', err);
+                        showToast('Error saving image');
+                    } finally {
+                        // Restore checkerboard visibility
+                        if (checkerboard) checkerboard.style.opacity = '';
+                    }
+                });
+
                 // Initial canvas setup and resize listener
                 if (canvas) {
                     resizeCanvas(); // Initial size
@@ -1072,6 +1159,49 @@
             updateLabelSizeButton();
             updateValueSizeButton();
             updateColumnButton(); 
+
+            // --- Profile Dropdown Logic (Added) ---
+            const profileDropdownContainer = document.getElementById('profile-dropdown-container');
+            const profilePictureTrigger = document.getElementById('profile-picture-trigger');
+            const profileDropdownMenu = document.getElementById('profile-dropdown-menu');
+            const logoutButton = document.getElementById('logout-button');
+
+            // Toggle dropdown on picture click
+            profilePictureTrigger?.addEventListener('click', (event) => {
+                event.stopPropagation(); // Prevent click from immediately closing the dropdown
+                profileDropdownMenu?.classList.toggle('hidden');
+            });
+
+            // Close dropdown if clicked outside
+            document.addEventListener('click', (event) => {
+                if (profileDropdownContainer && !profileDropdownContainer.contains(event.target)) {
+                    profileDropdownMenu?.classList.add('hidden');
+                }
+            });
+
+            // Logout button action
+            logoutButton?.addEventListener('click', async () => {
+                 if (!csrfToken) {
+                    console.error("CSRF token not available for logout");
+                    return;
+                }
+                try {
+                    const response = await fetch('/logout', addCSRFToken({ 
+                        method: 'POST',
+                        credentials: 'include' 
+                    }));
+                    
+                    if (response.ok) {
+                        window.location.href = '/'; // Redirect to home on successful logout
+                    } else {
+                        console.error('Logout failed:', response.status, await response.text());
+                    }
+                } catch (error) {
+                    console.error('Error during logout:', error);
+                }
+                profileDropdownMenu?.classList.add('hidden'); // Hide dropdown after action
+            });
+            // --- End Profile Dropdown Logic ---
         });
     </script>
 </body>
