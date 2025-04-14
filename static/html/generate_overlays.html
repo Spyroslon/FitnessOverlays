@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="/static/images/FinessOverlaysLogo.ico">
     <meta name="copyright" content="FitnessOverlays - Copyright (c) 2025 Spyros Lontos">
     <meta name="license" content="AGPL-3.0">
     <title>Strava Overlay Generator</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/js/common.js" defer></script>
     <script>
         tailwind.config = {
             theme: {
@@ -153,11 +154,11 @@
                         <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="distance">Distance</button>
                         <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="movingTime">Time</button>
                         <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="pace">Pace</button>
-                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="elevationGain">Elevation</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="averageSpeed">Avg Speed</button>
                         <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="avgHeartRate">Avg HR</button>
                         <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="maxHeartRate">Max HR</button>
                         <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="calories">Calories</button>
-                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="sufferScore">Suffer Score</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="elevationGain">Elevation</button>
                     </div>
 
                     <!-- Unified Controls Container -->
@@ -204,6 +205,16 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125Z" />
                                 </svg>
                                 <span id="columnCount" class="text-xs leading-none">1</span>
+                            </button>
+                        </div>
+                        <!-- Reset Button -->
+                        <div class="flex flex-col items-center gap-1">
+                            <button id="resetSettingsBtn"
+                                    class="flex flex-col items-center justify-center border-2 border-red-500 bg-white text-red-500 rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-red-50"
+                                    title="Reset all overlay settings">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                  </svg>
                             </button>
                         </div>
                     </div>
@@ -275,13 +286,13 @@
                 activityId: null,
                 activityData: null,
                 athleteId: null,
-                selectedMetrics: ['distance', 'movingTime', 'pace'],
+                selectedMetrics: JSON.parse(sessionStorage.getItem('selectedMetrics')) || ['distance', 'movingTime', 'pace'],
                 isAuthenticated: false,
-                textColor: '#ffffff',
-                textAlign: 'center', // Default center alignment
-                labelSize: 'small',
-                valueSize: 'medium', // Default medium
-                columns: 1
+                textColor: sessionStorage.getItem('textColor') || '#ffffff',
+                textAlign: sessionStorage.getItem('textAlign') || 'center',
+                labelSize: sessionStorage.getItem('labelSize') || 'small',
+                valueSize: sessionStorage.getItem('valueSize') || 'medium',
+                columns: parseInt(sessionStorage.getItem('columns'), 10) || 1
             };
 
             const SIZE_MULTIPLIERS = {
@@ -291,6 +302,9 @@
             };
 
             const StravaData = {};
+
+            // Declare metricsAvailability in a scope accessible by both functions
+            let metricsAvailability = {};
 
             const activityInfoCard = document.getElementById('activityInfoCard');
             const activityName = document.getElementById('activityName');
@@ -381,10 +395,12 @@
 
                     // Display Activity Info Card
                     activityName.textContent = parsedData.name || 'Untitled Activity';
+                    // Add success indicator styling
+                    activityName.classList.add('font-bold', 'px-2', 'py-1', 'rounded-md', 'inline-block'); // Added classes
                     stravaLink.href = `https://www.strava.com/activities/${parsedData.id}`;
 
-                    // Create metrics map with availability status
-                    const metricsAvailability = {
+                    // Create metrics map with availability status (Assign to the higher-scoped variable)
+                    metricsAvailability = {
                         distance: !!parsedData.distance,
                         movingTime: !!parsedData.moving_time,
                         pace: !!(parsedData.moving_time && parsedData.distance),
@@ -392,7 +408,7 @@
                         avgHeartRate: !!parsedData.average_heartrate,
                         maxHeartRate: !!parsedData.max_heartrate,
                         calories: !!parsedData.calories,
-                        sufferScore: !!parsedData.suffer_score
+                        averageSpeed: !!parsedData.average_speed
                     };
 
                     console.log("metricsAvailability:", metricsAvailability);
@@ -419,7 +435,7 @@
                     StravaData.avgHeartRate = metricsAvailability.avgHeartRate ? Math.round(parsedData.average_heartrate) + ' bpm' : null;
                     StravaData.maxHeartRate = metricsAvailability.maxHeartRate ? Math.round(parsedData.max_heartrate) + ' bpm' : null;
                     StravaData.calories = metricsAvailability.calories ? Math.round(parsedData.calories) : null;
-                    StravaData.sufferScore = metricsAvailability.sufferScore ? Math.round(parsedData.suffer_score) : null;
+                    StravaData.averageSpeed = metricsAvailability.averageSpeed ? (parsedData.average_speed * 3.6).toFixed(1) + ' km/h' : null;
 
                     // --- Apply Button Styles Based on Availability and Default Selection ---
                     document.querySelectorAll('.overlay-option').forEach(button => {
@@ -711,6 +727,9 @@
                         state.selectedMetrics.push(metric);
                     }
 
+                    // Save the updated selection to sessionStorage
+                    sessionStorage.setItem('selectedMetrics', JSON.stringify(state.selectedMetrics));
+
                     generateOverlay(StravaData);
                 });
             });
@@ -886,7 +905,7 @@
                     avgHeartRate: 'Avg HR',
                     maxHeartRate: 'Max HR',
                     calories: 'Calories',
-                    sufferScore: 'Suffer Score'
+                    averageSpeed: 'Avg Speed'
                 };
                 return labels[metricKey] || metricKey; // Fallback to key if no label found
             }
@@ -912,6 +931,8 @@
 
                 state.textColor = e.target.value;
                 generateOverlay(StravaData);
+                // Save state
+                sessionStorage.setItem('textColor', state.textColor);
             });
 
                 // Copy Text Button - Seems mostly correct, ensure toast
@@ -1099,6 +1120,8 @@
                     // Update state and redraw
                     state.textAlign = alignment;
                     generateOverlay(StravaData);
+                    // Save state
+                    sessionStorage.setItem('textAlign', state.textAlign);
                 });
             });
 
@@ -1111,6 +1134,8 @@
                     });
                     state.labelSize = size;
                     generateOverlay(StravaData);
+                    // Save state
+                    sessionStorage.setItem('labelSize', state.labelSize);
                 });
             });
 
@@ -1122,6 +1147,8 @@
                     });
                     state.valueSize = size;
                     generateOverlay(StravaData);
+                    // Save state
+                    sessionStorage.setItem('valueSize', state.valueSize);
                 });
             });
 
@@ -1131,6 +1158,8 @@
                 state.textAlign = ALIGN_ORDER[(currentIndex + 1) % ALIGN_ORDER.length];
                 updateAlignButton();
                 generateOverlay(StravaData);
+                // Save state
+                sessionStorage.setItem('textAlign', state.textAlign);
             });
 
             labelSizeCycleBtn?.addEventListener('click', () => {
@@ -1138,6 +1167,8 @@
                 state.labelSize = SIZE_ORDER[(currentIndex + 1) % SIZE_ORDER.length];
                 updateLabelSizeButton();
                 generateOverlay(StravaData);
+                // Save state
+                sessionStorage.setItem('labelSize', state.labelSize);
             });
 
             valueSizeCycleBtn?.addEventListener('click', () => {
@@ -1145,6 +1176,8 @@
                 state.valueSize = SIZE_ORDER[(currentIndex + 1) % SIZE_ORDER.length];
                 updateValueSizeButton();
                 generateOverlay(StravaData);
+                // Save state
+                sessionStorage.setItem('valueSize', state.valueSize);
             });
 
             columnToggleBtn?.addEventListener('click', () => {
@@ -1152,6 +1185,8 @@
                 state.columns = (state.columns % 4) + 1;
                 updateColumnButton();
                 generateOverlay(StravaData);
+                // Save state
+                sessionStorage.setItem('columns', state.columns.toString());
             });
             
             // --- Initial Button States ---
@@ -1159,6 +1194,65 @@
             updateLabelSizeButton();
             updateValueSizeButton();
             updateColumnButton(); 
+
+            // --- Reset Button Logic ---
+            const resetSettingsBtn = document.getElementById('resetSettingsBtn');
+            resetSettingsBtn?.addEventListener('click', () => {
+                // Define default values
+                const defaultMetrics = ['distance', 'movingTime', 'pace'];
+                const defaultTextColor = '#ffffff';
+                const defaultTextAlign = 'center';
+                const defaultLabelSize = 'small';
+                const defaultValueSize = 'medium';
+                const defaultColumns = 1;
+
+                // 1. Clear saved state from sessionStorage
+                sessionStorage.removeItem('selectedMetrics');
+                sessionStorage.removeItem('textColor');
+                sessionStorage.removeItem('textAlign');
+                sessionStorage.removeItem('labelSize');
+                sessionStorage.removeItem('valueSize');
+                sessionStorage.removeItem('columns');
+
+                // 2. Reset the state object
+                state.selectedMetrics = [...defaultMetrics]; // Use spread for new array
+                state.textColor = defaultTextColor;
+                state.textAlign = defaultTextAlign;
+                state.labelSize = defaultLabelSize;
+                state.valueSize = defaultValueSize;
+                state.columns = defaultColumns;
+
+                // 3. Update Controls UI
+                if (colorWheel) colorWheel.value = defaultTextColor;
+                updateAlignButton();
+                updateLabelSizeButton();
+                updateValueSizeButton();
+                updateColumnButton();
+
+                // 4. Update Metric Buttons UI
+                document.querySelectorAll('.overlay-option').forEach(button => {
+                    const metric = button.dataset.metric;
+                    // Check availability from the existing metricsAvailability map (created during loadActivityFromSession)
+                    const isAvailable = state.activityData ? !!metricsAvailability[metric] : false; // Now accesses the higher-scoped variable
+
+                    button.classList.remove('bg-strava-orange', 'bg-strava-gray', 'bg-gray-300', 'cursor-not-allowed');
+                    button.disabled = false;
+
+                    if (!isAvailable) {
+                        button.disabled = true;
+                        button.classList.add('bg-gray-300', 'cursor-not-allowed');
+                    } else {
+                        if (defaultMetrics.includes(metric)) {
+                            button.classList.add('bg-strava-orange');
+                        } else {
+                            button.classList.add('bg-strava-gray');
+                        }
+                    }
+                });
+
+                // 5. Redraw Canvas
+                generateOverlay(StravaData);
+            });
 
             // --- Profile Dropdown Logic (Added) ---
             const profileDropdownContainer = document.getElementById('profile-dropdown-container');
