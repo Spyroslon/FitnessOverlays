@@ -150,7 +150,7 @@
             <div class="bg-white rounded-xl shadow-lg p-6 space-y-4">
                 <!-- Section Contents -->
                 <div id="textSection" class="section-content space-y-4">
-                    <div id="overlayOptions" class="grid grid-cols-3 gap-2">
+                    <div id="overlayOptions" class="grid grid-cols-3 md:grid-cols-4 gap-2">
                         <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="distance">Distance</button>
                         <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="movingTime">Time</button>
                         <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="pace">Pace</button>
@@ -993,161 +993,161 @@
                 }
             });
 
-                // Copy Image Button - Logic to copy to clipboard
-                copyImageBtn?.addEventListener('click', async () => {
-                    if (!state.activityData || state.selectedMetrics.length === 0) {
-                        console.warn('No activity data or selected metrics to copy.');
-                        return;
-                    }
-                    if (!canvas) {
-                        console.error("Canvas element not found for copying image.");
-                        return;
-                    }
-                    const checkerboard = canvas.previousElementSibling; // Get the checkerboard div
-
-                    try {
-                        // Temporarily hide the checkerboard background for copying
-                        if (checkerboard && checkerboard.classList.contains('checkerboard')) {
-                           checkerboard.style.opacity = '0'; // Hide instead of display none to avoid layout shifts
-                        }
-
-                        // Get dimensions of the drawn content
-                        const bbox = getCroppedDimensions(StravaData, ctx, canvas);
-
-                        if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
-                            console.warn("No content detected on canvas or invalid bounding box.", bbox);
-                             if (checkerboard) checkerboard.style.opacity = ''; // Restore background
-                            showToast('Nothing to copy');
-                            return;
-                        }
-
-                        // Create a temporary canvas sized to the bounding box
-                        const tempCanvas = document.createElement('canvas');
-                        const tempCtx = tempCanvas.getContext('2d');
-                        tempCanvas.width = bbox.width;
-                        tempCanvas.height = bbox.height;                    
-
-                        // Draw the relevant part of the original canvas onto the temporary canvas
-                        tempCtx.drawImage(
-                            canvas,
-                            bbox.x, bbox.y, bbox.width, bbox.height, // Source rectangle (from original canvas)
-                            0, 0, bbox.width, bbox.height           // Destination rectangle (whole temp canvas)
-                        );
-
-                        // Convert temp canvas to Blob for clipboard API
-                        tempCanvas.toBlob(async (blob) => {
-                            if (!blob) {
-                                if (checkerboard) checkerboard.style.opacity = ''; 
-                                console.error("Canvas toBlob failed for clipboard copy");
-                                showToast("Error preparing image for copy");
-                                return;
-                            }
-
-                            // Check if clipboard API is available (requires secure context)
-                            if (!navigator.clipboard || !navigator.clipboard.write) {
-                                showToast('Copy failed (insecure context)');
-                                console.warn('Clipboard API (write) not available in this context.');
-                                if (checkerboard) checkerboard.style.opacity = ''; 
-                                return; // Exit if clipboard write is not available
-                            }
-
-                            try {
-                                // Use ClipboardItem API
-                                await navigator.clipboard.write([
-                                    new ClipboardItem({ 'image/png': blob })
-                                ]);
-                                showToast('Image copied!');
-                            } catch (err) {
-                                console.error('Failed to copy image using ClipboardItem API: ', err);
-                                showToast('Failed to copy image');
-                            } finally {
-                                if (checkerboard) checkerboard.style.opacity = '';
-                            }
-                        }, 'image/png');
-
-                    } catch (err) {
-                        console.error('Error preparing image for copy: ', err);
-                        showToast('Error copying image');
-                        if (checkerboard) checkerboard.style.opacity = '';
-                    }
-                });
-
-                // Add save image button handler
-                document.getElementById('saveImageBtn')?.addEventListener('click', async () => {
-                    if (!state.activityData || state.selectedMetrics.length === 0) {
-                        console.warn('No activity data or selected metrics to save.');
-                        return;
-                    }
-                    if (!canvas) {
-                        console.error("Canvas element not found for saving image.");
-                        return;
-                    }
-                    const checkerboard = canvas.previousElementSibling;
-
-                    try {
-                        // Temporarily hide the checkerboard background
-                        if (checkerboard && checkerboard.classList.contains('checkerboard')) {
-                            checkerboard.style.opacity = '0';
-                        }
-
-                        // Get dimensions of the drawn content
-                        const bbox = getCroppedDimensions(StravaData, ctx, canvas);
-
-                        if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
-                            console.warn("No content detected on canvas or invalid bounding box.", bbox);
-                            if (checkerboard) checkerboard.style.opacity = '';
-                            showToast('Nothing to save');
-                            return;
-                        }
-
-                        // Create a temporary canvas sized to the bounding box
-                        const tempCanvas = document.createElement('canvas');
-                        const tempCtx = tempCanvas.getContext('2d');
-                        tempCanvas.width = bbox.width;
-                        tempCanvas.height = bbox.height;
-
-                        // Draw the relevant part of the original canvas onto the temporary canvas
-                        tempCtx.drawImage(
-                            canvas,
-                            bbox.x, bbox.y, bbox.width, bbox.height,
-                            0, 0, bbox.width, bbox.height
-                        );
-
-                        // --- Display image in modal for manual save ---
-                        try {
-                            const imageDataUrl = tempCanvas.toDataURL("image/png");
-                            const modalImage = document.getElementById('modalImage');
-                            const imageSaveModal = document.getElementById('imageSaveModal');
-
-                            if (modalImage && imageSaveModal) {
-                                modalImage.src = imageDataUrl;
-                                imageSaveModal.classList.remove('hidden');
-                                showToast("Image ready - Long-press to save");
-                            } else {
-                                console.error("Modal elements not found.");
-                                showToast("Error displaying image");
-                            }
-                        } catch (err) {
-                            console.error("Error generating image data URL:", err);
-                            showToast("Error preparing image");
-                        } finally {
-                            // Restore checkerboard visibility AFTER attempting to show modal
-                            if (checkerboard) checkerboard.style.opacity = '';
-                        }
-
-                    } catch (err) {
-                        console.error('Error during image preparation/display: ', err);
-                        showToast('Error generating image');
-                        // Ensure checkerboard is restored even if outer try fails
-                        if (checkerboard) checkerboard.style.opacity = '';
-                    }
-                });
-
-                // Initial canvas setup and resize listener
-                if (canvas) {
-                    resizeCanvas(); // Initial size
-                    window.addEventListener('resize', resizeCanvas);
+            // Copy Image Button - Logic to copy to clipboard
+            copyImageBtn?.addEventListener('click', async () => {
+                if (!state.activityData || state.selectedMetrics.length === 0) {
+                    console.warn('No activity data or selected metrics to copy.');
+                    return;
                 }
+                if (!canvas) {
+                    console.error("Canvas element not found for copying image.");
+                    return;
+                }
+                const checkerboard = canvas.previousElementSibling; // Get the checkerboard div
+
+                try {
+                    // Temporarily hide the checkerboard background for copying
+                    if (checkerboard && checkerboard.classList.contains('checkerboard')) {
+                        checkerboard.style.opacity = '0'; // Hide instead of display none to avoid layout shifts
+                    }
+
+                    // Get dimensions of the drawn content
+                    const bbox = getCroppedDimensions(StravaData, ctx, canvas);
+
+                    if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
+                        console.warn("No content detected on canvas or invalid bounding box.", bbox);
+                            if (checkerboard) checkerboard.style.opacity = ''; // Restore background
+                        showToast('Nothing to copy');
+                        return;
+                    }
+
+                    // Create a temporary canvas sized to the bounding box
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = bbox.width;
+                    tempCanvas.height = bbox.height;                    
+
+                    // Draw the relevant part of the original canvas onto the temporary canvas
+                    tempCtx.drawImage(
+                        canvas,
+                        bbox.x, bbox.y, bbox.width, bbox.height, // Source rectangle (from original canvas)
+                        0, 0, bbox.width, bbox.height           // Destination rectangle (whole temp canvas)
+                    );
+
+                    // Convert temp canvas to Blob for clipboard API
+                    tempCanvas.toBlob(async (blob) => {
+                        if (!blob) {
+                            if (checkerboard) checkerboard.style.opacity = ''; 
+                            console.error("Canvas toBlob failed for clipboard copy");
+                            showToast("Error preparing image for copy");
+                            return;
+                        }
+
+                        // Check if clipboard API is available (requires secure context)
+                        if (!navigator.clipboard || !navigator.clipboard.write) {
+                            showToast('Copy failed (insecure context)');
+                            console.warn('Clipboard API (write) not available in this context.');
+                            if (checkerboard) checkerboard.style.opacity = ''; 
+                            return; // Exit if clipboard write is not available
+                        }
+
+                        try {
+                            // Use ClipboardItem API
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            showToast('Image copied!');
+                        } catch (err) {
+                            console.error('Failed to copy image using ClipboardItem API: ', err);
+                            showToast('Failed to copy image');
+                        } finally {
+                            if (checkerboard) checkerboard.style.opacity = '';
+                        }
+                    }, 'image/png');
+
+                } catch (err) {
+                    console.error('Error preparing image for copy: ', err);
+                    showToast('Error copying image');
+                    if (checkerboard) checkerboard.style.opacity = '';
+                }
+            });
+
+            // Add save image button handler
+            document.getElementById('saveImageBtn')?.addEventListener('click', async () => {
+                if (!state.activityData || state.selectedMetrics.length === 0) {
+                    console.warn('No activity data or selected metrics to save.');
+                    return;
+                }
+                if (!canvas) {
+                    console.error("Canvas element not found for saving image.");
+                    return;
+                }
+                const checkerboard = canvas.previousElementSibling;
+
+                try {
+                    // Temporarily hide the checkerboard background
+                    if (checkerboard && checkerboard.classList.contains('checkerboard')) {
+                        checkerboard.style.opacity = '0';
+                    }
+
+                    // Get dimensions of the drawn content
+                    const bbox = getCroppedDimensions(StravaData, ctx, canvas);
+
+                    if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
+                        console.warn("No content detected on canvas or invalid bounding box.", bbox);
+                        if (checkerboard) checkerboard.style.opacity = '';
+                        showToast('Nothing to save');
+                        return;
+                    }
+
+                    // Create a temporary canvas sized to the bounding box
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = bbox.width;
+                    tempCanvas.height = bbox.height;
+
+                    // Draw the relevant part of the original canvas onto the temporary canvas
+                    tempCtx.drawImage(
+                        canvas,
+                        bbox.x, bbox.y, bbox.width, bbox.height,
+                        0, 0, bbox.width, bbox.height
+                    );
+
+                    // --- Display image in modal for manual save ---
+                    try {
+                        const imageDataUrl = tempCanvas.toDataURL("image/png");
+                        const modalImage = document.getElementById('modalImage');
+                        const imageSaveModal = document.getElementById('imageSaveModal');
+
+                        if (modalImage && imageSaveModal) {
+                            modalImage.src = imageDataUrl;
+                            imageSaveModal.classList.remove('hidden');
+                            showToast("Image ready - Long-press to save");
+                        } else {
+                            console.error("Modal elements not found.");
+                            showToast("Error displaying image");
+                        }
+                    } catch (err) {
+                        console.error("Error generating image data URL:", err);
+                        showToast("Error preparing image");
+                    } finally {
+                        // Restore checkerboard visibility AFTER attempting to show modal
+                        if (checkerboard) checkerboard.style.opacity = '';
+                    }
+
+                } catch (err) {
+                    console.error('Error during image preparation/display: ', err);
+                    showToast('Error generating image');
+                    // Ensure checkerboard is restored even if outer try fails
+                    if (checkerboard) checkerboard.style.opacity = '';
+                }
+            });
+
+            // Initial canvas setup and resize listener
+            if (canvas) {
+                resizeCanvas(); // Initial size
+                window.addEventListener('resize', resizeCanvas);
+            }
 
             // Move this inside DOMContentLoaded, after state is defined
             document.querySelectorAll('.text-align-btn').forEach(btn => {
