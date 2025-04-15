@@ -55,6 +55,13 @@ docker build -t fitnessoverlays-app .
 docker run -p 5000:8000 --name fitnessoverlays-web -d --env-file .env fitnessoverlays-app
 # Access at http://localhost:5000
 
+docker run -p 5000:8000 \
+  --name fitnessoverlays-web-dev \
+  -v "//c/Developments/FitOverlays:/app" \
+  -d \
+  --env-file .env \
+  fitnessoverlays-app
+
 # Check running app container
 docker ps
 

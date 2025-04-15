@@ -38,7 +38,7 @@
         }
 
         /* Keep custom checkerboard */
-        canvas.dark-checkerboard {
+        .dark-checkerboard {
             background-image:
             linear-gradient(45deg, #333333 25%, transparent 25%),
             linear-gradient(-45deg, #333333 25%, transparent 25%),
@@ -150,15 +150,15 @@
             <div class="bg-white rounded-xl shadow-lg p-6 space-y-4">
                 <!-- Section Contents -->
                 <div id="textSection" class="section-content space-y-4">
-                    <div id="overlayOptions" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="distance">Distance</button>
-                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="movingTime">Time</button>
-                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="pace">Pace</button>
-                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="averageSpeed">Avg Speed</button>
-                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="avgHeartRate">Avg HR</button>
-                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="maxHeartRate">Max HR</button>
-                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="calories">Calories</button>
-                        <button class="overlay-option p-3 rounded-lg text-white bg-strava-gray transition-colors" data-metric="elevationGain">Elevation</button>
+                    <div id="overlayOptions" class="grid grid-cols-3 gap-2">
+                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="distance">Distance</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="movingTime">Time</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="pace">Pace</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="averageSpeed">Avg Speed</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="avgHeartRate">Avg HR</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="maxHeartRate">Max HR</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="calories">Calories</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="elevationGain">Elevation</button>
                     </div>
 
                     <!-- Unified Controls Container -->
@@ -210,7 +210,7 @@
                         <!-- Reset Button -->
                         <div class="flex flex-col items-center gap-1">
                             <button id="resetSettingsBtn"
-                                    class="flex flex-col items-center justify-center border-2 border-red-500 bg-white text-red-500 rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-red-50"
+                                    class="flex flex-col items-center justify-center border-2 border-red-500 bg-red-100 text-red-500 rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none shadow-sm active:bg-red-200"
                                     title="Reset all overlay settings">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -221,7 +221,7 @@
                 </div>
 
                 <!-- Copy Buttons -->
-                <div id="copyButtonsContainer" class="flex flex-col sm:flex-row gap-2 mt-6 justify-center">
+                <div id="copyButtonsContainer" class="flex flex-row gap-2 mt-6 justify-center">
                     <div id="copyTextContainer" class="flex-1 flex flex-col items-center gap-1">
                         <button id="copyTextBtn" 
                                 class="w-14 h-14 bg-strava-text hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
@@ -229,7 +229,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5A3.375 3.375 0 0 0 6.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0 0 15 2.25h-1.5a2.251 2.251 0 0 0-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 0 0-9-9Z" />
                             </svg>
                         </button>
-                        <span class="text-sm text-strava-text">Copy to Clipboard as text</span>
+                        <span class="text-xs text-center text-strava-text">Copy Text</span>
                     </div>
                     <div id="copyImageContainer" class="flex-1 flex flex-col items-center gap-1">
                         <button id="copyImageBtn" 
@@ -238,7 +238,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75" />
                             </svg>
                         </button>
-                        <span class="text-sm text-strava-text">Copy to Clipboard as Image</span>
+                        <span class="text-xs text-center text-strava-text">Copy Image</span>
                     </div>
                     <div id="saveImageContainer" class="flex-1 flex flex-col items-center gap-1">
                         <button id="saveImageBtn" 
@@ -247,7 +247,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                             </svg>
                         </button>
-                        <span class="text-sm text-strava-text">Save as Image</span>
+                        <span class="text-xs text-center text-strava-text">Save Image</span>
                     </div>
                 </div>
             </div>
@@ -274,6 +274,22 @@
     <!-- Toast -->
     <div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-strava-orange text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 pointer-events-none z-50 opacity-0">
         Copied to clipboard!
+    </div>
+
+    <!-- Image Save Modal -->
+    <div id="imageSaveModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-[60] hidden">
+        <div class="bg-white rounded-lg shadow-xl p-4 max-w-sm w-full text-center relative aspect-[9/16] max-h-[50vh] flex flex-col">
+            <button id="closeModalBtn" 
+                    class="absolute top-1 right-1 m-1 p-1.5 bg-gray-300 hover:bg-gray-400 rounded-full transition-colors z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414z" clip-rule="evenodd" />
+                </svg>
+            </button>
+            <p class="text-gray-700 mb-2 font-medium text-sm flex-shrink-0">Long-press image to save</p>
+            <div class="flex-grow flex items-center justify-center overflow-hidden">
+                <img id="modalImage" src="" alt="Generated Overlay" class="max-w-full max-h-full object-contain rounded border border-gray-300 dark-checkerboard">
+            </div>
+        </div>
     </div>
 
     <script>
@@ -500,6 +516,9 @@
             const copyTextBtn = document.getElementById('copyTextBtn');
             const copyImageBtn = document.getElementById('copyImageBtn');
             const toast = document.getElementById('toast');
+
+            // --- Variable to track toast timeout ---
+            let toastTimeoutId = null;
 
             // --- Define Cycle Orders --- 
             const ALIGN_ORDER = ['left', 'center', 'right'];
@@ -911,10 +930,18 @@
             }
 
             function showToast(message) {
+                // Clear any existing timeout
+                if (toastTimeoutId) {
+                    clearTimeout(toastTimeoutId);
+                }
+
                 toast.textContent = message;
                 toast.classList.remove('opacity-0');
-                setTimeout(() => {
+                
+                // Set a new timeout to hide the toast
+                toastTimeoutId = setTimeout(() => {
                     toast.classList.add('opacity-0');
+                    toastTimeoutId = null; // Clear the ID once the timeout runs
                 }, 2000);
             }
 
@@ -935,31 +962,38 @@
                 sessionStorage.setItem('textColor', state.textColor);
             });
 
-                // Copy Text Button - Seems mostly correct, ensure toast
-                copyTextBtn?.addEventListener('click', () => {
-                    if (!state.activityData || state.selectedMetrics.length === 0) return;
+            // Copy Text Button - Seems mostly correct, ensure toast
+            copyTextBtn?.addEventListener('click', () => {
+                if (!state.activityData || state.selectedMetrics.length === 0) return;
 
-                    const textToCopy = state.selectedMetrics
-                        .map(metric => {
-                            const value = StravaData[metric];
-                            return value !== null && value !== undefined 
-                                ? `${getMetricLabel(metric)}\n${value}`  // Put label and value on separate lines
-                                : null;
-                        })
-                        .filter(line => line !== null)
-                        .join('\n\n');  // Add double line break between metrics
+                // Check if clipboard API is available (requires secure context)
+                if (!navigator.clipboard) {
+                    showToast('Copy failed (insecure context)');
+                    console.warn('Clipboard API not available in this context.');
+                    return; // Exit if clipboard is not available
+                }
 
-                    if (textToCopy) {
-                        navigator.clipboard.writeText(textToCopy)
-                            .then(() => showToast('Text copied!'))
-                            .catch(err => {
-                                console.error('Failed to copy text: ', err);
-                                showToast('Failed to copy text');
-                            });
-                    }
-                });
+                const textToCopy = state.selectedMetrics
+                    .map(metric => {
+                        const value = StravaData[metric];
+                        return value !== null && value !== undefined 
+                            ? `${getMetricLabel(metric)}\n${value}`  // Put label and value on separate lines
+                            : null;
+                    })
+                    .filter(line => line !== null)
+                    .join('\n\n');  // Add double line break between metrics
 
-                // Copy Image Button - Replace with ported logic
+                if (textToCopy) {
+                    navigator.clipboard.writeText(textToCopy)
+                        .then(() => showToast('Text copied!'))
+                        .catch(err => {
+                            console.error('Failed to copy text: ', err);
+                            showToast('Failed to Copy Text');
+                        });
+                }
+            });
+
+                // Copy Image Button - Logic to copy to clipboard
                 copyImageBtn?.addEventListener('click', async () => {
                     if (!state.activityData || state.selectedMetrics.length === 0) {
                         console.warn('No activity data or selected metrics to copy.');
@@ -976,9 +1010,6 @@
                         if (checkerboard && checkerboard.classList.contains('checkerboard')) {
                            checkerboard.style.opacity = '0'; // Hide instead of display none to avoid layout shifts
                         }
-
-                        // Ensure canvas is fully rendered - small delay might help
-                        // await new Promise(resolve => setTimeout(resolve, 100)); // Increased delay slightly
 
                         // Get dimensions of the drawn content
                         const bbox = getCroppedDimensions(StravaData, ctx, canvas);
@@ -997,20 +1028,29 @@
                         tempCanvas.height = bbox.height;                    
 
                         // Draw the relevant part of the original canvas onto the temporary canvas
-                        // Source rect: bbox.x, bbox.y, bbox.width, bbox.height
-                        // Dest rect: 0, 0, bbox.width, bbox.height
                         tempCtx.drawImage(
                             canvas,
                             bbox.x, bbox.y, bbox.width, bbox.height, // Source rectangle (from original canvas)
                             0, 0, bbox.width, bbox.height           // Destination rectangle (whole temp canvas)
                         );
 
-
                         // Convert temp canvas to Blob for clipboard API
                         tempCanvas.toBlob(async (blob) => {
                             if (!blob) {
-                                throw new Error("Canvas toBlob failed");
+                                if (checkerboard) checkerboard.style.opacity = ''; 
+                                console.error("Canvas toBlob failed for clipboard copy");
+                                showToast("Error preparing image for copy");
+                                return;
                             }
+
+                            // Check if clipboard API is available (requires secure context)
+                            if (!navigator.clipboard || !navigator.clipboard.write) {
+                                showToast('Copy failed (insecure context)');
+                                console.warn('Clipboard API (write) not available in this context.');
+                                if (checkerboard) checkerboard.style.opacity = ''; 
+                                return; // Exit if clipboard write is not available
+                            }
+
                             try {
                                 // Use ClipboardItem API
                                 await navigator.clipboard.write([
@@ -1020,9 +1060,7 @@
                             } catch (err) {
                                 console.error('Failed to copy image using ClipboardItem API: ', err);
                                 showToast('Failed to copy image');
-                                // Consider a fallback download here if needed
                             } finally {
-                                // Restore checkerboard visibility regardless of success/failure
                                 if (checkerboard) checkerboard.style.opacity = '';
                             }
                         }, 'image/png');
@@ -1030,7 +1068,6 @@
                     } catch (err) {
                         console.error('Error preparing image for copy: ', err);
                         showToast('Error copying image');
-                        // Ensure checkerboard is restored in case of error
                         if (checkerboard) checkerboard.style.opacity = '';
                     }
                 });
@@ -1076,27 +1113,32 @@
                             0, 0, bbox.width, bbox.height
                         );
 
-                        // Create a download link
-                        const link = document.createElement('a');
-                        link.download = `strava-overlay-${state.activityId || 'activity'}.png`;
-                        
-                        // Convert canvas to blob and create object URL
-                        tempCanvas.toBlob((blob) => {
-                            if (!blob) {
-                                throw new Error("Canvas toBlob failed");
+                        // --- Display image in modal for manual save ---
+                        try {
+                            const imageDataUrl = tempCanvas.toDataURL("image/png");
+                            const modalImage = document.getElementById('modalImage');
+                            const imageSaveModal = document.getElementById('imageSaveModal');
+
+                            if (modalImage && imageSaveModal) {
+                                modalImage.src = imageDataUrl;
+                                imageSaveModal.classList.remove('hidden');
+                                showToast("Image ready - Long-press to save");
+                            } else {
+                                console.error("Modal elements not found.");
+                                showToast("Error displaying image");
                             }
-                            const url = URL.createObjectURL(blob);
-                            link.href = url;
-                            link.click();
-                            URL.revokeObjectURL(url);
-                            showToast('Image saved!');
-                        }, 'image/png');
+                        } catch (err) {
+                            console.error("Error generating image data URL:", err);
+                            showToast("Error preparing image");
+                        } finally {
+                            // Restore checkerboard visibility AFTER attempting to show modal
+                            if (checkerboard) checkerboard.style.opacity = '';
+                        }
 
                     } catch (err) {
-                        console.error('Error saving image: ', err);
-                        showToast('Error saving image');
-                    } finally {
-                        // Restore checkerboard visibility
+                        console.error('Error during image preparation/display: ', err);
+                        showToast('Error generating image');
+                        // Ensure checkerboard is restored even if outer try fails
                         if (checkerboard) checkerboard.style.opacity = '';
                     }
                 });
@@ -1296,7 +1338,30 @@
                 profileDropdownMenu?.classList.add('hidden'); // Hide dropdown after action
             });
             // --- End Profile Dropdown Logic ---
+
+            // --- Image Save Modal Logic ---
+            const imageSaveModal = document.getElementById('imageSaveModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const modalImage = document.getElementById('modalImage');
+
+            const hideModal = () => {
+                if (imageSaveModal) {
+                    imageSaveModal.classList.add('hidden');
+                    // Optional: Clear image src when hiding
+                    if (modalImage) modalImage.src = ''; 
+                }
+            };
+
+            closeModalBtn?.addEventListener('click', hideModal);
+            imageSaveModal?.addEventListener('click', (event) => {
+                // Hide if clicked on the background overlay itself, not the content
+                if (event.target === imageSaveModal) {
+                    hideModal();
+                }
+            });
+            // --- End Image Save Modal Logic ---
         });
     </script>
+
 </body>
 </html>
