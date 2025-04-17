@@ -26,7 +26,17 @@ flask app server run
 # Access at http://127.0.0.1:5000 (or the address shown)
 ```
 
-**2. Docker (App)**
+**2. Dependencies**
+
+```bash
+# Install from requirements.txt
+pip install -r requirements.txt
+
+# Save current environment to requirements.txt
+pip freeze > requirements-frozen.txt
+```
+
+**3. Docker (App)**
 
 ```bash
 # --- Application (if running via Docker) ---
@@ -60,16 +70,6 @@ docker stop fitnessoverlays-web
 
 # Remove stopped app container (e.g., before running a new build)
 docker rm fitnessoverlays-web
-```
-
-**3. Dependencies**
-
-```bash
-# Install from requirements.txt
-pip install -r requirements.txt
-
-# Save current environment to requirements.txt
-pip freeze > requirements-frozen.txt
 ```
 
 ## Project Basics
