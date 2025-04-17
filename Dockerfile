@@ -10,29 +10,44 @@
     # 3. Set the working directory inside the container
     WORKDIR /app
     
-    # 4. Install system dependencies (if any are needed)
-    #    Example: RUN apt-get update && apt-get install -y some-package && rm -rf /var/lib/apt/lists/*
-    #    (Add packages here if your Python libraries need them, e.g., for database drivers)
+    # 4. Install Node.js, npm, and other system dependencies (if any)
+    #    Install Node.js (needed for Tailwind build) and curl (to download NodeSource script)
+    RUN apt-get update && \
+        apt-get install -y --no-install-recommends curl gnupg && \
+        curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+        apt-get install -y nodejs && \
+        # Clean up apt lists to reduce image size
+        rm -rf /var/lib/apt/lists/*
     
-    # 5. Copy only the requirements file first
-    #    This takes advantage of Docker's layer caching. If requirements.txt doesn't change,
-    #    Docker won't re-run the pip install step on subsequent builds.
+    # 5. Copy package.json and package-lock.json (if it exists)
+    #    Do this before copying the rest of the code for better caching
+    COPY package*.json ./
+    
+    # 6. Install Node.js dependencies (including Tailwind)
+    RUN npm install
+    
+    # 7. Copy only the Python requirements file first
     COPY requirements-frozen.txt .
     
-    # 6. Install Python dependencies
+    # 8. Install Python dependencies
     RUN pip install --no-cache-dir -r requirements-frozen.txt
     
-    # 7. Copy the rest of your application code into the container
+    # 9. Copy the rest of your application code into the container
     #    Files listed in .dockerignore will be skipped automatically.
     COPY . .
     
-    # 8. Expose the port the app runs on (Gunicorn default is 8000)
+    # 10. Build Tailwind CSS for production
+    #     Run this *after* copying all code, including HTML templates
+    RUN npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify
+    
+    # 11. Expose the port the app runs on (Gunicorn default is 8000)
     EXPOSE 8000
     
-    # 9. Define the command to run your application using Gunicorn
-    #    -w 1: Use 1 worker processes (adjust based on your server CPU cores)
-    #    -b 0.0.0.0:8000: Bind to all network interfaces on port 8000
-    #    app.server:app: Run the 'app' object from the 'app/server.py' module
+    # 12. Define the command to run your application using Gunicorn
+    #     -w 1: Use 1 worker process (suitable for Render free tier)
+    #     -b 0.0.0.0:8000: Bind to all network interfaces on port 8000
+    #     --access-logfile - --error-logfile -: Log to stdout/stderr
+    #     server:app: Run the 'app' object from the 'server.py' module
     CMD ["gunicorn", "-w", "1", "--bind", "0.0.0.0:8000", "--access-logfile", "-", "--error-logfile", "-", "server:app"]
     
     # TEMPORARY change for debugging

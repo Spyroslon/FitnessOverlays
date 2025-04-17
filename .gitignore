@@ -10,6 +10,8 @@
 # Logs
 /logs/
 *.log
+npm-debug.log*
+*_logs/
 
 # Media files
 *.jpg
@@ -25,3 +27,7 @@
 /instance/
 /activities/
 *.db
+
+# Node.js / Build artifacts
+/node_modules/
+/static/css/tailwind.css

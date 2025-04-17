@@ -20,6 +20,8 @@
     # Logs
     logs/
     *.log
+    npm-debug.log*
+    *_logs/
 
     # Secrets / Environment files (handled at runtime, not build time)
     .env
@@ -43,3 +45,6 @@
     Dockerfile
     docker-compose.yml
     .dockerignore
+
+    # Node.js
+    node_modules/

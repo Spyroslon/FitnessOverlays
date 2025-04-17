@@ -1,0 +1,23 @@
+{
+  "name": "fitnessoverlays",
+  "version": "1.0.0",
+  "description": "## Turn Your Strava Activities into Awesome Overlays",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Spyroslon/FitnessOverlays.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Spyroslon/FitnessOverlays/issues"
+  },
+  "homepage": "https://github.com/Spyroslon/FitnessOverlays#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

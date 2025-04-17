@@ -224,10 +224,12 @@ def add_security_headers(response: Response) -> Response:
         'worker-src': ["'self'"]
     }
     
-    # In production, we'll use a compiled Tailwind CSS file instead of CDN
+    # In production, remove the Tailwind CDN script source
     if ENVIRONMENT == "prod":
-        csp['script-src'].remove("cdn.tailwindcss.com")
-        csp['style-src'].append("/static/css/tailwind.css")  # Add path to compiled CSS
+        # Ensure the CDN source is removed if present
+        if "cdn.tailwindcss.com" in csp['script-src']:
+             csp['script-src'].remove("cdn.tailwindcss.com")
+        # No need to append '/static/css/tailwind.css' to style-src, 'self' covers it.
     
     csp_string = '; '.join([
         f"{key} {' '.join(value)}" 
