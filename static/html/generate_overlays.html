@@ -81,7 +81,7 @@
 
     </style>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40">
+<body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40" style="touch-action: manipulation;">
     
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
         <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center max-w-[900px]">
@@ -1072,6 +1072,27 @@
                 }
             });
 
+            // --- Helper function to check for likely mobile device ---
+            function isLikelyMobileDevice() {
+                // Check for touch points (good indicator for touch screens)
+                // and also consider screen width as a secondary heuristic
+                const hasTouch = navigator.maxTouchPoints > 0;
+                const narrowScreen = window.innerWidth < 768; // Example breakpoint
+                return hasTouch || narrowScreen; // Combine checks (adjust logic as needed)
+            }
+
+            // Generate Overlay
+            function generateOverlay(data = StravaData) {
+                // Clear the entire canvas
+                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+                // Add dark checkerboard class to canvas
+                canvas.classList.add('dark-checkerboard');
+
+                // Draw metrics
+                drawMetrics(data);
+            }
+
             // Add save image button handler
             document.getElementById('saveImageBtn')?.addEventListener('click', async () => {
                 if (!state.activityData || state.selectedMetrics.length === 0) {
@@ -1113,9 +1134,11 @@
                         0, 0, bbox.width, bbox.height
                     );
 
-                    // --- Display image in modal for manual save ---
-                    try {
-                        const imageDataUrl = tempCanvas.toDataURL("image/png");
+                    // --- Display image based on device type ---
+                    const imageDataUrl = tempCanvas.toDataURL("image/png");
+
+                    if (isLikelyMobileDevice()) {
+                        // Mobile: Show modal for long-press save
                         const modalImage = document.getElementById('modalImage');
                         const imageSaveModal = document.getElementById('imageSaveModal');
 
@@ -1127,18 +1150,23 @@
                             console.error("Modal elements not found.");
                             showToast("Error displaying image");
                         }
-                    } catch (err) {
-                        console.error("Error generating image data URL:", err);
-                        showToast("Error preparing image");
-                    } finally {
-                        // Restore checkerboard visibility AFTER attempting to show modal
-                        if (checkerboard) checkerboard.style.opacity = '';
+                    } else {
+                        // Desktop: Trigger direct download
+                        const link = document.createElement('a');
+                        link.download = `fitness_overlay_${state.activityId || 'image'}.png`; // Add activity ID if available
+                        link.href = imageDataUrl;
+                        document.body.appendChild(link); // Required for Firefox
+                        link.click();
+                        document.body.removeChild(link);
+                        showToast("Image download started");
                     }
+                    // Removed redundant error handling here, covered by outer try/catch
 
                 } catch (err) {
                     console.error('Error during image preparation/display: ', err);
                     showToast('Error generating image');
-                    // Ensure checkerboard is restored even if outer try fails
+                } finally {
+                    // Restore checkerboard visibility AFTER attempting action
                     if (checkerboard) checkerboard.style.opacity = '';
                 }
             });

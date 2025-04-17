@@ -51,7 +51,7 @@ docker run -p 5000:8000 --name fitnessoverlays-web -d --env-file .env fitnessove
 # Mounted mode for faster testing
 docker run -p 5000:8000 \
   --name fitnessoverlays-web \
-  -v "//c/Developments/FitOverlays:/app" \
+  -v "//c/Developments/FitnessOverlays:/app" \
   -d \
   --env-file .env \
   fitnessoverlays-app

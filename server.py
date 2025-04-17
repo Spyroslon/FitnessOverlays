@@ -34,7 +34,7 @@ def check_env_vars():
         "CLIENT_SECRET",
         "AUTH_BASE_URL",
         "TOKEN_URL",
-        "SQLALCHEMY_DATABASE_URI",
+        "DATABASE_FILENAME",
         "SECRET_KEY",
         "RATELIMIT_STORAGE_URI",
         "ENVIRONMENT"
@@ -50,7 +50,8 @@ CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 AUTH_BASE_URL = os.getenv("AUTH_BASE_URL")
 TOKEN_URL = os.getenv("TOKEN_URL")
-SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
+DATABASE_FILENAME = os.getenv("DATABASE_FILENAME")
+PERSISTENT_DATA_DIR = os.getenv("PERSISTENT_DATA_DIR", None) # Optional for local dev
 RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://") # Default to memory if not set
 
 # Environment-based configuration
@@ -75,36 +76,6 @@ if not app.secret_key:
     # For production, it's better to fail fast if the key is missing.
     raise ValueError("SECRET_KEY environment variable not set. Cannot run application securely.")
 
-# Configure SQLAlchemy
-app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Recommended setting
-app.config['RATELIMIT_STORAGE_URI'] = RATELIMIT_STORAGE_URI
-app.config.update(
-    SESSION_COOKIE_SECURE=True,
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Lax',
-    PERMANENT_SESSION_LIFETIME=timedelta(days=1)
-)
-if ENVIRONMENT != "prod":
-    app.config.update(
-        SESSION_COOKIE_SECURE=False
-    )
-db = SQLAlchemy(app)
-
-# Define the ActivityCache model
-class ActivityCache(db.Model):
-    activity_id = db.Column(db.BigInteger, primary_key=True)
-    athlete_id = db.Column(db.BigInteger, index=True, nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    fetched_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-
-    def __repr__(self):
-        return f'<ActivityCache {self.athlete_id}:{self.activity_id}>'
-
-# Create database tables if they don't exist
-with app.app_context():
-    db.create_all()
-
 # Configure logging
 if not os.path.exists('logs'):
     # Use exist_ok=True to prevent errors if the directory already exists
@@ -127,7 +98,7 @@ def custom_namer(default_name):
         # Fallback in case the split fails (e.g., initial log file)
         # This shouldn't happen with TimedRotatingFileHandler naming, but good practice
         new_name = default_name + ".rotated" # Or handle differently
-        logger.error(f"Could not parse rotated log filename: {default_name}. Using fallback: {new_name}")
+        logging.error(f"Could not parse rotated log filename: {default_name}. Using fallback: {new_name}")
     return new_name
 
 # Configure TimedRotatingFileHandler for daily rotation at midnight, keeping 30 days of logs
@@ -161,6 +132,78 @@ root_logger.setLevel(logging.INFO) # Set root logger level
 
 # Use the configured logger throughout the app
 logger = logging.getLogger(__name__)
+
+# --- Database Path Construction ---
+def get_database_uri(filename, persistent_dir):
+    db_path = None
+    # Production environment with a specified absolute persistent directory
+    if ENVIRONMENT == "prod" and persistent_dir and os.path.isabs(persistent_dir):
+        try:
+            # Ensure the directory exists, create if necessary
+            os.makedirs(persistent_dir, exist_ok=True)
+            db_path = os.path.join(persistent_dir, filename)
+            logger.info(f"Using persistent database path in PROD: {db_path}")
+        except OSError as e:
+            # Handle potential errors during directory creation (e.g., permissions)
+            logger.error(f"Error creating persistent directory {persistent_dir} in PROD: {e}")
+            # Fallback or raise error? Raising prevents startup if persistent disk is mandatory/expected.
+            raise ValueError(f"Could not create persistent directory: {persistent_dir}") from e
+    
+    # Fallback for Development environment OR Production without a valid persistent_dir
+    if db_path is None:
+        instance_path = os.path.join(app.instance_path)
+        try:
+            # Ensure the instance folder exists
+            os.makedirs(instance_path, exist_ok=True)
+            db_path = os.path.join(instance_path, filename)
+            if ENVIRONMENT == "prod":
+                logger.info(f"Using instance folder database path in PROD (PERSISTENT_DATA_DIR not set/absolute): {db_path}")
+            else:
+                logger.info(f"Using instance folder database path in DEV: {db_path}")
+        except OSError as e:
+            logger.error(f"Error creating instance directory {instance_path}: {e}")
+            raise ValueError(f"Could not create instance directory: {instance_path}") from e
+            
+    if db_path is None:
+        # This should theoretically not be reached if makedirs works or raises
+        critical_error = "Failed to determine a valid database path."
+        logger.critical(critical_error)
+        raise RuntimeError(critical_error)
+        
+    return f"sqlite:///{db_path}"
+# --- End Database Path Construction ---
+
+# Configure SQLAlchemy
+# Construct the database URI dynamically
+constructed_db_uri = get_database_uri(DATABASE_FILENAME, PERSISTENT_DATA_DIR)
+app.config['SQLALCHEMY_DATABASE_URI'] = constructed_db_uri
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Recommended setting
+app.config['RATELIMIT_STORAGE_URI'] = RATELIMIT_STORAGE_URI
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    PERMANENT_SESSION_LIFETIME=timedelta(days=1)
+)
+if ENVIRONMENT != "prod":
+    app.config.update(
+        SESSION_COOKIE_SECURE=False
+    )
+db = SQLAlchemy(app)
+
+# Define the ActivityCache model
+class ActivityCache(db.Model):
+    activity_id = db.Column(db.BigInteger, primary_key=True)
+    athlete_id = db.Column(db.BigInteger, index=True, nullable=False)
+    data = db.Column(db.JSON, nullable=False)
+    fetched_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<ActivityCache {self.athlete_id}:{self.activity_id}>'
+
+# Create database tables if they don't exist
+with app.app_context():
+    db.create_all()
 
 # Add CSP configuration function
 def add_security_headers(response: Response) -> Response:
