@@ -20,5 +20,8 @@
 /vscode/
 /.idea/
 
-# Flask instance folder
+# Databases
+/db/
 /instance/
+/activities/
+*.db

@@ -21,31 +21,14 @@ pip install -r requirements.txt
 cp .env.example .env
 # --> EDIT .env with your Strava Client ID/Secret <--
 
-# Start local Redis (Required! See Docker section below)
-docker start my-redis-dev
-
 # Run the Flask development server
-flask run
+flask app server run
 # Access at http://127.0.0.1:5000 (or the address shown)
 ```
 
-**2. Docker (Redis & App)**
+**2. Docker (App)**
 
 ```bash
-# --- Redis (for local dev rate limiting) ---
-
-# Start Redis container (first time)
-docker run --name my-redis-dev -d -p 6379:6379 redis
-
-# Start existing stopped Redis container
-docker start my-redis-dev
-
-# Check if Redis container is running
-docker ps
-
-# Stop Redis container
-docker stop my-redis-dev
-
 # --- Application (if running via Docker) ---
 
 # Build the app image (after code changes)
@@ -55,8 +38,9 @@ docker build -t fitnessoverlays-app .
 docker run -p 5000:8000 --name fitnessoverlays-web -d --env-file .env fitnessoverlays-app
 # Access at http://localhost:5000
 
+# Mounted mode for faster testing
 docker run -p 5000:8000 \
-  --name fitnessoverlays-web-dev \
+  --name fitnessoverlays-web \
   -v "//c/Developments/FitOverlays:/app" \
   -d \
   --env-file .env \
@@ -85,7 +69,7 @@ docker rm fitnessoverlays-web
 pip install -r requirements.txt
 
 # Save current environment to requirements.txt
-pip freeze > requirements.txt
+pip freeze > requirements-frozen.txt
 ```
 
 ## Project Basics
@@ -101,6 +85,7 @@ pip freeze > requirements.txt
   - `activities.db`: Local cache of fetched activities.
   - `.env`: Environment variables (Strava keys, secrets - **DO NOT COMMIT**).
   - `requirements.txt`: Python dependencies.
+  - `requirements-frozen.txt`: Frozen Python dependencies.
   - `Dockerfile`: Instructions to build the Docker image.
 
 ## Backend Basics (`server.py`)

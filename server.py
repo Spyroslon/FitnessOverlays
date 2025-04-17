@@ -114,8 +114,24 @@ if not os.path.exists('logs'):
 log_file = 'logs/app.log' # Base log filename
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
+# Custom namer for log files
+def custom_namer(default_name):
+    # default_name looks like /path/to/logs/app.log.YYYY-MM-DD
+    dir_name, file_name = os.path.split(default_name)
+    try:
+        # Split assuming the original extension '.log' is present before the date suffix
+        base_name, timestamp_suffix = file_name.split('.log.')
+        # Construct the new name: logs/app.YYYY-MM-DD.log
+        new_name = os.path.join(dir_name, f"{base_name}.{timestamp_suffix}.log")
+    except ValueError:
+        # Fallback in case the split fails (e.g., initial log file)
+        # This shouldn't happen with TimedRotatingFileHandler naming, but good practice
+        new_name = default_name + ".rotated" # Or handle differently
+        logger.error(f"Could not parse rotated log filename: {default_name}. Using fallback: {new_name}")
+    return new_name
+
 # Configure TimedRotatingFileHandler for daily rotation at midnight, keeping 30 days of logs
-# Rotated files will have dates appended like app.log.YYYY-MM-DD
+# Rotated files will have dates appended like app.YYYY-MM-DD -> NOW app.YYYY-MM-DD.log
 timed_handler = TimedRotatingFileHandler(
     log_file,
     when='midnight', # Rotate daily at midnight
@@ -125,6 +141,7 @@ timed_handler = TimedRotatingFileHandler(
     delay=False,     # Open file immediately
     utc=False        # Use local time for rotation timestamp
 )
+timed_handler.namer = custom_namer # Assign the custom namer
 timed_handler.setFormatter(formatter)
 timed_handler.setLevel(logging.INFO)
 

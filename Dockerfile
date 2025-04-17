@@ -1,6 +1,6 @@
     # 1. Start with an official Python base image
     #    Using a specific version is good practice. 'slim' is smaller.
-    FROM python:3.11-slim 
+    FROM python:3.13-slim 
     
     # 2. Set environment variables
     #    Prevents Python from writing pyc files and buffers output
@@ -17,10 +17,10 @@
     # 5. Copy only the requirements file first
     #    This takes advantage of Docker's layer caching. If requirements.txt doesn't change,
     #    Docker won't re-run the pip install step on subsequent builds.
-    COPY requirements.txt .
+    COPY requirements-frozen.txt .
     
     # 6. Install Python dependencies
-    RUN pip install --no-cache-dir -r requirements.txt
+    RUN pip install --no-cache-dir -r requirements-frozen.txt
     
     # 7. Copy the rest of your application code into the container
     #    Files listed in .dockerignore will be skipped automatically.
@@ -30,10 +30,10 @@
     EXPOSE 8000
     
     # 9. Define the command to run your application using Gunicorn
-    #    -w 4: Use 4 worker processes (adjust based on your server CPU cores)
+    #    -w 1: Use 1 worker processes (adjust based on your server CPU cores)
     #    -b 0.0.0.0:8000: Bind to all network interfaces on port 8000
-    #    server:app: Run the 'app' object from the 'server.py' module
-    CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "server:app"]
+    #    app.server:app: Run the 'app' object from the 'app/server.py' module
+    CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:8000", "app.server:app"]
     
     # TEMPORARY change for debugging
     # CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "--log-level", "debug", "--error-logfile", "-", "--access-logfile", "-", "server:app"]
