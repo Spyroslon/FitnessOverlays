@@ -123,8 +123,8 @@
             </div>
 
             <!-- Canvas Card -->
-            <div class="aspect-9-16 bg-white rounded-xl relative shadow-lg p-3 max-w-sm mx-auto mb-3 flex justify-center items-center">
-                <div class="w-full h-full aspect-9-16 relative">
+            <div class="aspect-9-16 bg-white rounded-xl shadow-lg p-3 max-w-sm mx-auto mb-3 flex flex-col">
+                <div class="w-full h-full aspect-9-16 relative flex-grow">
                     <canvas id="overlayCanvas" class="w-full h-full dark-checkerboard rounded-xl" style="display:block;"></canvas>
                 </div>
             </div>
@@ -502,6 +502,12 @@
 
             // --- Variable to track toast timeout ---
             let toastTimeoutId = null;
+
+            // Add helper function to detect mobile devices
+            function isLikelyMobileDevice() {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                    (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+            }
 
             // --- Define Cycle Orders --- 
             const ALIGN_ORDER = ['left', 'center', 'right'];
@@ -940,7 +946,6 @@
                 }
             });
 
-            // Modify the copyImageBtn to export high-resolution cropped image
             copyImageBtn?.addEventListener('click', async () => {
                 if (!state.activityData || state.selectedMetrics.length === 0) {
                     console.warn('No activity data or selected metrics to copy.');
@@ -951,70 +956,77 @@
                     return;
                 }
 
-                try {
-                    // Get dimensions of the drawn content
-                    const bbox = getCroppedDimensions(StravaData, ctx, canvas);
+                const bbox = getCroppedDimensions(StravaData, ctx, canvas);
 
-                    if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
-                        console.warn("No content detected on canvas or invalid bounding box.", bbox);
-                        showToast('Nothing to copy');
+                if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
+                    console.warn("No content detected on canvas or invalid bounding box.", bbox);
+                    showToast('Nothing to copy');
+                    return;
+                }
+
+                // Create a temporary canvas sized to the bounding box
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = bbox.width * 2; // Double resolution for high-quality export
+                tempCanvas.height = bbox.height * 2;
+
+                // Draw the relevant part of the original canvas onto the temporary canvas
+                tempCtx.drawImage(
+                    canvas,
+                    bbox.x, bbox.y, bbox.width, bbox.height, // Source rectangle (from original canvas)
+                    0, 0, tempCanvas.width, tempCanvas.height // Destination rectangle (scaled for high resolution)
+                );
+
+                try {
+                    const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/png'));
+                    if (!blob) {
+                        throw new Error('Failed to create blob from canvas');
+                    }
+
+                    if (navigator.clipboard && navigator.clipboard.write) {
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ 'image/png': blob })
+                        ]);
+                        showToast('Image copied!');
                         return;
                     }
 
-                    // Create a temporary canvas sized to the bounding box
-                    const tempCanvas = document.createElement('canvas');
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCanvas.width = bbox.width * 2; // Double resolution for high-quality export
-                    tempCanvas.height = bbox.height * 2;
-
-                    // Draw the relevant part of the original canvas onto the temporary canvas
-                    tempCtx.drawImage(
-                        canvas,
-                        bbox.x, bbox.y, bbox.width, bbox.height, // Source rectangle (from original canvas)
-                        0, 0, tempCanvas.width, tempCanvas.height // Destination rectangle (scaled for high resolution)
-                    );
-
-                    // Convert temp canvas to Blob for clipboard API
-                    tempCanvas.toBlob(async (blob) => {
-                        if (!blob) {
-                            console.error("Canvas toBlob failed for clipboard copy");
-                            showToast("Error preparing image for copy");
-                            return;
+                    // If clipboard API fails, use exactly the same code as save button
+                    if (isLikelyMobileDevice()) {
+                        if (imageSaveModal && modalImage) {
+                            modalImage.src = tempCanvas.toDataURL('image/png');
+                            imageSaveModal.classList.remove('hidden');
+                            showToast('Long press to save image');
                         }
-
-                        // Check if clipboard API is available (requires secure context)
-                        if (!navigator.clipboard || !navigator.clipboard.write) {
-                            showToast('Copy failed (insecure context)');
-                            console.warn('Clipboard API (write) not available in this context.');
-                            return; // Exit if clipboard write is not available
-                        }
-
-                        try {
-                            // Use ClipboardItem API
-                            await navigator.clipboard.write([
-                                new ClipboardItem({ 'image/png': blob })
-                            ]);
-                            showToast('Image copied!');
-                        } catch (err) {
-                            console.error('Failed to copy image using ClipboardItem API: ', err);
-                            showToast('Failed to copy image');
-                        }
-                    }, 'image/png');
-
+                    } else {
+                        const link = document.createElement('a');
+                        link.download = `fitness_overlay_${state.activityId || 'image'}.png`;
+                        link.href = tempCanvas.toDataURL('image/png');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        showToast("Image saved successfully");
+                    }
                 } catch (err) {
-                    console.error('Error preparing image for copy: ', err);
-                    showToast('Error copying image');
+                    console.error('Error copying/saving image: ', err);
+                    // Use exactly the same fallback as save button
+                    if (isLikelyMobileDevice()) {
+                        if (imageSaveModal && modalImage) {
+                            modalImage.src = tempCanvas.toDataURL('image/png');
+                            imageSaveModal.classList.remove('hidden');
+                            showToast('Long press to save image');
+                        }
+                    } else {
+                        const link = document.createElement('a');
+                        link.download = `fitness_overlay_${state.activityId || 'image'}.png`;
+                        link.href = tempCanvas.toDataURL('image/png');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        showToast("Image saved successfully");
+                    }
                 }
             });
-
-            // --- Helper function to check for likely mobile device ---
-            function isLikelyMobileDevice() {
-                // Check for touch points (good indicator for touch screens)
-                // and also consider screen width as a secondary heuristic
-                const hasTouch = navigator.maxTouchPoints > 0;
-                const narrowScreen = window.innerWidth < 768; // Example breakpoint
-                return hasTouch || narrowScreen; // Combine checks (adjust logic as needed)
-            }
 
             // Modify the saveImageBtn to handle mobile and desktop differently
             saveImageBtn?.addEventListener('click', async () => {
