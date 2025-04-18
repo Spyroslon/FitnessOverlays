@@ -728,7 +728,9 @@
                     }))
                     .filter(metric => metric.value !== null && metric.value !== undefined);
 
-                if (metrics.length === 0) return { x: 0, y: 0, width: canvasRef.width, height: canvasRef.height };
+                if (metrics.length === 0) {
+                    return { x: 0, y: 0, width: 0, height: 0 };
+                }
 
                 const numItems = metrics.length;
                 const requestedColumns = state.columns;
@@ -736,106 +738,112 @@
                 
                 // Calculate actual columns based on number of items
                 let actualColumns = Math.min(requestedColumns, numItems);
-                if (numItems === 1) actualColumns = 1;
                 actualColumns = Math.max(1, actualColumns);
 
                 const logicalWidth = canvasRef.width / dpr;
                 const logicalHeight = canvasRef.height / dpr;
                 const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
                 const columnWidth = availableWidth / actualColumns;
-                const verticalPadding = logicalHeight * VERTICAL_PADDING_FACTOR;
-                const availableHeight = logicalHeight - (verticalPadding * 2);
 
-                // Calculate number of rows
-                const numRows = Math.ceil(numItems / actualColumns);
+                // Calculate font sizes
+                const titleFontSize = BASE_FONT_SIZE * SIZE_MULTIPLIERS[state.labelSize];
+                const valueFontSize = BASE_FONT_SIZE * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
+                const itemSpacing = METRIC_GROUP_SPACING * 0.8; // Slightly reduced spacing
 
-                // Calculate font sizes with proper scaling
-                const maxItemHeight = availableHeight / (numRows * 1.5); // Add some spacing factor
-                const maxFontBase = Math.min(
-                    maxItemHeight * 0.45,
-                    columnWidth * 0.15,
-                    BASE_FONT_SIZE
-                );
-
-                let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
-                let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
-                let groupSpacing = METRIC_GROUP_SPACING;
-
-                // Initialize bounds variables
-                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                const safetyMargin = Math.max(20, titleFontSize * 0.5) * dpr; // Increased safety margin
+                // Initialize bounds with maximum possible values
+                let minX = canvasRef.width, minY = canvasRef.height;
+                let maxX = 0, maxY = 0;
 
                 // Set up context for text measurements
                 context.textBaseline = 'middle';
+
+                // Pre-measure all text to get accurate bounds
+                const textMeasurements = metrics.map(metric => {
+                    context.font = `${titleFontSize}px Roboto`;
+                    const labelWidth = context.measureText(metric.name).width;
+                    context.font = `bold ${valueFontSize}px Roboto`;
+                    const valueWidth = context.measureText(metric.value).width;
+                    return {
+                        labelWidth,
+                        valueWidth,
+                        totalWidth: Math.max(labelWidth, valueWidth)
+                    };
+                });
+
+                // Calculate layout and bounds
+                const numRows = Math.ceil(numItems / actualColumns);
+                const itemHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
+                const totalContentHeight = (itemHeight * numRows) + (itemSpacing * (numRows - 1));
+
+                // Calculate vertical centering offset
+                const verticalPadding = Math.min(
+                    logicalHeight * 0.1, // Max 10% of height
+                    Math.max(20, itemHeight * 0.2) // At least 20px or 20% of item height
+                );
+                const startY = (logicalHeight - totalContentHeight) / 2;
 
                 metrics.forEach((metric, index) => {
                     const columnIndex = index % actualColumns;
                     const rowIndex = Math.floor(index / actualColumns);
                     
-                    // Calculate horizontal position
-                    let xPos;
+                    // Calculate item position
+                    const measurement = textMeasurements[index];
+                    const yPos = startY + (rowIndex * (itemHeight + itemSpacing));
+                    
+                    // Calculate x position based on alignment and column
                     const slotLeft = HORIZONTAL_PADDING + (columnWidth * columnIndex);
                     const slotCenter = slotLeft + (columnWidth / 2);
                     const slotRight = slotLeft + columnWidth;
-
-                    switch (state.textAlign) {
-                        case 'left': xPos = slotLeft; break;
-                        case 'right': xPos = slotRight; break;
-                        default: xPos = slotCenter;
-                    }
-
-                    // Calculate vertical position with proper spacing
-                    const itemHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
-                    const rowSpacing = groupSpacing * 1.2; // Slightly increased spacing between rows
-                    const yOffset = rowIndex * (itemHeight + rowSpacing);
-                    const baseY = verticalPadding + yOffset;
-
-                    // Measure text widths for both label and value
-                    context.font = `${titleFontSize}px Roboto`;
-                    const labelWidth = context.measureText(metric.name).width;
-                    context.font = `bold ${valueFontSize}px Roboto`;
-                    const valueWidth = context.measureText(metric.value).width;
                     
-                    // Calculate local bounds for this metric
-                    const maxTextWidth = Math.max(labelWidth, valueWidth);
-                    let localMinX, localMaxX;
-                    
+                    let xPos, localMinX, localMaxX;
                     switch (state.textAlign) {
                         case 'left':
+                            xPos = slotLeft;
                             localMinX = xPos * dpr;
-                            localMaxX = (xPos + maxTextWidth) * dpr;
+                            localMaxX = (xPos + measurement.totalWidth) * dpr;
                             break;
                         case 'right':
-                            localMinX = (xPos - maxTextWidth) * dpr;
+                            xPos = slotRight;
+                            localMinX = (xPos - measurement.totalWidth) * dpr;
                             localMaxX = xPos * dpr;
                             break;
                         default: // center
-                            localMinX = (xPos - maxTextWidth/2) * dpr;
-                            localMaxX = (xPos + maxTextWidth/2) * dpr;
+                            xPos = slotCenter;
+                            localMinX = (xPos - measurement.totalWidth/2) * dpr;
+                            localMaxX = (xPos + measurement.totalWidth/2) * dpr;
                     }
 
                     // Update global bounds
                     minX = Math.min(minX, localMinX);
                     maxX = Math.max(maxX, localMaxX);
-                    minY = Math.min(minY, baseY * dpr);
-                    maxY = Math.max(maxY, (baseY + itemHeight) * dpr);
+                    minY = Math.min(minY, yPos * dpr);
+                    maxY = Math.max(maxY, (yPos + itemHeight) * dpr);
                 });
 
-                // Add safety margin and ensure bounds are within canvas
-                minX = Math.max(0, minX - safetyMargin);
-                minY = Math.max(0, minY - safetyMargin);
-                maxX = Math.min(canvasRef.width, maxX + safetyMargin);
-                maxY = Math.min(canvasRef.height, maxY + safetyMargin);
+                // Calculate padding based on content size
+                const contentWidth = maxX - minX;
+                const contentHeight = maxY - minY;
+                const horizontalPadding = Math.min(
+                    contentWidth * 0.1, // 10% of content width
+                    Math.max(15 * dpr, titleFontSize * 0.4 * dpr) // At least 15px or 40% of title font size
+                );
+                const verticalPaddingScaled = verticalPadding * dpr;
 
-                // Calculate final dimensions
-                const finalWidth = Math.max(1, maxX - minX);
-                const finalHeight = Math.max(1, maxY - minY);
+                // Apply padding while ensuring bounds stay within canvas
+                minX = Math.max(0, minX - horizontalPadding);
+                minY = Math.max(0, minY - verticalPaddingScaled);
+                maxX = Math.min(canvasRef.width, maxX + horizontalPadding);
+                maxY = Math.min(canvasRef.height, maxY + verticalPaddingScaled);
+
+                // Ensure minimum dimensions and aspect ratio
+                const width = Math.max(contentWidth * 0.2, maxX - minX); // At least 20% of content width
+                const height = Math.max(contentHeight * 0.2, maxY - minY); // At least 20% of content height
 
                 return {
                     x: minX,
                     y: minY,
-                    width: finalWidth,
-                    height: finalHeight
+                    width,
+                    height
                 };
             }
 
