@@ -289,15 +289,15 @@
                 isAuthenticated: false,
                 textColor: sessionStorage.getItem('textColor') || '#ffffff',
                 textAlign: sessionStorage.getItem('textAlign') || 'center',
-                labelSize: sessionStorage.getItem('labelSize') || 'small',
-                valueSize: sessionStorage.getItem('valueSize') || 'medium',
+                labelSize: sessionStorage.getItem('labelSize') || 'medium', // Default to medium
+                valueSize: sessionStorage.getItem('valueSize') || 'large', // Default to large
                 columns: parseInt(sessionStorage.getItem('columns'), 10) || 1
             };
 
             const SIZE_MULTIPLIERS = {
-                small: 0.8,
-                medium: 1.0,
-                large: 1.2
+                small: 0.7, // Adjusted to be slightly smaller than before
+                medium: 0.85, // Adjusted to be between small and large
+                large: 1.0 // Set to the current size used for Medium
             };
 
             const StravaData = {};
@@ -559,11 +559,11 @@
             }
 
             // --- Constants for Drawing ---
-            const BASE_FONT_SIZE = 24; // Increased base size slightly
+            const BASE_FONT_SIZE = 24;
             const VALUE_FONT_SIZE_MULTIPLIER = 1.2;
-            const MIN_FONT_SIZE = 10; // Slightly larger minimum font size
-            const VERTICAL_PADDING_FACTOR = 0.9; // Use slightly more vertical space
-            const METRIC_GROUP_SPACING = 40; // Increased space between metric groups
+            const MIN_FONT_SIZE = 12;
+            const VERTICAL_PADDING_FACTOR = 0.05; // 5% of canvas height as vertical padding
+            const METRIC_GROUP_SPACING = 20; // px between metric groups
             const LABEL_VALUE_SPACING = 6;
             const HORIZONTAL_PADDING = 20;
 
@@ -589,7 +589,6 @@
                 generateOverlay();
             }
 
-            // Update drawMetrics function
             function drawMetrics(data, context = ctx) {
                 const metrics = state.selectedMetrics
                     .map(key => ({
@@ -602,14 +601,9 @@
 
                 const numItems = metrics.length;
                 const requestedColumns = state.columns;
-
-                // --- Font Size Calculation Logic (Based on Requested Columns) ---
-                // Determine columns for scaling: respect request, but not more than items
                 let actualColsForSizing = Math.min(requestedColumns, numItems);
                 if (numItems === 1) actualColsForSizing = 1;
                 actualColsForSizing = Math.max(1, actualColsForSizing);
-
-                // Calculate *maximum* items per column if distributed across requested columns (for scaling)
                 const itemsPerColumnForSizing = Math.ceil(numItems / actualColsForSizing);
 
                 const dpr = window.devicePixelRatio || 1;
@@ -617,61 +611,44 @@
                 const logicalHeight = overlayCanvas.height / dpr;
                 const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
                 const columnWidthForSizing = availableWidth / actualColsForSizing;
-                const minVerticalMargin = logicalHeight * 0.1;
-                const availableHeight = logicalHeight - (minVerticalMargin * 2);
+                const verticalPadding = logicalHeight * VERTICAL_PADDING_FACTOR;
+                const availableHeight = logicalHeight - (verticalPadding * 2);
 
                 // Estimate max item height based on available vertical space and itemsPerColumnForSizing
-                const estimatedSpacingFactor = 0.6;
-                const maxItemHeightDenominator = itemsPerColumnForSizing + Math.max(0, itemsPerColumnForSizing - 1) * estimatedSpacingFactor;
-                const maxItemHeight = availableHeight / Math.max(1, maxItemHeightDenominator);
-
+                const maxItemHeight = (availableHeight - (METRIC_GROUP_SPACING * (itemsPerColumnForSizing - 1))) / Math.max(1, itemsPerColumnForSizing);
                 const maxFontBase = Math.min(
-                    maxItemHeight * 0.45,       
-                    columnWidthForSizing * 0.15, 
-                    BASE_FONT_SIZE             
+                    maxItemHeight * 0.45,
+                    columnWidthForSizing * 0.15,
+                    BASE_FONT_SIZE
                 );
 
                 let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
                 let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
-                let dynamicGroupSpacing = titleFontSize * 1.6; 
+                let groupSpacing = METRIC_GROUP_SPACING;
 
+                // Recalculate needed height and scale if needed
                 let neededHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing +
-                                   (dynamicGroupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
+                                   (groupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
                 const scaleFactor = Math.min(1, availableHeight / Math.max(1, neededHeight));
-
                 titleFontSize *= scaleFactor;
                 valueFontSize *= scaleFactor;
-                dynamicGroupSpacing *= scaleFactor;
-
+                groupSpacing *= scaleFactor;
                 titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
                 valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
-                dynamicGroupSpacing = Math.max(dynamicGroupSpacing, LABEL_VALUE_SPACING * 0.5);
+                groupSpacing = Math.max(groupSpacing, LABEL_VALUE_SPACING * 0.5);
 
                 const finalItemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
-                // --- End Font Size Calculation ---
-
-                // --- Drawing Logic (Based on Actual Distribution) ---
-                // Determine the actual number of columns to draw into
                 const drawableColumns = Math.min(requestedColumns, numItems);
-                // Calculate the number of rows needed based on requested columns
                 const numRows = Math.ceil(numItems / requestedColumns);
-
-                // Calculate the total content height based on the number of rows needed
-                const finalTotalContentHeight = (finalItemHeight * numRows) + 
-                                                (dynamicGroupSpacing * Math.max(0, numRows - 1));
-
-                const startY = (logicalHeight - finalTotalContentHeight) / 2;
+                const finalTotalContentHeight = (finalItemHeight * numRows) + (groupSpacing * Math.max(0, numRows - 1));
+                const startY = verticalPadding + (availableHeight - finalTotalContentHeight) / 2;
 
                 context.textBaseline = 'middle';
                 metrics.forEach((metric, index) => {
-                    // Determine column and row index based on HORIZONTAL filling across requested columns
                     const columnIndex = index % requestedColumns;
                     const rowIndex = Math.floor(index / requestedColumns);
-
-                    // Calculate x position based on the number of *drawable* columns and the column index
                     const columnWidth = availableWidth / drawableColumns;
                     let xPos;
-
                     if (drawableColumns === 1) {
                         context.textAlign = state.textAlign;
                         switch (state.textAlign) {
@@ -680,39 +657,28 @@
                             default: xPos = logicalWidth / 2;
                         }
                     } else {
-                        // Multi-column: Apply alignment within the column slot
-                        context.textAlign = state.textAlign; // Set alignment based on state
+                        context.textAlign = state.textAlign;
                         const slotLeft = HORIZONTAL_PADDING + (columnWidth * columnIndex);
                         const slotCenter = slotLeft + (columnWidth / 2);
                         const slotRight = slotLeft + columnWidth;
-
                         switch (state.textAlign) {
-                            case 'left': 
-                                xPos = slotLeft;
-                                break;
-                            case 'right': 
-                                xPos = slotRight;
-                                break;
-                            default: // center
-                                xPos = slotCenter;
+                            case 'left': xPos = slotLeft; break;
+                            case 'right': xPos = slotRight; break;
+                            default: xPos = slotCenter;
                         }
                     }
-
-                    // Calculate the top Y based on the row index
-                    const itemSlotTopY = startY + (rowIndex * (finalItemHeight + dynamicGroupSpacing));
+                    const itemSlotTopY = startY + (rowIndex * (finalItemHeight + groupSpacing));
                     const itemSlotCenterY = itemSlotTopY + finalItemHeight / 2;
                     context.fillStyle = state.textColor;
-
                     const textPairHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
                     const labelYOffset = -(textPairHeight / 2) + (titleFontSize / 2);
                     const valueYOffset = (textPairHeight / 2) - (valueFontSize / 2);
-
                     context.font = `${titleFontSize}px Roboto`;
                     context.fillText(metric.name, xPos, itemSlotCenterY + labelYOffset);
                     context.font = `bold ${valueFontSize}px Roboto`;
                     context.fillText(metric.value, xPos, itemSlotCenterY + valueYOffset);
                 });
-                context.textBaseline = 'alphabetic'; // Reset baseline
+                context.textBaseline = 'alphabetic';
             }
 
             // Existing code
@@ -1261,8 +1227,8 @@
                 const defaultMetrics = ['distance', 'movingTime', 'pace'];
                 const defaultTextColor = '#ffffff';
                 const defaultTextAlign = 'center';
-                const defaultLabelSize = 'small';
-                const defaultValueSize = 'medium';
+                const defaultLabelSize = 'medium';
+                const defaultValueSize = 'large';
                 const defaultColumns = 1;
 
                 // 1. Clear saved state from sessionStorage
