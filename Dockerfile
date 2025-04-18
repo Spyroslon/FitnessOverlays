@@ -45,7 +45,7 @@
     
     # 12. Define the command to run your application using Gunicorn
     #     -w 1: Use 1 worker process (suitable for Render free tier)
-    #     -b 0.0.0.0:${PORT}: Bind to all network interfaces on the port provided by Render
+    #     -b 0.0.0.0:8000: Bind to all network interfaces on the 8000 port
     #     --access-logfile - --error-logfile -: Log to stdout/stderr
     #     server:app: Run the 'app' object from the 'server.py' module
-    CMD ["gunicorn", "-w", "1", "--bind", "0.0.0.0:${PORT}", "--access-logfile", "-", "--error-logfile", "-", "server:app"]
+    CMD ["gunicorn", "-w", "1", "--bind", "0.0.0.0:8000", "--access-logfile", "-", "--error-logfile", "-", "server:app"]
