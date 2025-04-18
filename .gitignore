@@ -13,10 +13,6 @@
 npm-debug.log*
 *_logs/
 
-# Media files
-*.jpg
-*.png
-
 # Editor/IDE specific
 /.cursor/
 /vscode/
