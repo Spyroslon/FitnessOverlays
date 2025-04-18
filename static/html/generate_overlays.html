@@ -939,34 +939,36 @@
                 );
 
                 try {
-                    // First, create the blob that we'll use for clipboard
                     const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/png'));
                     if (!blob) throw new Error('Failed to create blob');
 
-                    // Check for actual clipboard write support
-                    if ('clipboard' in navigator && 'write' in navigator.clipboard) {
-                        try {
-                            await navigator.clipboard.write([
-                                new ClipboardItem({ 'image/png': blob })
-                            ]);
-                            showToast('Image copied!');
-                            return;
-                        } catch (clipErr) {
-                            console.error('Direct clipboard write failed:', clipErr);
-                            // Don't throw, continue to fallback
-                        }
-                    }
+                    // For iOS Chrome, we'll try multiple clipboard API approaches
+                    const imageItem = new ClipboardItem({ 'image/png': blob });
                     
-                    // If we get here, either the API isn't available or the operation failed
-                    // Use the save modal fallback
-                    if (imageSaveModal && modalImage) {
-                        modalImage.src = tempCanvas.toDataURL('image/png');
-                        imageSaveModal.classList.remove('hidden');
-                        showToast('Long press to save image');
+                    try {
+                        // First try the modern clipboard.write API
+                        await navigator.clipboard.write([imageItem]);
+                        showToast('Image copied!');
+                        return;
+                    } catch (writeErr) {
+                        console.log('Modern clipboard.write failed, trying alternative methods...', writeErr);
+                        
+                        // Try the iOS-specific clipboard API next
+                        if ('clipboard' in navigator && 'read' in navigator.clipboard) {
+                            try {
+                                await navigator.clipboard.write([imageItem]);
+                                showToast('Image copied!');
+                                return;
+                            } catch (iosErr) {
+                                console.log('iOS clipboard API failed:', iosErr);
+                                throw iosErr; // Continue to fallback
+                            }
+                        }
+                        throw writeErr; // If all clipboard attempts fail, continue to fallback
                     }
                 } catch (err) {
-                    console.error('Error handling clipboard/save operation:', err);
-                    // Use save modal as final fallback
+                    console.error('All clipboard methods failed:', err);
+                    // Only now do we fall back to the save modal
                     if (imageSaveModal && modalImage) {
                         modalImage.src = tempCanvas.toDataURL('image/png');
                         imageSaveModal.classList.remove('hidden');
