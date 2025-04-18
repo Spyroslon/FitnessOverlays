@@ -974,7 +974,7 @@
                 }
             });
 
-            // Copy Image Button - Logic to copy to clipboard
+            // Modify the copyImageBtn to export high-resolution cropped image
             copyImageBtn?.addEventListener('click', async () => {
                 if (!state.activityData || state.selectedMetrics.length === 0) {
                     console.warn('No activity data or selected metrics to copy.');
@@ -984,20 +984,13 @@
                     console.error("Canvas element not found for copying image.");
                     return;
                 }
-                const checkerboard = canvas.previousElementSibling; // Get the checkerboard div
 
                 try {
-                    // Temporarily hide the checkerboard background for copying
-                    if (checkerboard && checkerboard.classList.contains('checkerboard')) {
-                        checkerboard.style.opacity = '0'; // Hide instead of display none to avoid layout shifts
-                    }
-
                     // Get dimensions of the drawn content
                     const bbox = getCroppedDimensions(StravaData, ctx, canvas);
 
                     if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
                         console.warn("No content detected on canvas or invalid bounding box.", bbox);
-                            if (checkerboard) checkerboard.style.opacity = ''; // Restore background
                         showToast('Nothing to copy');
                         return;
                     }
@@ -1005,20 +998,19 @@
                     // Create a temporary canvas sized to the bounding box
                     const tempCanvas = document.createElement('canvas');
                     const tempCtx = tempCanvas.getContext('2d');
-                    tempCanvas.width = bbox.width;
-                    tempCanvas.height = bbox.height;                    
+                    tempCanvas.width = bbox.width * 2; // Double resolution for high-quality export
+                    tempCanvas.height = bbox.height * 2;
 
                     // Draw the relevant part of the original canvas onto the temporary canvas
                     tempCtx.drawImage(
                         canvas,
                         bbox.x, bbox.y, bbox.width, bbox.height, // Source rectangle (from original canvas)
-                        0, 0, bbox.width, bbox.height           // Destination rectangle (whole temp canvas)
+                        0, 0, tempCanvas.width, tempCanvas.height // Destination rectangle (scaled for high resolution)
                     );
 
                     // Convert temp canvas to Blob for clipboard API
                     tempCanvas.toBlob(async (blob) => {
                         if (!blob) {
-                            if (checkerboard) checkerboard.style.opacity = ''; 
                             console.error("Canvas toBlob failed for clipboard copy");
                             showToast("Error preparing image for copy");
                             return;
@@ -1028,7 +1020,6 @@
                         if (!navigator.clipboard || !navigator.clipboard.write) {
                             showToast('Copy failed (insecure context)');
                             console.warn('Clipboard API (write) not available in this context.');
-                            if (checkerboard) checkerboard.style.opacity = ''; 
                             return; // Exit if clipboard write is not available
                         }
 
@@ -1041,15 +1032,12 @@
                         } catch (err) {
                             console.error('Failed to copy image using ClipboardItem API: ', err);
                             showToast('Failed to copy image');
-                        } finally {
-                            if (checkerboard) checkerboard.style.opacity = '';
                         }
                     }, 'image/png');
 
                 } catch (err) {
                     console.error('Error preparing image for copy: ', err);
                     showToast('Error copying image');
-                    if (checkerboard) checkerboard.style.opacity = '';
                 }
             });
 
@@ -1062,8 +1050,8 @@
                 return hasTouch || narrowScreen; // Combine checks (adjust logic as needed)
             }
 
-            // Add save image button handler
-            document.getElementById('saveImageBtn')?.addEventListener('click', async () => {
+            // Modify the saveImageBtn to handle mobile and desktop differently
+            saveImageBtn?.addEventListener('click', async () => {
                 if (!state.activityData || state.selectedMetrics.length === 0) {
                     console.warn('No activity data or selected metrics to save.');
                     return;
@@ -1072,73 +1060,105 @@
                     console.error("Canvas element not found for saving image.");
                     return;
                 }
-                const checkerboard = canvas.previousElementSibling;
 
-                try {
-                    // Temporarily hide the checkerboard background
-                    if (checkerboard && checkerboard.classList.contains('checkerboard')) {
-                        checkerboard.style.opacity = '0';
-                    }
+                if (isLikelyMobileDevice()) {
+                    // Show modal for mobile users
+                    if (imageSaveModal && modalImage) {
+                        const bbox = getCroppedDimensions(StravaData, ctx, canvas);
 
-                    // Get dimensions of the drawn content
-                    const bbox = getCroppedDimensions(StravaData, ctx, canvas);
-
-                    if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
-                        console.warn("No content detected on canvas or invalid bounding box.", bbox);
-                        if (checkerboard) checkerboard.style.opacity = '';
-                        showToast('Nothing to save');
-                        return;
-                    }
-
-                    // Create a temporary canvas sized to the bounding box
-                    const tempCanvas = document.createElement('canvas');
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCanvas.width = bbox.width;
-                    tempCanvas.height = bbox.height;
-
-                    // Draw the relevant part of the original canvas onto the temporary canvas
-                    tempCtx.drawImage(
-                        canvas,
-                        bbox.x, bbox.y, bbox.width, bbox.height,
-                        0, 0, bbox.width, bbox.height
-                    );
-
-                    // --- Display image based on device type ---
-                    const imageDataUrl = tempCanvas.toDataURL("image/png");
-
-                    if (isLikelyMobileDevice()) {
-                        // Mobile: Show modal for long-press save
-                        const modalImage = document.getElementById('modalImage');
-                        const imageSaveModal = document.getElementById('imageSaveModal');
-
-                        if (modalImage && imageSaveModal) {
-                            modalImage.src = imageDataUrl;
-                            imageSaveModal.classList.remove('hidden');
-                            showToast("Image ready - Long-press to save");
-                        } else {
-                            console.error("Modal elements not found.");
-                            showToast("Error displaying image");
+                        if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
+                            console.warn("No content detected on canvas or invalid bounding box.", bbox);
+                            showToast('Nothing to save');
+                            return;
                         }
-                    } else {
-                        // Desktop: Trigger direct download
+
+                        // Create a temporary canvas sized to the bounding box
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCanvas.width = bbox.width * 2; // Double resolution for high-quality export
+                        tempCanvas.height = bbox.height * 2;
+
+                        // Draw the relevant part of the original canvas onto the temporary canvas
+                        tempCtx.drawImage(
+                            canvas,
+                            bbox.x, bbox.y, bbox.width, bbox.height, // Source rectangle (from original canvas)
+                            0, 0, tempCanvas.width, tempCanvas.height // Destination rectangle (scaled for high resolution)
+                        );
+
+                        modalImage.src = tempCanvas.toDataURL('image/png');
+                        imageSaveModal.classList.remove('hidden');
+                    }
+                } else {
+                    // Handle desktop download
+                    try {
+                        const bbox = getCroppedDimensions(StravaData, ctx, canvas);
+
+                        if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
+                            console.warn("No content detected on canvas or invalid bounding box.", bbox);
+                            showToast('Nothing to save');
+                            return;
+                        }
+
+                        // Create a temporary canvas sized to the bounding box
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCanvas.width = bbox.width * 2; // Double resolution for high-quality export
+                        tempCanvas.height = bbox.height * 2;
+
+                        // Draw the relevant part of the original canvas onto the temporary canvas
+                        tempCtx.drawImage(
+                            canvas,
+                            bbox.x, bbox.y, bbox.width, bbox.height, // Source rectangle (from original canvas)
+                            0, 0, tempCanvas.width, tempCanvas.height // Destination rectangle (scaled for high resolution)
+                        );
+
+                        // Trigger download
                         const link = document.createElement('a');
-                        link.download = `fitness_overlay_${state.activityId || 'image'}.png`; // Add activity ID if available
-                        link.href = imageDataUrl;
-                        document.body.appendChild(link); // Required for Firefox
+                        link.download = `fitness_overlay_${state.activityId || 'image'}.png`;
+                        link.href = tempCanvas.toDataURL('image/png');
+                        document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
-                        showToast("Image download started");
+                        showToast("Image saved successfully");
+                    } catch (err) {
+                        console.error('Error saving image: ', err);
+                        showToast('Error saving image');
                     }
-                    // Removed redundant error handling here, covered by outer try/catch
-
-                } catch (err) {
-                    console.error('Error during image preparation/display: ', err);
-                    showToast('Error generating image');
-                } finally {
-                    // Restore checkerboard visibility AFTER attempting action
-                    if (checkerboard) checkerboard.style.opacity = '';
                 }
             });
+
+            // Adjust canvas dimensions to maintain original size but export cropped image
+            const exportWidth = 1080 * 2; // Double resolution for high-quality export
+            const exportHeight = 1920 * 2;
+
+            function exportHighResCroppedImage() {
+                const dpr = window.devicePixelRatio || 1;
+                const cropWidth = exportWidth * dpr;
+                const cropHeight = exportHeight * dpr;
+
+                // Create a temporary canvas for high-resolution cropping
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = cropWidth;
+                tempCanvas.height = cropHeight;
+
+                // Draw the cropped area from the original canvas
+                tempCtx.drawImage(
+                    canvas,
+                    0, 0, cropWidth, cropHeight, // Source rectangle
+                    0, 0, cropWidth, cropHeight  // Destination rectangle
+                );
+
+                // Export the high-resolution cropped image
+                const highResImage = tempCanvas.toDataURL('image/png');
+                return highResImage;
+            }
+
+            // Remove the previously added high-resolution export button
+            const exportHighResContainer = document.getElementById('exportHighResContainer');
+            if (exportHighResContainer) {
+                exportHighResContainer.remove();
+            }
 
             // Initial canvas setup and resize listener
             if (canvas) {

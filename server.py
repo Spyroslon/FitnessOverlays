@@ -312,7 +312,6 @@ def csrf_protect():
         return jsonify({"error": "Invalid CSRF token"}), 403
 
 @app.route('/login')
-@limiter.limit("10 per minute")  # Add rate limit for login to prevent OAuth abuse
 def login():
     """Handle the login process using Strava OAuth"""
     try:
@@ -333,7 +332,6 @@ def login():
         return jsonify({"error": "Authentication failed"}), 401
 
 @app.route('/callback')
-@limiter.limit("10 per minute")  # Add rate limit for callback to prevent OAuth abuse
 def callback():
     """Handle the OAuth callback from Strava"""
     try:
@@ -355,9 +353,6 @@ def callback():
         
         # Store athlete info in session
         athlete = token.get('athlete', {})
-        print(f'Athlete info: {athlete}')
-        # {'id': 107400053, 'username': 'spyros_lontos', 'resource_state': 2, 'firstname': 'Spyros', 'lastname': 'Lontos', 'bio': None, 'city': 'Düsseldorf', 'state': None, 'country': None, 'sex': 'M', 'premium': True, 'summit': True, 'created_at': '2022-08-25T15:33:02Z', 'updated_at': '2025-03-03T20:10:53Z', 'badge_type_id': 1, 'weight': 67.0, 'profile_medium': 'https://dgalywyr863hv.cloudfront.net/pictures/athletes/107400053/25413557/1/medium.jpg', 'profile': 'https://dgalywyr863hv.cloudfront.net/pictures/athletes/107400053/25413557/1/large.jpg', 'friend': None, 'follower': None}
-
         session['athlete_id'] = athlete.get('id')
         session['athlete_username'] = athlete.get('username')
         session['athlete_first_name'] = athlete.get('firstname')
@@ -711,7 +706,6 @@ def fetch_activity_from_strava(activity_id):
          return jsonify({"error": "An unexpected error occurred."}), 500
 
 @app.route("/status")
-@limiter.limit("30 per minute")  # Add specific limit for status endpoint
 def status():
     """Check if user is authenticated, provide CSRF token and handle token refresh"""
     logger.info(f"Status endpoint called - Session: {session}")
