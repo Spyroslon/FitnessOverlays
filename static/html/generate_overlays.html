@@ -947,19 +947,11 @@
             });
 
             copyImageBtn?.addEventListener('click', async () => {
-                if (!state.activityData || state.selectedMetrics.length === 0) {
-                    console.warn('No activity data or selected metrics to copy.');
-                    return;
-                }
-                if (!canvas) {
-                    console.error("Canvas element not found for copying image.");
-                    return;
-                }
+                if (!state.activityData || state.selectedMetrics.length === 0) return;
+                if (!canvas) return;
 
                 const bbox = getCroppedDimensions(StravaData, ctx, canvas);
-
                 if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
-                    console.warn("No content detected on canvas or invalid bounding box.", bbox);
                     showToast('Nothing to copy');
                     return;
                 }
@@ -967,63 +959,47 @@
                 // Create a temporary canvas sized to the bounding box
                 const tempCanvas = document.createElement('canvas');
                 const tempCtx = tempCanvas.getContext('2d');
-                tempCanvas.width = bbox.width * 2; // Double resolution for high-quality export
+                tempCanvas.width = bbox.width * 2;
                 tempCanvas.height = bbox.height * 2;
-
-                // Draw the relevant part of the original canvas onto the temporary canvas
                 tempCtx.drawImage(
                     canvas,
-                    bbox.x, bbox.y, bbox.width, bbox.height, // Source rectangle (from original canvas)
-                    0, 0, tempCanvas.width, tempCanvas.height // Destination rectangle (scaled for high resolution)
+                    bbox.x, bbox.y, bbox.width, bbox.height,
+                    0, 0, tempCanvas.width, tempCanvas.height
                 );
 
                 try {
+                    // First, create the blob that we'll use for clipboard
                     const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/png'));
-                    if (!blob) {
-                        throw new Error('Failed to create blob from canvas');
-                    }
+                    if (!blob) throw new Error('Failed to create blob');
 
-                    if (navigator.clipboard && navigator.clipboard.write) {
-                        await navigator.clipboard.write([
-                            new ClipboardItem({ 'image/png': blob })
-                        ]);
-                        showToast('Image copied!');
-                        return;
-                    }
-
-                    // If clipboard API fails, use exactly the same code as save button
-                    if (isLikelyMobileDevice()) {
-                        if (imageSaveModal && modalImage) {
-                            modalImage.src = tempCanvas.toDataURL('image/png');
-                            imageSaveModal.classList.remove('hidden');
-                            showToast('Long press to save image');
+                    // Check for actual clipboard write support
+                    if ('clipboard' in navigator && 'write' in navigator.clipboard) {
+                        try {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            showToast('Image copied!');
+                            return;
+                        } catch (clipErr) {
+                            console.error('Direct clipboard write failed:', clipErr);
+                            // Don't throw, continue to fallback
                         }
-                    } else {
-                        const link = document.createElement('a');
-                        link.download = `fitness_overlay_${state.activityId || 'image'}.png`;
-                        link.href = tempCanvas.toDataURL('image/png');
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        showToast("Image saved successfully");
+                    }
+                    
+                    // If we get here, either the API isn't available or the operation failed
+                    // Use the save modal fallback
+                    if (imageSaveModal && modalImage) {
+                        modalImage.src = tempCanvas.toDataURL('image/png');
+                        imageSaveModal.classList.remove('hidden');
+                        showToast('Long press to save image');
                     }
                 } catch (err) {
-                    console.error('Error copying/saving image: ', err);
-                    // Use exactly the same fallback as save button
-                    if (isLikelyMobileDevice()) {
-                        if (imageSaveModal && modalImage) {
-                            modalImage.src = tempCanvas.toDataURL('image/png');
-                            imageSaveModal.classList.remove('hidden');
-                            showToast('Long press to save image');
-                        }
-                    } else {
-                        const link = document.createElement('a');
-                        link.download = `fitness_overlay_${state.activityId || 'image'}.png`;
-                        link.href = tempCanvas.toDataURL('image/png');
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        showToast("Image saved successfully");
+                    console.error('Error handling clipboard/save operation:', err);
+                    // Use save modal as final fallback
+                    if (imageSaveModal && modalImage) {
+                        modalImage.src = tempCanvas.toDataURL('image/png');
+                        imageSaveModal.classList.remove('hidden');
+                        showToast('Long press to save image');
                     }
                 }
             });
