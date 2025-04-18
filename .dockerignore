@@ -36,10 +36,10 @@
     # Git folder
     .git/
 
-    # Notes / READMEs (usually not needed in runtime image)
+    # Notes / READMEs and extras (usually not needed in runtime image)
     NOTES.md
     README.md
-    strava_activity_examples/
+    extras/
 
     # Docker files themselves
     Dockerfile
