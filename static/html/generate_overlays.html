@@ -15,9 +15,9 @@
         .aspect-9-16 {
             aspect-ratio: 9/16;
             width: 100%;
-            max-height: 50vh; /* Reduced from 60vh */
-            max-width: calc(50vh * 9/16); /* Adjusted to match new max-height */
-            margin: 0 auto;
+            max-height: 65vh; /* Reduced from 60vh */
+            max-width: calc(65vh * 9/16); /* Adjusted to match new max-height */
+            /* margin: 0 auto; */
         }
 
         /* Keep custom checkerboard */
@@ -64,7 +64,7 @@
 
     </style>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40" style="touch-action: manipulation;">
+<body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40">
     
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
         <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center max-w-[900px]">
@@ -123,9 +123,9 @@
             </div>
 
             <!-- Canvas Card -->
-            <div class="bg-white rounded-xl relative shadow-lg p-3 max-w-sm mx-auto mb-3">
-                <div class="aspect-9-16 relative w-full max-w-sm">
-                    <canvas id="overlayCanvas" class="absolute inset-0 w-full h-full"></canvas>
+            <div class="aspect-9-16 bg-white rounded-xl relative shadow-lg p-3 max-w-sm mx-auto mb-3 flex justify-center items-center">
+                <div class="w-full h-full aspect-9-16 relative">
+                    <canvas id="overlayCanvas" class="w-full h-full dark-checkerboard rounded-xl" style="display:block;"></canvas>
                 </div>
             </div>
 
@@ -320,61 +320,61 @@
                 };
             }
 
-            // Update checkAuth function to store CSRF token
-            async function checkAuth() {
-                try {
-                    const response = await fetch("/status", {
-                        credentials: "include"
-                    });
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-                    csrfToken = data.csrf_token;  // Store CSRF token
-                    
-                    // Handle require_login flag
-                    if (data.require_login) {
-                        window.location.href = "/login";
-                        return;
-                    }
-                    
-                    if (data.authenticated) {
-                        console.log('User is authenticated:', data); 
-                        // Show profile picture if available
-                        if (data.athlete_profile) {
-                            const profileDropdownContainer = document.getElementById('profile-dropdown-container');
-                            const profilePicture = document.getElementById('profile-picture');
-                            profilePicture.src = data.athlete_profile;
-                            profileDropdownContainer.classList.remove('hidden');
-                        }
-                        state.isAuthenticated = true;
-                        state.athleteId = data.athlete_id;  // Store athlete_id in state
-                        document.getElementById('create-overlay-header-btn').classList.remove('hidden');
+            // Check auth status using common function and handle results
+            checkAuth().then(authStatus => {
+                 if (!authStatus) return; // Early exit if checkAuth failed critically
 
-                        // Now that auth is confirmed, check for activity data
-                        loadActivityFromSession();
+                 // Find elements after auth check, as they might be needed
+                 const profileDropdownContainer = document.getElementById('profile-dropdown-container');
+                 const profilePicture = document.getElementById('profile-picture');
+                 const createOverlayHeaderBtn = document.getElementById('create-overlay-header-btn');
 
-                        // Start token expiry check timer
-                        if (data.expires_at) {
-                            const timeToExpiry = data.expires_at - (Date.now() / 1000);
-                            if (timeToExpiry > 0) {
-                                // Check auth status 5 minutes before expiry
-                                setTimeout(checkAuth, (timeToExpiry - 300) * 1000);
-                            }
-                        }
-                    } else {
-                        console.log('User is not authenticated:', data);
-                        // Hide profile picture and create buttons when not authenticated
-                        document.getElementById('profile-dropdown-container').classList.add('hidden');
-                        document.getElementById('create-overlay-header-btn').classList.add('hidden');
+                if (authStatus.authenticated) {
+                    console.log('User is authenticated on generate_overlays page:', authStatus); 
+                    // Update local state based on authStatus
+                    state.isAuthenticated = true;
+                    state.athleteId = authStatus.athleteId; // athleteId is also set globally by common.js, but update local state too
+
+                    // Show profile picture if available
+                    if (authStatus.athlete_profile && profileDropdownContainer && profilePicture) {
+                        profilePicture.src = authStatus.athlete_profile;
+                        profileDropdownContainer.classList.remove('hidden');
+                    } else if (profileDropdownContainer) {
+                        profileDropdownContainer.classList.add('hidden'); // Hide if no profile pic
                     }
-                } catch (error) {
-                    console.error("Auth check failed:", error);
+                    if (createOverlayHeaderBtn) createOverlayHeaderBtn.classList.remove('hidden');
+
+                    // Now that auth is confirmed and state is updated, load activity data
+                    loadActivityFromSession(); 
+
+                } else {
+                    console.log('User is not authenticated on generate_overlays page:', authStatus);
+                    state.isAuthenticated = false; // Update state
+                    state.athleteId = null;
+                    // Hide profile picture and create buttons when not authenticated
+                    if (profileDropdownContainer) profileDropdownContainer.classList.add('hidden');
+                    if (createOverlayHeaderBtn) createOverlayHeaderBtn.classList.add('hidden');
+
+                    // If authStatus requires login (e.g., token expired, direct access), redirect
+                    // common.js checkAuth already handles redirection for protected pages, 
+                    // but this adds an extra layer if needed for generate_overlays specific logic.
+                    if (authStatus.require_login) {
+                         // Redirect if not already on a public page (though common.js should handle this)
+                         // For generate_overlays, we definitely require login.
+                         window.location.href = "/auth_required";
+                         console.log("Redirecting due to require_login flag.");
+                    }
                 }
-            }
-
-            // Check auth status first - this will trigger loadActivityFromSession if successful
-            checkAuth();
+            }).catch(error => {
+                 console.error("Error processing auth status on generate_overlays page:", error);
+                 // Handle potential errors - e.g., hide elements, show message
+                 const profileDropdownContainer = document.getElementById('profile-dropdown-container');
+                 const createOverlayHeaderBtn = document.getElementById('create-overlay-header-btn');
+                 if (profileDropdownContainer) profileDropdownContainer.classList.add('hidden');
+                 if (createOverlayHeaderBtn) createOverlayHeaderBtn.classList.add('hidden');
+                 // Optionally show an error message to the user on the page
+                 alert("Authentication check failed. Please try reloading the page.");
+            });
 
             // Function to load and process activity data from sessionStorage
             function loadActivityFromSession() {
@@ -559,13 +559,13 @@
             }
 
             // --- Constants for Drawing ---
-            const BASE_FONT_SIZE = 28; // Increased base size slightly
-            const VALUE_FONT_SIZE_MULTIPLIER = 1.2; 
+            const BASE_FONT_SIZE = 24; // Increased base size slightly
+            const VALUE_FONT_SIZE_MULTIPLIER = 1.2;
             const MIN_FONT_SIZE = 10; // Slightly larger minimum font size
             const VERTICAL_PADDING_FACTOR = 0.9; // Use slightly more vertical space
             const METRIC_GROUP_SPACING = 40; // Increased space between metric groups
-            const LABEL_VALUE_SPACING = 6; 
-            const HORIZONTAL_PADDING = 30; 
+            const LABEL_VALUE_SPACING = 6;
+            const HORIZONTAL_PADDING = 20;
 
             function resizeCanvas() {
                 const container = canvas.parentElement;
@@ -578,7 +578,8 @@
                 canvas.width = rect.width * dpr;
                 canvas.height = rect.height * dpr;
                 
-                // Scale all drawing operations by DPR
+                // Always reset transform before scaling to avoid cumulative scaling
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.scale(dpr, dpr);
                 
                 // Set display size (CSS pixels)
@@ -740,9 +741,6 @@
             function generateOverlay(data = StravaData) {
                 // Clear the entire canvas
                 ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-
-                // Add dark checkerboard class to canvas
-                canvas.classList.add('dark-checkerboard');
 
                 // Draw metrics
                 drawMetrics(data);
@@ -1064,18 +1062,6 @@
                 return hasTouch || narrowScreen; // Combine checks (adjust logic as needed)
             }
 
-            // Generate Overlay
-            function generateOverlay(data = StravaData) {
-                // Clear the entire canvas
-                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-
-                // Add dark checkerboard class to canvas
-                canvas.classList.add('dark-checkerboard');
-
-                // Draw metrics
-                drawMetrics(data);
-            }
-
             // Add save image button handler
             document.getElementById('saveImageBtn')?.addEventListener('click', async () => {
                 if (!state.activityData || state.selectedMetrics.length === 0) {
@@ -1306,49 +1292,6 @@
                 // 5. Redraw Canvas
                 generateOverlay(StravaData);
             });
-
-            // --- Profile Dropdown Logic (Added) ---
-            const profileDropdownContainer = document.getElementById('profile-dropdown-container');
-            const profilePictureTrigger = document.getElementById('profile-picture-trigger');
-            const profileDropdownMenu = document.getElementById('profile-dropdown-menu');
-            const logoutButton = document.getElementById('logout-button');
-
-            // Toggle dropdown on picture click
-            profilePictureTrigger?.addEventListener('click', (event) => {
-                event.stopPropagation(); // Prevent click from immediately closing the dropdown
-                profileDropdownMenu?.classList.toggle('hidden');
-            });
-
-            // Close dropdown if clicked outside
-            document.addEventListener('click', (event) => {
-                if (profileDropdownContainer && !profileDropdownContainer.contains(event.target)) {
-                    profileDropdownMenu?.classList.add('hidden');
-                }
-            });
-
-            // Logout button action
-            logoutButton?.addEventListener('click', async () => {
-                 if (!csrfToken) {
-                    console.error("CSRF token not available for logout");
-                    return;
-                }
-                try {
-                    const response = await fetch('/logout', addCSRFToken({ 
-                        method: 'POST',
-                        credentials: 'include' 
-                    }));
-                    
-                    if (response.ok) {
-                        window.location.href = '/'; // Redirect to home on successful logout
-                    } else {
-                        console.error('Logout failed:', response.status, await response.text());
-                    }
-                } catch (error) {
-                    console.error('Error during logout:', error);
-                }
-                profileDropdownMenu?.classList.add('hidden'); // Hide dropdown after action
-            });
-            // --- End Profile Dropdown Logic ---
 
             // --- Image Save Modal Logic ---
             const imageSaveModal = document.getElementById('imageSaveModal');

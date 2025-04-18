@@ -4,7 +4,7 @@ Core information for getting started and common tasks.
 
 ## Quick Reference Commands
 
-**1. Setup & Running (Local)**
+## 1. Setup & Running (Local)
 
 ```bash
 # Create virtual environment (if not exists)
@@ -26,7 +26,7 @@ flask app server run
 # Access at http://127.0.0.1:5000 (or the address shown)
 ```
 
-**2. Dependencies**
+## 2. Dependencies
 
 ```bash
 # Install from requirements.txt
@@ -36,7 +36,7 @@ pip install -r requirements.txt
 pip freeze > requirements-frozen.txt
 ```
 
-**3. Docker (App)**
+## 3. Docker (App)
 
 ```bash
 # --- Application (if running via Docker) ---
@@ -70,6 +70,45 @@ docker stop fitnessoverlays-web
 
 # Remove stopped app container (e.g., before running a new build)
 docker rm fitnessoverlays-web
+```
+
+## 4. Tailwind CSS (Local Build)
+
+```bash
+# --- Tailwind Setup & Build ---
+npm install -D tailwindcss
+
+# Initialize Tailwind (creates tailwind.config.js)
+npx tailwindcss init
+
+# Configure './tailwind.config.js' - *IMPORTANT*
+# You MUST tell Tailwind where your template files are. Example:
+# module.exports = {
+#   content: [
+#     "./static/html/**/*.html",
+#     "./static/js/**/*.js",
+#     // Add other paths if needed
+#   ],
+#   theme: {
+#     extend: {},
+#   },
+#   plugins: [],
+# }
+
+# Create your main input CSS file (e.g., ./static/css/input.css)
+# Add the Tailwind directives:
+# @tailwind base;
+# @tailwind components;
+# @tailwind utilities;
+
+# Build the output CSS file (run this after changes to templates/config)
+npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css
+
+# Build and watch for changes during development
+npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --watch
+
+# For production builds (minified)
+npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify
 ```
 
 ## Project Basics
