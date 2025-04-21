@@ -11,25 +11,33 @@
     <link href="/static/css/tailwind.css" rel="stylesheet">
     <script src="/static/js/common.js" defer></script> 
     <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 1s ease-out forwards;
+        }
         /* Add custom styles or overrides here if needed */
         html {
             scroll-behavior: smooth;
         }
-        /* Style for the scrollbar in the carousel (optional, browser-specific) */
-        .carousel::-webkit-scrollbar {
-            height: 4px; /* Adjust height */
-        }
-        .carousel::-webkit-scrollbar-thumb {
-            background-color: #fc4c02; /* Strava orange */
-            border-radius: 10px;
-        }
-        .carousel::-webkit-scrollbar-track {
-            background-color: #e2e8f0; /* Tailwind gray-200 */
-        }
-        /* Style for Firefox scrollbar */
+        /* Hide scrollbar while maintaining scroll functionality */
         .carousel {
-            scrollbar-width: thin;
-            scrollbar-color: #fc4c02 #e2e8f0; /* thumb color track color */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .carousel::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+
+        .carousel img {
+            pointer-events: none;
+            -webkit-user-drag: none;
         }
     </style>
     </head>
@@ -76,34 +84,33 @@
         </nav>
     </header>
 
-    <main class="container mx-auto px-4 py-8 md:py-12">
-
-        <section class="text-center mb-12 md:mb-16 relative z-10">
+    <main class="container mx-auto px-4 md:py-12">
+        <section class="text-center mb-12 md:mb-16 relative z-10 fade-in">
             <h2 class="text-3xl md:text-4xl font-bold mb-4 text-gray-900">Bring Your <span class="text-[#fc4c02]">Strava</span> Activities to Life</h2>
-                <p class="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-                    Connect your Strava account, enter an activity link, and generate customized, shareable overlays for your Instagram Stories in seconds.
-                </p>
-                <div id="connect-strava" class="inline-block transform hover:scale-110 transition-transform duration-200 cursor-pointer">
-                    <img src="/static/images/btn_strava_connect_with_orange_x2.svg" alt="Connect with Strava" class="h-12 drop-shadow-lg rounded-lg">
-                </div>
-                <div id="create-overlay-btn" class="hidden flex justify-center">
-                    <a href="/input_activity" 
-                       class="bg-[#fc4c02] text-white font-bold py-3 px-8 rounded-lg
-                              transform hover:scale-110 transition-all duration-200 
-                              drop-shadow-lg
-                              flex items-center space-x-2">
-                        <span>Create Your Overlay</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" 
-                             class="h-5 w-5" 
-                             viewBox="0 0 20 20" 
-                             fill="currentColor">
-                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
-                    </a>
-                </div>
-             </section>
+            <p class="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                Connect your Strava account, enter an activity link, and generate customized, shareable overlays for your Instagram Stories in seconds.
+            </p>
+            <div id="connect-strava" class="inline-block transform hover:scale-110 transition-transform duration-200 cursor-pointer">
+                <img src="/static/images/btn_strava_connect_with_orange_x2.svg" alt="Connect with Strava" class="h-12 drop-shadow-lg rounded-lg">
+            </div>
+            <div id="create-overlay-btn" class="hidden flex justify-center">
+                <a href="/activities" 
+                    class="bg-[#fc4c02] text-white font-bold py-3 px-8 rounded-lg
+                            transform hover:scale-110 transition-all duration-200 
+                            drop-shadow-lg
+                            flex items-center space-x-2">
+                    <span>Create Your Overlay</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                            class="h-5 w-5" 
+                            viewBox="0 0 20 20" 
+                            fill="currentColor">
+                        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </a>
+            </div>
+        </section>
 
-        <section class="mb-12 md:mb-16 relative z-10">
+        <section class="mb-12 md:mb-16 relative z-10 fade-in">
             <h3 class="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8 text-gray-900">See What You Can Create</h3>
             <div class="max-w-[900px] mx-auto">
                 <div class="flex space-x-4 overflow-x-auto pb-4 carousel snap-x snap-mandatory scroll-smooth backdrop-blur-sm p-4 rounded-lg">
@@ -124,33 +131,34 @@
                     </div>
                 </div>
             </div>
-            <p class="text-center text-sm text-gray-600 mt-2">Scroll or swipe to see more examples &rarr;</p>
         </section>
 
         <section id="guide" class="mb-12 md:mb-16 bg-white/80 backdrop-blur-sm p-6 md:p-8 rounded-lg shadow-lg border border-gray-200/50 relative z-10">
-             <h3 class="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8 text-gray-900">Simple Steps to Awesome Stories</h3>
-             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 md:gap-2 text-center">
-                <div class="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+            <h2 class="text-3xl font-bold text-center text-[#242428] mb-12">
+                Get Your Custom Overlay in <span class="text-[#fc4c02]">3 Simple Steps</span>
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 md:gap-2 text-center">
+                <div class="flex flex-col items-center p-4 rounded-lg transition-colors duration-200">
                     <div class="bg-[#fc4c02] text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mb-3 shadow-md">1</div>
                     <h4 class="font-semibold mb-1 text-lg text-gray-800">Connect</h4>
                     <p class="text-gray-600 text-sm">Securely connect your Strava account.</p>
                 </div>
-                 <div class="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                    <div class="flex flex-col items-center p-4 rounded-lg transition-colors duration-200">
                     <div class="bg-[#fc4c02] text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mb-3 shadow-md">2</div>
                     <h4 class="font-semibold mb-1 text-lg text-gray-800">Input Activity</h4>
                     <p class="text-gray-600 text-sm">Copy your activity link from Strava and paste it here.</p>
                 </div>
-                 <div class="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                    <div class="flex flex-col items-center p-4 rounded-lg transition-colors duration-200">
                     <div class="bg-[#fc4c02] text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mb-3 shadow-md">3</div>
                     <h4 class="font-semibold mb-1 text-lg text-gray-800">Customize</h4>
                     <p class="text-gray-600 text-sm">Choose and personalize your desired overlay style.</p>
                 </div>
-                 <div class="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                    <div class="flex flex-col items-center p-4 rounded-lg transition-colors duration-200">
                     <div class="bg-[#fc4c02] text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mb-3 shadow-md">4</div>
                     <h4 class="font-semibold mb-1 text-lg text-gray-800">Copy & Share</h4>
                     <p class="text-gray-600 text-sm">Copy the transparent overlay and paste it into your Story!</p>
                 </div>
-             </div>
+            </div>
         </section>
 
     </main>
@@ -226,27 +234,45 @@
                  if (createOverlayBtn) createOverlayBtn.classList.add('hidden');
             });
 
-
-            // --- Page Specific Event Listeners ---
-
             // Add click handler for Strava connect button
             connectStravaBtn?.addEventListener("click", function() {
                 window.location.href = "/login";
             });
 
-            // Add click handler for create overlay button
-            createOverlayBtn?.addEventListener("click", function(e) {
-                window.location.href = "/input_activity";
+            // Add carousel drag scrolling
+            const carousel = document.querySelector('.carousel');
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            carousel.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // Prevent default selection behavior
+                isDown = true;
+                carousel.style.cursor = 'grabbing';
+                startX = e.pageX - carousel.offsetLeft;
+                scrollLeft = carousel.scrollLeft;
             });
 
-            // Add click handler for header create overlay button
-            createOverlayHeaderBtn?.addEventListener("click", function(e) {
-                window.location.href = "/input_activity";
+            carousel.addEventListener('mouseleave', () => {
+                isDown = false;
+                carousel.style.cursor = 'grab';
             });
 
-            // The profile dropdown logic is now handled by common.js
-            // initializeProfileDropdown(); // Called automatically by common.js DOMContentLoaded
+            carousel.addEventListener('mouseup', () => {
+                isDown = false;
+                carousel.style.cursor = 'grab';
+            });
 
+            carousel.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - carousel.offsetLeft;
+                const walk = (x - startX); // Removed multiplier for more precise control
+                carousel.scrollLeft = scrollLeft - walk;
+            });
+
+            // Set initial grab cursor
+            carousel.style.cursor = 'grab';
         });
     </script>
 
