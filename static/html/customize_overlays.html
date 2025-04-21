@@ -96,14 +96,14 @@
             </div>
 
             <div class="flex justify-end min-w-[40px]">
-                <a href="/input_activity" id="create-overlay-header-btn" 
-                   class="hidden w-8 h-8 bg-[#fc4c02] text-white rounded-full 
-                          flex items-center justify-center
-                          transform hover:scale-110 transition-all duration-200 
-                          drop-shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                    </svg>
+                <a href="/activities" id="create-overlay-header-btn" 
+                    class="hidden bg-[#fc4c02] text-white rounded-lg 
+                            px-2 sm:px-4 py-2 sm:py-2
+                            text-xs sm:text-base whitespace-nowrap
+                            flex items-center justify-center font-medium
+                            transform hover:scale-105 transition-all duration-200 
+                            drop-shadow-lg">
+                    Activities
                 </a>
             </div>
         </nav>
@@ -319,7 +319,7 @@
                  const createOverlayHeaderBtn = document.getElementById('create-overlay-header-btn');
 
                 if (authStatus.authenticated) {
-                    console.log('User is authenticated on generate_overlays page:', authStatus); 
+                    console.log('User is authenticated on customize_overlays page:', authStatus); 
                     // Update local state based on authStatus
                     state.isAuthenticated = true;
                     state.athleteId = authStatus.athleteId; // athleteId is also set globally by common.js, but update local state too
@@ -337,7 +337,7 @@
                     loadActivityFromSession(); 
 
                 } else {
-                    console.log('User is not authenticated on generate_overlays page:', authStatus);
+                    console.log('User is not authenticated on customize_overlays page:', authStatus);
                     state.isAuthenticated = false; // Update state
                     state.athleteId = null;
                     // Hide profile picture and create buttons when not authenticated
@@ -346,16 +346,16 @@
 
                     // If authStatus requires login (e.g., token expired, direct access), redirect
                     // common.js checkAuth already handles redirection for protected pages, 
-                    // but this adds an extra layer if needed for generate_overlays specific logic.
+                    // but this adds an extra layer if needed for customize_overlays specific logic.
                     if (authStatus.require_login) {
                          // Redirect if not already on a public page (though common.js should handle this)
-                         // For generate_overlays, we definitely require login.
+                         // For customize_overlays, we definitely require login.
                          window.location.href = "/auth_required";
                          console.log("Redirecting due to require_login flag.");
                     }
                 }
             }).catch(error => {
-                 console.error("Error processing auth status on generate_overlays page:", error);
+                 console.error("Error processing auth status on customize_overlays page:", error);
                  // Handle potential errors - e.g., hide elements, show message
                  const profileDropdownContainer = document.getElementById('profile-dropdown-container');
                  const createOverlayHeaderBtn = document.getElementById('create-overlay-header-btn');

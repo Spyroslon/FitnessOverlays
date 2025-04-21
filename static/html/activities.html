@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -65,7 +65,21 @@
 
     <main class="flex-1 container mx-auto p-6">
         <div class="max-w-[900px] mx-auto space-y-8">
-            <h1 class="text-2xl font-bold">My Activities</h1>
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold">My Activities</h1>
+                <div class="flex flex-col items-end gap-1">
+                    <button id="sync-button" 
+                            class="px-4 py-2 bg-[#fc4c02] text-white rounded-lg 
+                                   flex items-center gap-2 hover:bg-[#e34402] transition-colors
+                                   disabled:opacity-50 disabled:cursor-not-allowed">
+                        <svg id="sync-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span id="sync-text">Sync Activities</span>
+                    </button>
+                    <div id="last-sync" class="text-sm text-gray-600"></div>
+                </div>
+            </div>
             
             <!-- Activities Grid -->
             <div id="activities-grid" class="space-y-4">
@@ -109,6 +123,14 @@
     </footer>
 
     <script>
+        // Global function to handle activity selection and redirect
+        window.saveActivityAndRedirect = function(activity) {
+            // Store the activity data in sessionStorage
+            sessionStorage.setItem('currentActivity', JSON.stringify(activity));
+            // Redirect to generate overlays page
+            window.location.href = '/customize_overlays';
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             // Helper function to create skeleton loading tile
             function createSkeletonTile() {
@@ -168,6 +190,32 @@
                 return `${paceMinutes}:${paceSeconds.toString().padStart(2, '0')}/km`;
             }
 
+            // Helper function to format countdown time
+            function formatCountdownTime(seconds) {
+                if (seconds <= 0) return 'Ready to sync';
+                if (seconds < 60) return 'less than a minute';
+                const minutes = Math.floor(seconds / 60);
+                return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+            }
+
+            // Helper function to format relative time
+            function formatRelativeTime(timestamp) {
+                const seconds = Math.floor((Date.now() - timestamp) / 1000);
+                
+                if (seconds < 30) return 'Just now';
+                if (seconds < 60) return 'Less than a minute ago';
+                
+                const minutes = Math.floor(seconds / 60);
+                if (minutes === 1) return '1 minute ago';
+                if (minutes < 60) return `${minutes} minutes ago`;
+                
+                const hours = Math.floor(minutes / 60);
+                if (hours === 1) return '1 hour ago';
+                if (hours < 24) return `${hours} hours ago`;
+                
+                return 'More than a day ago';
+            }
+
             function createActivityTile(activity) {
                 const tile = document.createElement('div');
                 tile.className = 'bg-gray-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group';
@@ -195,7 +243,7 @@
                                 </div>
                                 
                                 <!-- Generate Overlay Button -->
-                                <button onclick="window.location.href='/generate_overlays#${activity.id}'"
+                                <button onclick="saveActivityAndRedirect(${JSON.stringify(activity).replace(/"/g, '&quot;')})"
                                         class="w-10 h-10 bg-black/10 hover:bg-black/20 rounded-lg
                                                flex items-center justify-center
                                                backdrop-blur-sm transition-all duration-300
@@ -241,7 +289,7 @@
                 
                 if (activity) {
                     sessionStorage.setItem('currentActivity', JSON.stringify(activity));
-                    window.location.href = '/generate_overlays';
+                    window.location.href = '/customize_overlays';
                 }
             }
 
@@ -251,10 +299,18 @@
             const prevPageBtn = document.getElementById('prev-page');
             const nextPageBtn = document.getElementById('next-page');
             const currentPageSpan = document.getElementById('current-page');
+            const syncButton = document.getElementById('sync-button');
+            const syncIcon = document.getElementById('sync-icon');
+            const syncText = document.getElementById('sync-text');
             
             let currentPage = 1;
             const itemsPerPage = 5;
             let allActivities = [];
+
+            // Add sync button click handler
+            syncButton.addEventListener('click', () => {
+                syncActivities();
+            });
 
             function renderActivities(page) {
                 const start = (page - 1) * itemsPerPage;
@@ -288,56 +344,125 @@
                 }
             });
 
-            // Initialize activities loading
-            activitiesGrid.innerHTML = ''; // Clear any existing content
-            loadingState.classList.remove('hidden');
+            async function syncActivities() {
+                syncIcon.classList.add('spinner');
+                syncButton.disabled = true;
+                syncText.textContent = 'Syncing...';
+                document.getElementById('last-sync').textContent = 'Syncing with Strava...';
 
-            // Check authentication and load activities
+                try {
+                    const response = await fetch('/api/activities/sync', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-Token': csrfToken
+                        },
+                        credentials: 'include'
+                    });
+
+                    const data = await response.json();
+
+                    // Always update activities if they're provided in the response
+                    if (data.activities) {
+                        allActivities = data.activities;
+                        const lastSyncTime = Date.now();
+                        sessionStorage.setItem('lastSyncTime', lastSyncTime.toString());
+                        renderActivities(1);
+                        if (allActivities.length > itemsPerPage) {
+                            pagination.classList.remove('hidden');
+                        }
+                    }
+
+                    // Update sync status based on cooldown info
+                    if (data.cooldown && data.cooldown.active) {
+                        syncButton.disabled = true;
+                        syncText.textContent = 'Sync Activities';
+                        syncIcon.classList.remove('spinner');
+
+                        // Start the countdown
+                        const countdownInterval = setInterval(() => {
+                            const remaining = Math.max(0, data.cooldown.seconds_remaining--);
+                            if (remaining <= 0) {
+                                clearInterval(countdownInterval);
+                                syncButton.disabled = false;
+                                document.getElementById('last-sync').textContent = formatRelativeTime(parseInt(sessionStorage.getItem('lastSyncTime')));
+                            } else {
+                                document.getElementById('last-sync').textContent = 
+                                    `Next refresh available in ${formatCountdownTime(remaining)}`;
+                            }
+                        }, 1000);
+                    } else {
+                        // No cooldown, normal sync completion
+                        syncIcon.classList.remove('spinner');
+                        syncButton.disabled = false;
+                        syncText.textContent = 'Sync Activities';
+                        document.getElementById('last-sync').textContent = 'Just now';
+                        startRelativeTimeUpdates();
+                    }
+
+                    // Handle warnings if present
+                    if (data.warning) {
+                        console.warn(data.warning);
+                    }
+                } catch (error) {
+                    console.error('Error syncing activities:', error);
+                    syncIcon.classList.remove('spinner');
+                    syncButton.disabled = false;
+                    syncText.textContent = 'Retry Sync';
+                    document.getElementById('last-sync').textContent = 'Sync failed. Please try again.';
+                }
+            }
+
+            let relativeTimeInterval;
+            function startRelativeTimeUpdates() {
+                // Clear any existing interval
+                if (relativeTimeInterval) {
+                    clearInterval(relativeTimeInterval);
+                }
+
+                // Update relative time every minute
+                relativeTimeInterval = setInterval(() => {
+                    const lastSyncTime = sessionStorage.getItem('lastSyncTime');
+                    if (lastSyncTime) {
+                        const lastSyncElement = document.getElementById('last-sync');
+                        // Only update if we're not showing a cooldown timer
+                        if (!lastSyncElement.textContent.includes('Next refresh available')) {
+                            lastSyncElement.textContent = formatRelativeTime(parseInt(lastSyncTime));
+                        }
+                    }
+                }, 60000); // Update every minute
+            }
+
+            // Remove auto-refresh on page load, rely on server to tell us if we can sync
             checkAuth().then(authStatus => {
-                if (!authStatus) {
+                if (!authStatus || !authStatus.authenticated) {
                     window.location.href = '/auth_required';
                     return;
                 }
 
-                if (authStatus.authenticated) {
-                    // Show profile picture if available
-                    const profileDropdownContainer = document.getElementById('profile-dropdown-container');
-                    const profilePicture = document.getElementById('profile-picture');
-                    if (authStatus.athlete_profile && profileDropdownContainer && profilePicture) {
-                        profilePicture.src = authStatus.athlete_profile;
-                        profileDropdownContainer.classList.remove('hidden');
-                    }
+                // Show profile picture if available
+                const profileDropdownContainer = document.getElementById('profile-dropdown-container');
+                const profilePicture = document.getElementById('profile-picture');
+                if (authStatus.athlete_profile && profileDropdownContainer && profilePicture) {
+                    profilePicture.src = authStatus.athlete_profile;
+                    profileDropdownContainer.classList.remove('hidden');
+                }
 
-                    // Load activities
-                    fetch('/api/activities/latest')
-                        .then(response => response.json())
-                        .then(data => {
-                            loadingState.classList.add('hidden');
-                            allActivities = data;
-                            sessionStorage.setItem('activities', JSON.stringify(data));
-                            
-                            if (data.length > 0) {
-                                renderActivities(1);
-                                if (data.length > itemsPerPage) {
-                                    pagination.classList.remove('hidden');
-                                }
-                            } else {
-                                activitiesGrid.innerHTML = `
-                                    <div class="text-center py-12 text-gray-500">
-                                        No activities found
-                                    </div>`;
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error fetching activities:', error);
-                            loadingState.classList.add('hidden');
-                            activitiesGrid.innerHTML = `
-                                <div class="text-center py-12 text-red-600">
-                                    Failed to load activities. Please try again later.
-                                </div>`;
-                        });
-                } else {
-                    window.location.href = '/auth_required';
+                // Check for existing last sync time
+                const lastSyncTime = sessionStorage.getItem('lastSyncTime');
+                if (lastSyncTime) {
+                    document.getElementById('last-sync').textContent = formatRelativeTime(parseInt(lastSyncTime));
+                    startRelativeTimeUpdates();
+                }
+
+                // Initially sync activities
+                syncActivities();
+            });
+            
+            // Clean up interval when page is unloaded
+            window.addEventListener('unload', () => {
+                if (relativeTimeInterval) {
+                    clearInterval(relativeTimeInterval);
                 }
             });
         });
