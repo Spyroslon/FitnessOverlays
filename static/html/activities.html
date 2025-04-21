@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/static/images/FinessOverlaysLogo.ico">
+    <meta name="copyright" content="FitnessOverlays - Copyright (c) 2025 Spyros Lontos">
+    <meta name="license" content="AGPL-3.0">
+    <title>FitnessOverlays</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="/static/css/tailwind.css" rel="stylesheet">
+    <script src="/static/js/common.js" defer></script>
+    <style>
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(180deg); }
+        }
+        .custom-loader {
+            width: 50px;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: 8px solid;
+            border-color: #fc4c02 #0000;
+            animation: spin 1s infinite;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-gradient-to-br from-white to-[#fc4c02]/40">
+    
+    <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
+        <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center max-w-[900px]">
+            <div class="flex justify-start min-w-[40px]">
+                <!-- Profile Dropdown Container -->
+                <div id="profile-dropdown-container" class="relative hidden">
+                    <!-- Profile Picture Trigger -->
+                    <div id="profile-picture-trigger" class="cursor-pointer">
+                         <img id="profile-picture" 
+                              src="" 
+                              alt="Profile" 
+                              class="w-8 h-8 rounded-full object-cover border border-gray-200/50">
+                    </div>
+                    <!-- Dropdown Menu -->
+                    <div id="profile-dropdown-menu" 
+                         class="hidden absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 ring-1 ring-black ring-opacity-5">
+                        <button id="logout-button" 
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center flex justify-center items-center">
+                <a href="/" class="text-3xl font-bold hover:opacity-80 transition-opacity">
+                    <span class="text-[#fc4c02]">Fitness</span><span class="text-gray-900">Overlays</span>
+                </a>
+            </div>
+
+            <div class="flex justify-end min-w-[40px]">
+            </div>
+        </nav>
+    </header>
+
+    <main class="flex-1 container mx-auto p-6">
+        <div class="max-w-[900px] mx-auto space-y-8">
+            <h1 class="text-2xl font-bold">My Activities</h1>
+            
+            <!-- Activities Grid -->
+            <div id="activities-grid" class="space-y-4">
+                <!-- Activity tiles will be inserted here by JavaScript -->
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading-state" class="flex flex-col items-center justify-center py-12 hidden">
+                <div class="custom-loader"></div>
+                <p class="mt-4 text-gray-600 font-medium">Loading activities...</p>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="flex justify-center items-center gap-2 mt-8 hidden">
+                <button id="prev-page" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800">
+                    Previous
+                </button>
+                <span id="page-info" class="text-gray-600">Page <span id="current-page">1</span></span>
+                <button id="next-page" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800">
+                    Next
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-auto bg-gray-900/80 backdrop-blur-sm text-gray-300 text-sm py-6 border-t border-gray-700/50">
+        <div class="container mx-auto px-4 flex flex-col items-center space-y-4">
+            <div class="text-center">
+                &copy; 2025 FitnessOverlays - Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
+                   target="_blank" 
+                   class="hover:text-strava-orange transition-colors">
+                    AGPL-3.0
+                </a>
+            </div>
+            <div>
+                <img src="/static/images/api_logo_pwrdBy_strava_horiz_white.svg" 
+                     alt="Powered by Strava" 
+                     class="h-4 width-auto mx-auto">
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Helper function to create skeleton loading tile
+            function createSkeletonTile() {
+                const tile = document.createElement('div');
+                tile.className = 'bg-white rounded-lg shadow-md p-4 animate-pulse';
+                tile.innerHTML = `
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex-1 flex items-center gap-4">
+                            <div class="bg-gray-200 h-6 w-20 rounded-full"></div>
+                            <div class="bg-gray-200 h-6 w-48 rounded"></div>
+                            <div class="bg-gray-200 h-6 w-32 rounded"></div>
+                        </div>
+                        <div class="flex flex-col items-end gap-2">
+                            <div class="bg-gray-200 h-4 w-24 rounded"></div>
+                            <div class="bg-gray-200 h-8 w-8 rounded-full"></div>
+                        </div>
+                    </div>
+                `;
+                return tile;
+            }
+
+            // Helper function to format date
+            function formatDate(dateStr) {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            // Format duration from seconds to HH:MM:SS
+            function formatDuration(seconds) {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const remainingSeconds = seconds % 60;
+                
+                if (hours > 0) {
+                    return `${hours}h ${minutes}m`;
+                }
+                return `${minutes}m ${remainingSeconds}s`;
+            }
+
+            // Format distance from meters to km
+            function formatDistance(meters) {
+                return (meters / 1000).toFixed(2) + ' km';
+            }
+
+            // Helper function to format pace (min/km)
+            function formatPace(seconds, meters) {
+                const totalMinutes = (seconds / 60);
+                const kilometers = meters / 1000;
+                const paceMinutes = Math.floor(totalMinutes / kilometers);
+                const paceSeconds = Math.floor(((totalMinutes / kilometers) % 1) * 60);
+                return `${paceMinutes}:${paceSeconds.toString().padStart(2, '0')}/km`;
+            }
+
+            function createActivityTile(activity) {
+                const tile = document.createElement('div');
+                tile.className = 'bg-gray-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group';
+                
+                const activityTypeColor = activity.type === 'Run' ? 'from-green-400/90 to-green-600/90' : 'from-blue-400/90 to-blue-600/90';
+                const activityIcon = activity.type === 'Run' ? 
+                    `<path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" />` :
+                    `<path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />`;
+                
+                tile.innerHTML = `
+                    <div class="relative">
+                        <!-- Header with gradient background -->
+                        <div class="bg-gradient-to-r ${activityTypeColor} p-4 text-gray-900">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                            ${activityIcon}
+                                        </svg>
+                                        <span class="font-medium">${activity.type}</span>
+                                    </div>
+                                    <h3 class="font-bold text-lg leading-tight mb-1">${activity.name}</h3>
+                                    <div class="text-sm opacity-90">${formatDate(activity.start_date)}</div>
+                                </div>
+                                
+                                <!-- Generate Overlay Button -->
+                                <button onclick="window.location.href='/generate_overlays#${activity.id}'"
+                                        class="w-10 h-10 bg-black/10 hover:bg-black/20 rounded-lg
+                                               flex items-center justify-center
+                                               backdrop-blur-sm transition-all duration-300
+                                               group-hover:scale-105">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Stats Grid -->
+                        <div class="grid grid-cols-3 gap-4 p-4 bg-white">
+                            <!-- Distance -->
+                            <div class="text-center">
+                                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Distance</div>
+                                <div class="font-bold text-gray-900">${formatDistance(activity.distance)}</div>
+                            </div>
+
+                            <!-- Duration -->
+                            <div class="text-center border-x border-gray-100">
+                                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Duration</div>
+                                <div class="font-bold text-gray-900">${formatDuration(activity.moving_time)}</div>
+                            </div>
+
+                            <!-- Pace -->
+                            <div class="text-center">
+                                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Avg Pace</div>
+                                <div class="font-bold text-gray-900">${formatPace(activity.moving_time, activity.distance)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                return tile;
+            }
+
+            // Function to handle generating overlay
+            function generateOverlay(activityId) {
+                // Store the selected activity in sessionStorage
+                const activities = JSON.parse(sessionStorage.getItem('activities'));
+                const activity = activities.find(a => a.id.toString() === activityId.toString());
+                
+                if (activity) {
+                    sessionStorage.setItem('currentActivity', JSON.stringify(activity));
+                    window.location.href = '/generate_overlays';
+                }
+            }
+
+            const activitiesGrid = document.getElementById('activities-grid');
+            const loadingState = document.getElementById('loading-state');
+            const pagination = document.getElementById('pagination');
+            const prevPageBtn = document.getElementById('prev-page');
+            const nextPageBtn = document.getElementById('next-page');
+            const currentPageSpan = document.getElementById('current-page');
+            
+            let currentPage = 1;
+            const itemsPerPage = 5;
+            let allActivities = [];
+
+            function renderActivities(page) {
+                const start = (page - 1) * itemsPerPage;
+                const end = start + itemsPerPage;
+                const activitiesToShow = allActivities.slice(start, end);
+
+                activitiesGrid.innerHTML = '';
+                activitiesToShow.forEach(activity => {
+                    activitiesGrid.appendChild(createActivityTile(activity));
+                });
+
+                // Update pagination
+                currentPageSpan.textContent = page;
+                prevPageBtn.disabled = page === 1;
+                nextPageBtn.disabled = end >= allActivities.length;
+            }
+
+            // Event listeners for pagination
+            prevPageBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderActivities(currentPage);
+                }
+            });
+
+            nextPageBtn.addEventListener('click', () => {
+                const maxPage = Math.ceil(allActivities.length / itemsPerPage);
+                if (currentPage < maxPage) {
+                    currentPage++;
+                    renderActivities(currentPage);
+                }
+            });
+
+            // Initialize activities loading
+            activitiesGrid.innerHTML = ''; // Clear any existing content
+            loadingState.classList.remove('hidden');
+
+            // Check authentication and load activities
+            checkAuth().then(authStatus => {
+                if (!authStatus) {
+                    window.location.href = '/auth_required';
+                    return;
+                }
+
+                if (authStatus.authenticated) {
+                    // Show profile picture if available
+                    const profileDropdownContainer = document.getElementById('profile-dropdown-container');
+                    const profilePicture = document.getElementById('profile-picture');
+                    if (authStatus.athlete_profile && profileDropdownContainer && profilePicture) {
+                        profilePicture.src = authStatus.athlete_profile;
+                        profileDropdownContainer.classList.remove('hidden');
+                    }
+
+                    // Load activities
+                    fetch('/api/activities/latest')
+                        .then(response => response.json())
+                        .then(data => {
+                            loadingState.classList.add('hidden');
+                            allActivities = data;
+                            sessionStorage.setItem('activities', JSON.stringify(data));
+                            
+                            if (data.length > 0) {
+                                renderActivities(1);
+                                if (data.length > itemsPerPage) {
+                                    pagination.classList.remove('hidden');
+                                }
+                            } else {
+                                activitiesGrid.innerHTML = `
+                                    <div class="text-center py-12 text-gray-500">
+                                        No activities found
+                                    </div>`;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching activities:', error);
+                            loadingState.classList.add('hidden');
+                            activitiesGrid.innerHTML = `
+                                <div class="text-center py-12 text-red-600">
+                                    Failed to load activities. Please try again later.
+                                </div>`;
+                        });
+                } else {
+                    window.location.href = '/auth_required';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

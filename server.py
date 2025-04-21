@@ -895,6 +895,40 @@ def generate_overlays():
     # Serve generate_overlays.html from static/html
     return send_from_directory('static/html', 'generate_overlays.html')
 
+@app.route('/activities')
+@login_required
+def activities():
+    """Serve the activities page for authenticated users"""
+    if not session.get('access_token'):
+        return redirect(url_for('login'))
+    
+    # Serve activities.html from static/html
+    return send_from_directory('static/html', 'activities.html')
+
+@app.route('/api/activities/latest')
+@login_required
+@limiter.limit("30 per minute")
+def get_latest_activities():
+    """Fetch latest activities from Strava"""
+    try:
+        # Get latest activities from Strava
+        response = requests.get(
+            "https://www.strava.com/api/v3/athlete/activities",
+            headers={"Authorization": f"Bearer {session['access_token']}"},
+            params={"per_page": 5}, # Limit to 5 activities
+            timeout=15
+        )
+
+        if not response.ok:
+            logger.error(f'Failed to fetch activities from Strava. Status: {response.status_code}')
+            return jsonify({"error": "Failed to fetch activities"}), response.status_code
+
+        activities = response.json()
+        return jsonify(activities)
+    except Exception as e:
+        logger.error(f'Error fetching activities: {str(e)}')
+        return jsonify({"error": "Failed to fetch activities"}), 500
+
 if __name__ == '__main__':
     logging.info("--- Preparing to run Flask app ---") # Add this log line
     logging.info("Starting Flask application...") # Example log at startup

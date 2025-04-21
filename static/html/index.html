@@ -9,6 +9,7 @@
     <title>FitnessOverlays</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="/static/css/tailwind.css" rel="stylesheet">
+    <script src="/static/js/common.js" defer></script> 
     <style>
         /* Add custom styles or overrides here if needed */
         html {
@@ -31,8 +32,6 @@
             scrollbar-color: #fc4c02 #e2e8f0; /* thumb color track color */
         }
     </style>
-    <!-- Include common JS file -->
-    <script src="/static/js/common.js" defer></script> 
     </head>
 <body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40" style="touch-action: manipulation;">
 
@@ -66,14 +65,12 @@
             </div>
 
             <div class="flex justify-end min-w-[40px]">
-                <a href="/input_activity" id="create-overlay-header-btn" 
-                   class="hidden w-8 h-8 bg-[#fc4c02] text-white rounded-full 
-                          flex items-center justify-center
-                          transform hover:scale-110 transition-all duration-200 
+                <a href="/activities" id="create-overlay-header-btn" 
+                   class="hidden bg-[#fc4c02] text-white rounded-lg px-4 py-2
+                          flex items-center justify-center font-medium
+                          transform hover:scale-105 transition-all duration-200 
                           drop-shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                    </svg>
+                    Activities
                 </a>
             </div>
         </nav>
