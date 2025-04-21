@@ -277,7 +277,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Add CSRF token management
+            // Remove local CSRF token management as it's handled by common.js
             let csrfToken = '';
             // Unused: let previousPage = document.referrer;
 
@@ -289,8 +289,8 @@
                 isAuthenticated: false,
                 textColor: sessionStorage.getItem('textColor') || '#ffffff',
                 textAlign: sessionStorage.getItem('textAlign') || 'center',
-                labelSize: sessionStorage.getItem('labelSize') || 'medium', // Default to medium
-                valueSize: sessionStorage.getItem('valueSize') || 'large', // Default to large
+                labelSize: sessionStorage.getItem('labelSize') || 'medium',
+                valueSize: sessionStorage.getItem('valueSize') || 'large',
                 columns: parseInt(sessionStorage.getItem('columns'), 10) || 1
             };
 
@@ -308,17 +308,6 @@
             const activityInfoCard = document.getElementById('activityInfoCard');
             const activityName = document.getElementById('activityName');
             const stravaLink = document.getElementById('stravaLink');
-
-            // Helper function to add CSRF token to fetch options
-            function addCSRFToken(options = {}) {
-                return {
-                    ...options,
-                    headers: {
-                        ...options.headers,
-                        'X-CSRF-Token': csrfToken
-                    }
-                };
-            }
 
             // Check auth status using common function and handle results
             checkAuth().then(authStatus => {
