@@ -68,42 +68,52 @@
 <body class="font-sans antialiased text-gray-800 bg-white bg-[radial-gradient(60%_120%_at_50%_50%,_#ffffff00_0%,_#ffd5c4_100%)]" style="touch-action: manipulation;">
     
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
-        <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center max-w-[900px]">
+        <nav class="container mx-auto px-2 sm:px-4 py-3 grid grid-cols-[60px_1fr_60px] sm:grid-cols-3 items-center max-w-[800px]">
             <div class="flex justify-start min-w-[40px]">
                 <!-- Profile Dropdown Container -->
                 <div id="profile-dropdown-container" class="relative hidden">
                     <!-- Profile Picture Trigger -->
-                    <div id="profile-picture-trigger" class="cursor-pointer">
-                         <img id="profile-picture" 
-                              src="" 
-                              alt="Profile" 
-                              class="w-10 h-10 rounded-full object-cover border border-gray-200/50">
+                    <div id="profile-picture-trigger" class="cursor-pointer relative">
+                        <img id="profile-picture" 
+                             src="" 
+                             alt="Profile" 
+                             class="w-10 h-10 rounded-full object-cover border border-gray-200/50">
+                        
+                        <span class="absolute bottom-0 left-7 w-3.5 h-3.5 bg-green-600 border border-white dark:border-gray-800 rounded-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-black" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 14a1 1 0 01-.7-.3l-4-4a1 1 0 111.4-1.4L10 11.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-.7.3z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
                     </div>
                     <!-- Dropdown Menu -->
                     <div id="profile-dropdown-menu" 
-                         class="hidden absolute left-0 w-40 bg-white/80 backdrop-blur-lg rounded-lg shadow-lg z-50 ring-1 ring-gray-200/50 border border-white/50 transform transition-all duration-200">
+                        class="hidden absolute left-0 w-auto max-w-xs bg-white rounded-lg shadow-lg z-50 ring-1 ring-gray-200/50 border border-white/50 transform transition-all duration-200">
+                        <div id="first-last-Name" class="px-4 py-2 text-sm text-gray-800 font-bold truncate">
+                            FirstName LastName
+                        </div>
+                        <div class="border-t border-gray-300"></div>
                         <button id="logout-button" 
-                                class="block w-full text-left px-4 py-2 text-sm font-medium text-gray-800 rounded-md hover:bg-[#fc4c02] hover:text-white transition-colors duration-200">
-                            Logout
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-800 rounded-md hover:bg-[#fc4c02] hover:text-white transition-colors duration-200">
+                            Log out
                         </button>
                     </div>
                 </div>
             </div>
 
             <div class="text-center flex justify-center items-center">
-                <a href="/" class="text-3xl font-bold hover:opacity-80 transition-opacity">
-                    <span class="text-[#fc4c02]">Fitness</span><span class="text-gray-900">Overlays</span>
+                <a href="/" class="text-2xl sm:text-3xl font-bold hover:opacity-80 transition-opacity">
+                    <span class="text-green-600">Fitness</span><span class="text-gray-900">Overlays</span>
                 </a>
             </div>
 
             <div class="flex justify-end min-w-[40px]">
                 <a href="/activities" id="create-overlay-header-btn" 
-                    class="hidden bg-[#fc4c02] text-white rounded-lg 
-                            px-2 sm:px-4 py-2 sm:py-2
-                            text-xs sm:text-base whitespace-nowrap
-                            flex items-center justify-center font-medium
-                            transform hover:scale-105 transition-all duration-200 
-                            drop-shadow-lg">
+                   class="hidden bg-green-600 text-white rounded-lg 
+                          px-2 sm:px-4 py-2 sm:py-2
+                          text-xs sm:text-base whitespace-nowrap
+                          flex items-center justify-center font-medium
+                          transform hover:scale-105 transition-all duration-200 
+                          drop-shadow-lg">
                     Activities
                 </a>
             </div>
@@ -333,12 +343,13 @@
 
             // Check auth status using common function and handle results
             checkAuth().then(authStatus => {
-                 if (!authStatus) return; // Early exit if checkAuth failed critically
+                if (!authStatus) return; // Early exit if checkAuth failed critically
 
-                 // Find elements after auth check, as they might be needed
-                 const profileDropdownContainer = document.getElementById('profile-dropdown-container');
-                 const profilePicture = document.getElementById('profile-picture');
-                 const createOverlayHeaderBtn = document.getElementById('create-overlay-header-btn');
+                // Find elements after auth check, as they might be needed
+                const profileDropdownContainer = document.getElementById('profile-dropdown-container');
+                const profilePicture = document.getElementById('profile-picture');
+                const firstlastname = document.getElementById('first-last-Name');
+                const createOverlayHeaderBtn = document.getElementById('create-overlay-header-btn');
 
                 if (authStatus.authenticated) {
                     console.log('User is authenticated on customize_overlays page:', authStatus); 
@@ -347,9 +358,10 @@
                     state.athleteId = authStatus.athleteId; // athleteId is also set globally by common.js, but update local state too
 
                     // Show profile picture if available
-                    if (authStatus.athlete_profile && profileDropdownContainer && profilePicture) {
+                    if (authStatus.athlete_profile && profileDropdownContainer && profilePicture && firstlastname) {
                         profilePicture.src = authStatus.athlete_profile;
                         profileDropdownContainer.classList.remove('hidden');
+                        firstlastname.textContent = `${authStatus.athlete_name} ${authStatus.athlete_lastname}`;
                     } else if (profileDropdownContainer) {
                         profileDropdownContainer.classList.add('hidden'); // Hide if no profile pic
                     }

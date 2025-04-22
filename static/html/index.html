@@ -7,8 +7,8 @@
     <meta name="copyright" content="FitnessOverlays - Copyright (c) 2025 Spyros Lontos">
     <meta name="license" content="AGPL-3.0">
     <title>FitnessOverlays</title>
-    <link href="/static/css/tailwind.css" rel="stylesheet">
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+    <!-- <link href="/static/css/tailwind.css" rel="stylesheet"> -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="/static/js/common.js" defer></script> 
     <style>
         @keyframes fadeIn {
@@ -44,23 +44,33 @@
 <body class="font-sans antialiased text-gray-800 bg-white bg-[radial-gradient(60%_120%_at_50%_50%,_#ffffff00_0%,_#ffd5c4_100%)]" style="touch-action: manipulation;">
 
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
-        <nav class="container mx-auto px-2 sm:px-4 py-3 grid grid-cols-[60px_1fr_60px] sm:grid-cols-3 items-center max-w-[1000px]">
+        <nav class="container mx-auto px-2 sm:px-4 py-3 grid grid-cols-[60px_1fr_60px] sm:grid-cols-3 items-center max-w-[800px]">
             <div class="flex justify-start min-w-[40px]">
                 <!-- Profile Dropdown Container -->
                 <div id="profile-dropdown-container" class="relative hidden">
                     <!-- Profile Picture Trigger -->
-                    <div id="profile-picture-trigger" class="cursor-pointer">
-                         <img id="profile-picture" 
-                              src="" 
-                              alt="Profile" 
-                              class="w-10 h-10 rounded-full object-cover border border-gray-200/50">
+                    <div id="profile-picture-trigger" class="cursor-pointer relative">
+                        <img id="profile-picture" 
+                             src="" 
+                             alt="Profile" 
+                             class="w-10 h-10 rounded-full object-cover border border-gray-200/50">
+                        
+                        <span class="absolute bottom-0 left-7 w-3.5 h-3.5 bg-green-600 border border-white dark:border-gray-800 rounded-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-black" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 14a1 1 0 01-.7-.3l-4-4a1 1 0 111.4-1.4L10 11.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-.7.3z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
                     </div>
                     <!-- Dropdown Menu -->
                     <div id="profile-dropdown-menu" 
-                         class="hidden absolute left-0 w-40 bg-white/80 backdrop-blur-lg rounded-lg shadow-lg z-50 ring-1 ring-gray-200/50 border border-white/50 transform transition-all duration-200">
+                        class="hidden absolute left-0 w-auto max-w-xs bg-white rounded-lg shadow-lg z-50 ring-1 ring-gray-200/50 border border-white/50 transform transition-all duration-200">
+                        <div id="first-last-Name" class="px-4 py-2 text-sm text-gray-800 font-bold truncate">
+                            FirstName LastName
+                        </div>
+                        <div class="border-t border-gray-300"></div>
                         <button id="logout-button" 
-                                class="block w-full text-left px-4 py-2 text-sm font-medium text-gray-800 rounded-md hover:bg-[#fc4c02] hover:text-white transition-colors duration-200">
-                            Logout
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-800 rounded-md hover:bg-[#fc4c02] hover:text-white transition-colors duration-200">
+                            Log out
                         </button>
                     </div>
                 </div>
@@ -68,13 +78,13 @@
 
             <div class="text-center flex justify-center items-center">
                 <a href="/" class="text-2xl sm:text-3xl font-bold hover:opacity-80 transition-opacity">
-                    <span class="text-[#fc4c02]">Fitness</span><span class="text-gray-900">Overlays</span>
+                    <span class="text-green-600">Fitness</span><span class="text-gray-900">Overlays</span>
                 </a>
             </div>
 
             <div class="flex justify-end min-w-[40px]">
                 <a href="/activities" id="create-overlay-header-btn" 
-                   class="hidden bg-[#fc4c02] text-white rounded-lg 
+                   class="hidden bg-green-600 text-white rounded-lg 
                           px-2 sm:px-4 py-2 sm:py-2
                           text-xs sm:text-base whitespace-nowrap
                           flex items-center justify-center font-medium
@@ -82,44 +92,29 @@
                           drop-shadow-lg">
                     Activities
                 </a>
-                <a href="/login" id="try-now-header-btn" 
-                   class="hidden bg-[#fc4c02] text-white rounded-lg 
-                          px-2 sm:px-4 py-2 sm:py-2
-                          text-xs sm:text-base whitespace-nowrap
-                          flex items-center justify-center font-medium
-                          transform hover:scale-105 transition-all duration-200 
-                          drop-shadow-lg">
-                    Try Now
-                </a>
             </div>
         </nav>
     </header>
 
-    <main class="container mx-auto p-4 max-w-[900px]">
+    <main class="container mx-auto p-4 max-w-[1000px]">
 
         <section class="text-center relative z-10 fade-in">
-            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#242428] mb-8">
-                Turn Your <span class="text-[#fc4c02]">Strava Activities</span> into Stunning Shareable Overlays
+            <h1 class="text-4xl font-bold tracking-tight text-[#242428] py-6">
+                Turn Your <span class="text-[#fc4c02]">Strava</span> Activities into Stunning Shareable Overlays
             </h1>
             <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-                Transform your workout data into clean, customizable, high-resolution image overlays. Perfect for showcasing your achievements on Instagram Stories, social media, and beyond!
+                Transform your workout data into clean, customizable, high-resolution image overlays. Perfect for showcasing your achievements on Instagram stories, Social Media, and beyond!
             </p>
             <div id="connect-strava" class="inline-block transform hover:scale-110 transition-transform duration-200 cursor-pointer py-10">
                 <img src="/static/images/btn_strava_connect_with_orange_x2.svg" alt="Connect with Strava" class="h-12 drop-shadow-lg rounded-lg">
             </div>
             <div id="create-overlay-btn" class="hidden flex justify-center py-10">
                 <a href="/activities" 
-                    class="bg-[#fc4c02] text-white font-bold py-3 px-8 rounded-lg
+                    class="bg-green-600 text-white font-bold py-4 px-6 rounded-lg
                             transform hover:scale-110 transition-all duration-200 
                             drop-shadow-lg
                             flex items-center space-x-2">
-                    <span>See your Activities</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" 
-                            class="h-5 w-5" 
-                            viewBox="0 0 20 20" 
-                            fill="currentColor">
-                        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
+                    <span>See your Activities 📋</span>
                 </a>
             </div>
         </section>
@@ -150,7 +145,7 @@
         <section class="py-6 bg-white/30 backdrop-blur-sm rounded-lg shadow-lg border border-white/50 relative z-10 fade-in mt-4">
             <div class="max-w-6xl mx-auto px-6">
                 <h2 class="text-3xl font-bold text-center text-[#242428] mb-12">
-                    Get Your Custom Overlay in <span class="text-[#fc4c02]">3 Simple Steps</span>
+                    Get Your Custom Overlay in <span class="text-green-600">3 Simple Steps</span>
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                     <div class="bg-white/70 backdrop-blur-sm p-6 rounded-lg shadow-md border border-white/50 hover:bg-white/80 transition-all duration-300">
@@ -221,6 +216,7 @@
             const tryNowHeaderBtn = document.getElementById('try-now-header-btn');
             const profileDropdownContainer = document.getElementById('profile-dropdown-container');
             const profilePicture = document.getElementById('profile-picture');
+            const firstlastname = document.getElementById('first-last-Name');
 
             // Check authentication status using the common function
             checkAuth().then(authStatus => {
@@ -229,9 +225,10 @@
                 if (authStatus.authenticated) {
                     console.log('User is authenticated on index page:', authStatus);
                     // Show profile picture dropdown if available
-                    if (authStatus.athlete_profile && profileDropdownContainer && profilePicture) {
+                    if (authStatus.athlete_profile && profileDropdownContainer && profilePicture && firstlastname) {
                         profilePicture.src = authStatus.athlete_profile;
                         profileDropdownContainer.classList.remove('hidden');
+                        firstlastname.textContent = `${authStatus.athlete_name} ${authStatus.athlete_lastname}`;
                     } else if (profileDropdownContainer) {
                         profileDropdownContainer.classList.add('hidden'); // Hide if no profile pic
                     }

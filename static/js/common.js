@@ -153,7 +153,10 @@ async function checkAuth() {
 
         return { // Return relevant auth details
             authenticated: data.authenticated,
+            athlete_username: data.athlete_username,
             athlete_profile: data.athlete_profile,
+            athlete_name: data.athlete_first_name,
+            athlete_lastname: data.athlete_last_name,
             athleteId: data.athlete_id, // Return athleteId too
             require_login: data.require_login // Pass this through
         };
