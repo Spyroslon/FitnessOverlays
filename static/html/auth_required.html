@@ -7,17 +7,16 @@
     <meta name="copyright" content="FitnessOverlays - Copyright (c) 2025 Spyros Lontos">
     <meta name="license" content="AGPL-3.0">
     <title>FitnessOverlays</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="/static/css/tailwind.css" rel="stylesheet">
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+    <script src="/static/js/common.js" defer></script> 
     <style>
         html {
             scroll-behavior: smooth;
         }
     </style>
-    <!-- Include common JS file (optional here, but for consistency) -->
-    <script src="/static/js/common.js" defer></script> 
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40 min-h-screen flex flex-col" style="touch-action: manipulation;">
+<body class="font-sans antialiased text-gray-800 bg-white bg-[radial-gradient(60%_120%_at_50%_50%,_#ffffff00_0%,_#ffd5c4_100%)]" style="touch-action: manipulation;">
 
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
         <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center max-w-[900px]">
@@ -47,24 +46,26 @@
         </div>
     </main>
 
-
-    <footer class="bg-gray-900/80 backdrop-blur-sm text-gray-300 text-sm py-6 border-t border-gray-700/50">
-        <div class="container mx-auto px-4 flex flex-col items-center space-y-4">
-            <div class="text-center">
-                &copy; 2025 FitnessOverlays - Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
-                   target="_blank" 
-                   class="hover:text-strava-orange transition-colors">
-                    AGPL-3.0
-                </a>
-            </div>
-            <div>
-                <img src="/static/images/api_logo_pwrdBy_strava_horiz_white.svg" 
-                     alt="Powered by Strava" 
-                     class="h-4 width-auto mx-auto">
+    <footer class="text-[#242428] text-sm py-6">
+        <div class="container mx-auto px-4">
+            <div class="max-w-[900px] mx-auto">
+                <div class="flex flex-col md:flex-row items-center md:items-center md:justify-between space-y-4 md:space-y-0">
+                    <div class="text-center md:text-left">
+                        &copy; 2025 FitnessOverlays - Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
+                           target="_blank" 
+                           class="hover:text-strava-orange transition-colors">
+                            AGPL-3.0
+                        </a>
+                    </div>
+                    <div>
+                        <img src="/static/images/api_logo_pwrdBy_strava_horiz_orange.svg" 
+                             alt="Powered by Strava" 
+                             class="h-5 width-auto">
+                    </div>
+                </div>
             </div>
         </div>
     </footer>
-
 
 </body>
 </html>
