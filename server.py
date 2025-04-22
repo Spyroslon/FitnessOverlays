@@ -1,7 +1,7 @@
 # FitnessOverlays - Copyright (c) 2025 Spyros Lontos
 # Licensed under AGPL-3.0
 
-from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response, send_file
+from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response
 import os
 import time
 import requests
@@ -15,7 +15,6 @@ from requests_oauthlib import OAuth2Session
 from dotenv import load_dotenv
 from flask_limiter.errors import RateLimitExceeded
 from werkzeug.utils import secure_filename, safe_join
-import re
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone, timedelta
@@ -236,16 +235,16 @@ class Activities(db.Model):
             return True
         return datetime.now(timezone.utc) - self.last_fetched > self.FETCH_COOLDOWN
 
-# Define the ListAthleteActivities model
-class ListAthleteActivities(db.Model):
+# Define the ActivityLists model
+class ActivityLists(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     athlete_id = db.Column(db.BigInteger, db.ForeignKey('athletes.athlete_id'), index=True, nullable=False)
     data = db.Column(db.JSON, nullable=False)
     last_synced = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     page = db.Column(db.Integer, nullable=False, default=1)
-    per_page = db.Column(db.Integer, nullable=False, default=5)
-    SYNC_COOLDOWN = timedelta(minutes=5)
-    ITEMS_PER_PAGE = 5
+    per_page = db.Column(db.Integer, nullable=False, default=30)
+    SYNC_COOLDOWN = timedelta(minutes=1)
+    ITEMS_PER_PAGE = 30
 
     @classmethod
     def get_last_sync(cls, athlete_id):
@@ -443,31 +442,35 @@ def callback():
             logger.error('No athlete ID in token response')
             return jsonify({"error": "Authentication failed"}), 400
             
-        # Find existing athlete or create new one
-        athlete = db.session.get(Athletes, athlete_id)
-        if not athlete:
-            athlete = Athletes(athlete_id=athlete_id)
-            db.session.add(athlete)
-            
-        # Update athlete data with new tokens and info
-        athlete.update_from_token(token, athlete_data)
-        
         try:
+            # Find existing athlete or create new one
+            athlete = db.session.get(Athletes, athlete_id)
+            if not athlete:
+                athlete = Athletes(athlete_id=athlete_id)
+                db.session.add(athlete)
+                logger.info(f'Creating new athlete record for ID: {athlete_id}')
+            else:
+                logger.info(f'Updating existing athlete record for ID: {athlete_id}')
+            
+            # Update athlete data with new tokens and info
+            athlete.update_from_token(token, athlete_data)
             db.session.commit()
-        except Exception as e:
+            logger.info(f'Successfully updated athlete data in database for ID: {athlete_id}')
+            
+            # Store athlete info in session
+            session['athlete_id'] = athlete_id
+            session['athlete_username'] = athlete_data.get('username')
+            session['athlete_first_name'] = athlete_data.get('firstname')
+            session['athlete_last_name'] = athlete_data.get('lastname')
+            session['athlete_profile'] = athlete_data.get('profile_medium')
+            session['access_token'] = token['access_token']
+            session['refresh_token'] = token['refresh_token']
+            session['expires_at'] = token['expires_at']
+            
+        except Exception as db_error:
             db.session.rollback()
-            logger.error(f'Database error saving athlete data: {str(e)}')
-            return jsonify({"error": "Database error"}), 500
-        
-        # Store athlete info in session
-        session['athlete_id'] = athlete_id
-        session['athlete_username'] = athlete_data.get('username')
-        session['athlete_first_name'] = athlete_data.get('firstname')
-        session['athlete_last_name'] = athlete_data.get('lastname')
-        session['athlete_profile'] = athlete_data.get('profile_medium')
-        session['access_token'] = token['access_token']
-        session['refresh_token'] = token['refresh_token']
-        session['expires_at'] = token['expires_at']
+            logger.error(f'Database error during callback: {str(db_error)}')
+            return jsonify({"error": "Database error during authentication"}), 500
         
         return redirect('/')
     except Exception as e:
@@ -620,10 +623,14 @@ def status():
 @app.errorhandler(RateLimitExceeded)
 def handle_ratelimit_error(e):
     logger.warning(f'Rate limit exceeded - IP: {get_remote_address()} - Endpoint: {request.path}')
-    return jsonify({
-        "error": "Rate limit exceeded. Please wait before trying again.",
-        "status": 429
-    }), 429
+    # Return JSON response only for API endpoints
+    if request.path.startswith('/api/'):
+        return jsonify({
+            "error": "Rate limit exceeded. Please wait before trying again.",
+            "status": 429
+        }), 429
+    # For non-API endpoints, return empty response so user stays on current page
+    return "", 429
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -635,6 +642,22 @@ def refresh_access_token(refresh_token):
     """Refresh the access token with robust error handling"""
     if not refresh_token:
         logger.warning('Refresh token missing during token refresh attempt')
+        return None
+        
+    # Get athlete from database using session athlete_id
+    athlete_id = session.get('athlete_id')
+    if not athlete_id:
+        logger.error('No athlete_id in session during token refresh')
+        return None
+
+    athlete = db.session.get(Athletes, athlete_id)
+    if not athlete:
+        logger.error(f'Athlete {athlete_id} not found in database during token refresh')
+        return None
+
+    # Verify stored refresh token matches the one provided
+    if athlete.refresh_token != refresh_token:
+        logger.error('Refresh token mismatch between session and database')
         return None
 
     try:
@@ -681,22 +704,16 @@ def refresh_access_token(refresh_token):
             if not isinstance(token_data['expires_at'], (int, float)):
                 logger.error('Invalid expiry timestamp received')
                 return None
-                
+
             # Update athlete record in database
-            athlete_id = session.get('athlete_id')
-            if athlete_id:
-                athlete = db.session.get(Athletes, athlete_id)
-                if athlete:
-                    athlete.update_from_token(token_data)
-                    try:
-                        db.session.commit()
-                        logger.info(f'Token refreshed and updated in database for athlete {athlete_id}')
-                    except Exception as e:
-                        db.session.rollback()
-                        logger.error(f'Failed to update refreshed token in database: {str(e)}')
-                        # Continue anyway as the token is still valid
-                else:
-                    logger.error(f'Athletes {athlete_id} not found in database during token refresh')
+            try:
+                athlete.update_from_token(token_data)
+                db.session.commit()
+                logger.info(f'Token refreshed and updated in database for athlete {athlete_id}')
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f'Failed to update refreshed token in database: {str(e)}')
+                return None
             
             return token_data
             
@@ -744,91 +761,53 @@ def activities():
     # Serve activities.html from static/html
     return send_from_directory('static/html', 'activities.html')
 
-@app.route('/api/activities/sync', methods=['POST'])
+@app.route('/api/activities/sync', methods=['GET', 'POST'])
 @login_required
 @limiter.limit("30 per minute")
 def sync_activities():
-    """Sync latest activities from Strava and store them in DB"""
-    logger.info(f"Sync activities endpoint called - Session: {session}")
+    """Unified endpoint to fetch/sync activities from Strava with caching and cooldown"""
+    logger.info(f"Activities endpoint called - Method: {request.method} - Session: {session}")
     athlete_id = session.get('athlete_id')
     if not athlete_id:
         return jsonify({"error": "Not authenticated"}), 401
 
     # Get pagination parameters with defaults
     page = request.args.get('page', 1, type=int)
-    per_page = min(request.args.get('per_page', 5, type=int), ListAthleteActivities.ITEMS_PER_PAGE)
+    per_page = min(request.args.get('per_page', 30, type=int), ActivityLists.ITEMS_PER_PAGE)
 
-    if page < 1:
-        return jsonify({"error": "Invalid page number"}), 400
-    if per_page < 1:
-        return jsonify({"error": "Invalid per_page value"}), 400
+    if page < 1 or per_page < 1:
+        return jsonify({"error": "Invalid pagination parameters"}), 400
 
     # Create a dummy instance to use the helper methods
-    sync_instance = ListAthleteActivities(athlete_id=athlete_id)
+    sync_instance = ActivityLists(athlete_id=athlete_id)
     
-    # Get the latest cached data first
-    sync_log = ListAthleteActivities.query.filter_by(
+    # Get the latest cached data
+    sync_log = ActivityLists.query.filter_by(
         athlete_id=athlete_id,
         page=page,
         per_page=per_page
     ).first()
 
-    # Check if sync is allowed based on the last sync time for this athlete
-    if not sync_instance.is_sync_allowed():
+    # For GET requests or when sync is not allowed, try to return cached data first
+    force_sync = request.method == 'POST'
+    if not force_sync or not sync_instance.is_sync_allowed():
         seconds_remaining = sync_instance.get_cooldown_remaining()
-        # Return cached data with cooldown info if available
+        
         if sync_log:
             return jsonify({
                 "activities": sync_log.data,
-                "pagination": {
-                    "page": page,
-                    "per_page": per_page
+                "pagination": {"page": page, "per_page": per_page},
+                "cooldown": {
+                    "active": seconds_remaining > 0,
+                    "seconds_remaining": seconds_remaining
                 },
-                "cooldown": {
-                    "active": True,
-                    "seconds_remaining": seconds_remaining
-                }
+                "cached": True
             })
-        else:
-            # If no cached data, fetch fresh despite cooldown
-            try:
-                logger.info(f'>>>> Fetching activities from Strava despite cooldown for athlete {athlete_id}')
-                response = requests.get(
-                    "https://www.strava.com/api/v3/athlete/activities",
-                    headers={"Authorization": f"Bearer {session['access_token']}"},
-                    params={"page": page, "per_page": per_page},
-                    timeout=15
-                )
-                if response.ok:
-                    activities = response.json()
-                    new_sync_log = ListAthleteActivities(
-                        athlete_id=athlete_id,
-                        data=activities,
-                        page=page,
-                        per_page=per_page
-                    )
-                    db.session.add(new_sync_log)
-                    db.session.commit()
-                    return jsonify({
-                        "activities": activities,
-                        "pagination": {"page": page, "per_page": per_page},
-                        "cooldown": {
-                            "active": True,
-                            "seconds_remaining": seconds_remaining
-                        }
-                    })
-            except Exception as e:
-                logger.error(f'Error fetching activities: {str(e)}')
+        elif not force_sync:
+            # For GET requests with no cache, proceed to fetch from Strava
+            force_sync = True
 
-            return jsonify({
-                "error": "No cached data available and sync is in cooldown",
-                "cooldown": {
-                    "active": True,
-                    "seconds_remaining": seconds_remaining
-                }
-            }), 404
-
-    # If we can sync, get fresh data from Strava
+    # If we reach here, we either need to sync (POST) or have no cached data (GET)
     try:
         response = requests.get(
             "https://www.strava.com/api/v3/athlete/activities",
@@ -839,131 +818,59 @@ def sync_activities():
 
         if not response.ok:
             logger.error(f'Failed to fetch activities from Strava. Status: {response.status_code}')
-            # Return cached data if available when Strava fails
             if sync_log:
                 return jsonify({
                     "activities": sync_log.data,
                     "pagination": {"page": page, "per_page": per_page},
-                    "warning": "Failed to fetch fresh data, showing cached data"
+                    "warning": "Failed to fetch fresh data, showing cached data",
+                    "cached": True
                 })
             return jsonify({"error": "Failed to fetch activities"}), response.status_code
 
         activities = response.json()
 
         # Update or create sync log
-        if sync_log:
-            sync_log.data = activities
-            sync_log.last_synced = datetime.now(timezone.utc)
-        else:
-            sync_log = ListAthleteActivities(
-                athlete_id=athlete_id,
-                data=activities,
-                page=page,
-                per_page=per_page
-            )
-            db.session.add(sync_log)
+        try:
+            if sync_log:
+                sync_log.data = activities
+                sync_log.last_synced = datetime.now(timezone.utc)
+            else:
+                sync_log = ActivityLists(
+                    athlete_id=athlete_id,
+                    data=activities,
+                    page=page,
+                    per_page=per_page
+                )
+                db.session.add(sync_log)
 
-        # Commit changes
-        db.session.commit()
-        
-        return jsonify({
-            "activities": activities,
-            "pagination": {
-                "page": page,
-                "per_page": per_page
-            },
-            "cooldown": {
-                "active": False,
-                "seconds_remaining": 0
-            }
-        })
+            db.session.commit()
+            
+            return jsonify({
+                "activities": activities,
+                "pagination": {"page": page, "per_page": per_page},
+                "cooldown": {
+                    "active": True,
+                    "seconds_remaining": ActivityLists.SYNC_COOLDOWN.total_seconds()
+                },
+                "cached": False
+            })
+
+        except Exception as db_error:
+            db.session.rollback()
+            logger.error(f'Database error: {str(db_error)}')
+            raise
 
     except Exception as e:
         db.session.rollback()
         logger.error(f'Error syncing activities: {str(e)}')
-        # Return cached data if available when an error occurs
         if sync_log:
             return jsonify({
                 "activities": sync_log.data,
                 "pagination": {"page": page, "per_page": per_page},
-                "warning": "Failed to fetch fresh data, showing cached data"
+                "warning": "Failed to fetch fresh data, showing cached data",
+                "cached": True
             })
         return jsonify({"error": "Failed to sync activities"}), 500
-
-@app.route('/api/activities/latest')
-@login_required
-@limiter.limit("30 per minute")
-def get_latest_activities():
-    """Fetch latest activities from DB or Strava if not in DB"""
-    athlete_id = session.get('athlete_id')
-    if not athlete_id:
-        return jsonify({"error": "Not authenticated"}), 401
-
-    # Get pagination parameters with defaults
-    page = request.args.get('page', 1, type=int)
-    per_page = min(request.args.get('per_page', 5, type=int), ListAthleteActivities.ITEMS_PER_PAGE)
-
-    if page < 1:
-        return jsonify({"error": "Invalid page number"}), 400
-    if per_page < 1:
-        return jsonify({"error": "Invalid per_page value"}), 400
-
-    try:
-        # Try to get cached activities for this page
-        sync_log = ListAthleteActivities.query.filter_by(
-            athlete_id=athlete_id,
-            page=page,
-            per_page=per_page
-        ).first()
-
-        if sync_log:
-            return jsonify({
-                "activities": sync_log.data,
-                "pagination": {
-                    "page": page,
-                    "per_page": per_page
-                }
-            })
-
-        # If no cached data, fetch from Strava
-        response = requests.get(
-            "https://www.strava.com/api/v3/athlete/activities",
-            headers={"Authorization": f"Bearer {session['access_token']}"},
-            params={
-                "page": page,
-                "per_page": per_page
-            },
-            timeout=15
-        )
-
-        if not response.ok:
-            logger.error(f'Failed to fetch activities from Strava. Status: {response.status_code}')
-            return jsonify({"error": "Failed to fetch activities"}), response.status_code
-
-        activities = response.json()
-
-        # Store in ListAthleteActivities table
-        new_sync_log = ListAthleteActivities(
-            athlete_id=athlete_id,
-            data=activities,
-            page=page,
-            per_page=per_page
-        )
-        db.session.add(new_sync_log)
-        db.session.commit()
-        
-        return jsonify({
-            "activities": activities,
-            "pagination": {
-                "page": page,
-                "per_page": per_page
-            }
-        })
-
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f'Error fetching activities: {str(e)}')
-        return jsonify({"error": "Failed to fetch activities"}), 500
 
 if __name__ == '__main__':
     logging.info("--- Preparing to run Flask app ---") # Add this log line
