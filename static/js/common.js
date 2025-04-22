@@ -28,16 +28,20 @@ function initializeProfileDropdown() {
     profilePictureTrigger.addEventListener('click', (event) => {
         event.stopPropagation(); // Prevent click from immediately closing the dropdown
         profileDropdownMenu.classList.toggle('hidden');
+        profileDropdownMenu.classList.toggle('opacity-0');
+        profileDropdownMenu.classList.toggle('opacity-100');
+        profileDropdownMenu.classList.toggle('translate-y-1');
+        profileDropdownMenu.classList.toggle('translate-y-0');
     });
 
     // Close dropdown if clicked outside
     document.addEventListener('click', (event) => {
         // Check if the click target is outside the dropdown container
-        if (!profileDropdownContainer.contains(event.target)) {
-            profileDropdownMenu.classList.add('hidden');
+        if (!profileDropdownContainer.contains(event.target) && !profilePictureTrigger.contains(event.target)) {
+            profileDropdownMenu.classList.add('hidden', 'opacity-0', 'translate-y-1');
+            profileDropdownMenu.classList.remove('opacity-100', 'translate-y-0');
         }
     });
-
 
     // Logout button action
     logoutButton.addEventListener('click', async () => {
@@ -65,7 +69,8 @@ function initializeProfileDropdown() {
            console.error('Error during logout:', error);
             // Optionally show an error message
        }
-       profileDropdownMenu.classList.add('hidden'); // Hide dropdown after action
+       profileDropdownMenu.classList.add('hidden', 'opacity-0', 'translate-y-1');
+       profileDropdownMenu.classList.remove('opacity-100', 'translate-y-0'); // Hide dropdown after action
     });
 }
 
@@ -165,4 +170,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeProfileDropdown(); 
     // Note: checkAuth() is NOT called here automatically. 
     // Each page should call it explicitly if needed within its own DOMContentLoaded handler.
-}); 
+});
