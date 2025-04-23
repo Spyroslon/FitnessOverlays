@@ -238,6 +238,8 @@
 
             // Helper function to format relative time
             function formatRelativeTime(timestamp) {
+                
+                console.log('Firing Formatting Relative time:', timestamp);
                 const seconds = Math.floor((Date.now() - timestamp) / 1000);
                 
                 if (seconds < 30) return 'Just now';
@@ -259,10 +261,6 @@
                 tile.className = 'bg-gray-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group';
                 
                 const activityTypeColor = activity.type === 'Run' ? 'from-green-400/90 to-green-600/90' : 'from-blue-400/90 to-blue-600/90';
-                const activityIcon = activity.type === 'Run' ? 
-                    `<path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" />` :
-                    `<path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />`;
                 
                 tile.innerHTML = `
                     <div class="relative">
@@ -271,46 +269,47 @@
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
                                     <div class="flex items-center gap-2 mb-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                            ${activityIcon}
-                                        </svg>
-                                        <span class="font-medium">${activity.type}</span>
+                                        <span class="font-medium text-fitness-gray">${activity.type}</span>
                                     </div>
-                                    <h3 class="font-bold text-lg leading-tight mb-1">${activity.name}</h3>
-                                    <div class="text-sm opacity-90">${formatDate(activity.start_date)}</div>
+                                    <h3 class="font-bold text-lg leading-tight">${activity.name}</h3>
                                 </div>
-                                
-                                <!-- Generate Overlay Button -->
-                                <button onclick="saveActivityAndRedirect(${JSON.stringify(activity).replace(/"/g, '&quot;')})"
-                                        class="w-10 h-10 bg-black/10 hover:bg-black/20 rounded-lg
-                                               flex items-center justify-center
-                                               backdrop-blur-sm transition-all duration-300
-                                               group-hover:scale-105">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
+                                <div class="text-sm opacity-90">${formatDate(activity.start_date)}</div>
                             </div>
                         </div>
 
                         <!-- Stats Grid -->
-                        <div class="grid grid-cols-3 gap-4 p-4 bg-white">
-                            <!-- Distance -->
-                            <div class="text-center">
-                                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Distance</div>
-                                <div class="font-bold text-gray-900">${formatDistance(activity.distance)}</div>
-                            </div>
+                        <div class="p-4 bg-white">
+                            <div class="grid grid-cols-[1fr_1fr_1fr_0.2fr] gap-4">
+                                <!-- Distance -->
+                                <div class="text-center">
+                                    <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Distance</div>
+                                    <div class="font-bold text-gray-900">${formatDistance(activity.distance)}</div>
+                                </div>
 
-                            <!-- Duration -->
-                            <div class="text-center border-x border-gray-100">
-                                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Duration</div>
-                                <div class="font-bold text-gray-900">${formatDuration(activity.moving_time)}</div>
-                            </div>
+                                <!-- Duration -->
+                                <div class="text-center border-x border-gray-100">
+                                    <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Duration</div>
+                                    <div class="font-bold text-gray-900">${formatDuration(activity.moving_time)}</div>
+                                </div>
 
-                            <!-- Pace -->
-                            <div class="text-center">
-                                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Avg Pace</div>
-                                <div class="font-bold text-gray-900">${formatPace(activity.moving_time, activity.distance)}</div>
+                                <!-- Pace -->
+                                <div class="text-center border-r border-gray-100">
+                                    <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Avg Pace</div>
+                                    <div class="font-bold text-gray-900">${formatPace(activity.moving_time, activity.distance)}</div>
+                                </div>
+
+                                <!-- Button -->
+                                <div class="flex items-center justify-center">
+                                    <button onclick="saveActivityAndRedirect(${JSON.stringify(activity).replace(/"/g, '&quot;')})"
+                                            class="w-8 h-8 bg-fitness-light-green hover:bg-black/20 rounded-lg
+                                                   flex items-center justify-center
+                                                   backdrop-blur-sm transition-all duration-300
+                                                   group-hover:scale-105">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

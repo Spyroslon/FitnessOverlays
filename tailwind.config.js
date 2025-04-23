@@ -15,6 +15,7 @@ module.exports = {
         'fitness-dark-gray': '#030712', // Using the same color value as gray-950
         'fitness-green': '#16a34a',  // Using the same color value as green-600
         'fitness-dark-green': '#14532d', // Using the same color value as green-800
+        'fitness-light-green': '#86efac', // Using the same color value as green-300
         'fitness-orange': '#ea580c', // Using the same color value as orange-600
       },
       fontFamily: {
