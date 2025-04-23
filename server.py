@@ -224,7 +224,7 @@ class Activities(db.Model):
     athlete_id = db.Column(db.BigInteger, db.ForeignKey('athletes.athlete_id'), index=True, nullable=False)
     data = db.Column(db.JSON, nullable=False)
     last_fetched = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    FETCH_COOLDOWN = timedelta(minutes=2)
+    FETCH_COOLDOWN = timedelta(minutes=5)
 
     def __repr__(self):
         return f'<Activities {self.athlete_id}:{self.activity_id}>'
@@ -799,7 +799,8 @@ def sync_activities():
                 "pagination": {"page": page, "per_page": per_page},
                 "cooldown": {
                     "active": seconds_remaining > 0,
-                    "seconds_remaining": seconds_remaining
+                    "seconds_remaining": seconds_remaining,
+                    "total_cooldown": ActivityLists.SYNC_COOLDOWN.total_seconds()
                 },
                 "cached": True
             })
@@ -850,7 +851,8 @@ def sync_activities():
                 "pagination": {"page": page, "per_page": per_page},
                 "cooldown": {
                     "active": True,
-                    "seconds_remaining": ActivityLists.SYNC_COOLDOWN.total_seconds()
+                    "seconds_remaining": ActivityLists.SYNC_COOLDOWN.total_seconds(),
+                    "total_cooldown": ActivityLists.SYNC_COOLDOWN.total_seconds()
                 },
                 "cached": False
             })

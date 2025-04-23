@@ -7,8 +7,8 @@
     <meta name="copyright" content="FitnessOverlays - Copyright (c) 2025 Spyros Lontos">
     <meta name="license" content="AGPL-3.0">
     <title>FitnessOverlays</title>
-    <!-- <link href="/static/css/tailwind.css" rel="stylesheet"> -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/static/css/tailwind.css" rel="stylesheet">
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <script src="/static/js/common.js" defer></script> 
     <style>
         @keyframes fadeIn {
@@ -22,26 +22,14 @@
         html {
             scroll-behavior: smooth;
         }
-        /* Hide scrollbar while maintaining scroll functionality */
-        .carousel {
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE and Edge */
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-        }
-        .carousel::-webkit-scrollbar {
-            display: none; /* Chrome, Safari and Opera */
-        }
-
         .carousel img {
             pointer-events: none;
             -webkit-user-drag: none;
         }
     </style>
-    </head>
-<body class="font-sans antialiased text-gray-800 bg-white bg-[radial-gradient(60%_120%_at_50%_50%,_#ffffff00_0%,_#ffd5c4_100%)]" style="touch-action: manipulation;">
+</head>
+
+<body class="font-sans antialiased text-gray-800 bg-white bg-[radial-gradient(60%_120%_at_50%_50%,_#ffffff00_0%,_#ffd5c4_100%)] min-h-screen flex flex-col flex-grow" style="touch-action: manipulation;">
 
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
         <nav class="container mx-auto px-2 sm:px-4 py-3 grid grid-cols-[60px_1fr_60px] sm:grid-cols-3 items-center max-w-[800px]">
@@ -55,8 +43,8 @@
                              alt="Profile" 
                              class="w-10 h-10 rounded-full object-cover border border-gray-200/50">
                         
-                        <span class="absolute bottom-0 left-7 w-3.5 h-3.5 bg-green-600 border border-white dark:border-gray-800 rounded-full flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-black" viewBox="0 0 20 20" fill="currentColor">
+                        <span class="absolute bottom-0 left-7 w-3.5 h-3.5 bg-fitness-green border border-white dark:border-gray-800 rounded-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 14a1 1 0 01-.7-.3l-4-4a1 1 0 111.4-1.4L10 11.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-.7.3z" clip-rule="evenodd" />
                             </svg>
                         </span>
@@ -69,7 +57,7 @@
                         </div>
                         <div class="border-t border-gray-300"></div>
                         <button id="logout-button" 
-                                class="block w-full text-left px-4 py-2 text-sm text-gray-800 rounded-md hover:bg-[#fc4c02] hover:text-white transition-colors duration-200">
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-800 rounded-md hover:bg-fitness-green hover:text-white transition-colors duration-200">
                             Log out
                         </button>
                     </div>
@@ -78,13 +66,13 @@
 
             <div class="text-center flex justify-center items-center">
                 <a href="/" class="text-2xl sm:text-3xl font-bold hover:opacity-80 transition-opacity">
-                    <span class="text-green-600">Fitness</span><span class="text-gray-900">Overlays</span>
+                    <span class="text-fitness-green">Fitness</span><span class="text-gray-900">Overlays</span>
                 </a>
             </div>
 
             <div class="flex justify-end min-w-[40px]">
                 <a href="/activities" id="create-overlay-header-btn" 
-                   class="hidden bg-green-600 text-white rounded-lg 
+                   class="hidden bg-fitness-green text-white rounded-lg 
                           px-2 sm:px-4 py-2 sm:py-2
                           text-xs sm:text-base whitespace-nowrap
                           flex items-center justify-center font-medium
@@ -99,8 +87,8 @@
     <main class="container mx-auto p-4 max-w-[1000px]">
 
         <section class="text-center relative z-10 fade-in">
-            <h1 class="text-4xl font-bold tracking-tight text-[#242428] py-6">
-                Turn Your <span class="text-[#fc4c02]">Strava</span> Activities into Stunning Shareable Overlays
+            <h1 class="text-4xl font-bold tracking-tight text-fitness-dark-gray py-6">
+                Turn Your <span class="text-fitness-green">Strava</span> Activities into Stunning Shareable Overlays
             </h1>
             <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
                 Transform your workout data into clean, customizable, high-resolution image overlays. Perfect for showcasing your achievements on Instagram stories, Social Media, and beyond!
@@ -110,7 +98,7 @@
             </div>
             <div id="create-overlay-btn" class="hidden flex justify-center py-10">
                 <a href="/activities" 
-                    class="bg-green-600 text-white font-bold py-4 px-6 rounded-lg
+                    class="bg-fitness-green text-white font-bold py-4 px-6 rounded-lg
                             transform hover:scale-110 transition-all duration-200 
                             drop-shadow-lg
                             flex items-center space-x-2">
@@ -121,7 +109,7 @@
 
         <section class="relative z-10 fade-in">
             <h3 class="text-2xl md:text-3xl font-bold text-center text-gray-900">See What You Can Create</h3>
-            <div class="max-w-[800px] mx-auto">
+            <div class="max-w-[1000px] mx-auto">
                 <div class="flex space-x-4 overflow-x-auto pb-2 carousel snap-x snap-mandatory scroll-smooth backdrop-blur-sm p-4 rounded-lg">
                     <div class="flex-shrink-0 w-60 md:w-64 snap-center transform transition-transform duration-200 drop-shadow-lg"> 
                         <img src="/static/images/14118553438_overlay.png" alt="Example Overlay 1" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
@@ -142,36 +130,34 @@
             </div>
         </section>
 
-        <section class="py-6 bg-white/30 backdrop-blur-sm rounded-lg shadow-lg border border-white/50 relative z-10 fade-in mt-4">
-            <div class="max-w-6xl mx-auto px-6">
-                <h2 class="text-3xl font-bold text-center text-[#242428] mb-12">
-                    Get Your Custom Overlay in <span class="text-green-600">3 Simple Steps</span>
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                    <div class="bg-white/70 backdrop-blur-sm p-6 rounded-lg shadow-md border border-white/50 hover:bg-white/80 transition-all duration-300">
-                        <div class="text-4xl mb-4">🔗</div>
-                        <h3 class="text-xl font-semibold text-[#242428] mb-2">1. Connect Strava</h3>
-                        <p class="text-[#666666]">Securely link your Strava account with just one click.</p>
-                    </div>
-                    <div class="bg-white/70 backdrop-blur-sm p-6 rounded-lg shadow-md border border-white/50 hover:bg-white/80 transition-all duration-300">
-                        <div class="text-4xl mb-4">📋</div>
-                        <h3 class="text-xl font-semibold text-[#242428] mb-2">2. Choose Activity</h3>
-                        <p class="text-[#666666]">See your actvities and select the one you want.</p>
-                    </div>
-                    <div class="bg-white/70 backdrop-blur-sm p-6 rounded-lg shadow-md border border-white/50 hover:bg-white/80 transition-all duration-300">
-                        <div class="text-4xl mb-4">🎨</div>
-                        <h3 class="text-xl font-semibold text-[#242428] mb-2">3. Customize & Export</h3>
-                        <p class="text-[#666666]">Choose metrics, tweak colors, adjust layout, and export your overlay!</p>
-                    </div>
+        <section class="max-w-6xl mx-auto pt-6">
+            <h2 class="text-3xl font-bold text-center text-fitness-dark-gray mb-6">
+                Get Your Custom Overlay in <span class="text-fitness-green">3 Simple Steps</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div class="bg-white/70 backdrop-blur-sm p-6 rounded-lg shadow-md border border-white/50 hover:bg-white/80 transition-all duration-300">
+                    <div class="text-4xl mb-4">🔗</div>
+                    <h3 class="text-xl font-semibold text-fitness-dark-gray mb-2">1. Connect Strava</h3>
+                    <p class="text-gray-500">Securely link your Strava account with just one click.</p>
+                </div>
+                <div class="bg-white/70 backdrop-blur-sm p-6 rounded-lg shadow-md border border-white/50 hover:bg-white/80 transition-all duration-300">
+                    <div class="text-4xl mb-4">📋</div>
+                    <h3 class="text-xl font-semibold text-fitness-dark-gray mb-2">2. Choose Activity</h3>
+                    <p class="text-gray-500">See your actvities and select the one you want.</p>
+                </div>
+                <div class="bg-white/70 backdrop-blur-sm p-6 rounded-lg shadow-md border border-white/50 hover:bg-white/80 transition-all duration-300">
+                    <div class="text-4xl mb-4">🎨</div>
+                    <h3 class="text-xl font-semibold text-fitness-dark-gray mb-2">3. Customize & Export</h3>
+                    <p class="text-gray-500">Choose metrics, tweak colors, adjust layout, and export your overlay!</p>
                 </div>
             </div>
         </section>
 
     </main>
 
-    <footer class="text-gray-800">
+    <footer class="text-fitness-dark-gray">
         <div class="mx-auto w-full max-w-screen-lg p-4 space-y-6">
-            <hr class="mb-6 border-gray-800 sm:mx-auto lg:mb-8" />
+            <hr class="mb-6 border-fitness-dark-gray sm:mx-auto lg:mb-8" />
             <div class="flex items-center justify-center">
                 <img src="/static/images/api_logo_pwrdBy_strava_horiz_black.svg" 
                      alt="Powered by Strava" 
@@ -188,7 +174,7 @@
                 <div class="flex space-x-5 justify-center">
                     <a href="https://x.com/spyroslon"
                         target="_blank"
-                        class="hover:text-gray-900">
+                        class="hover:text-fitness-dark-gray">
                             <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
                                 <path fill-rule="evenodd" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" clip-rule="evenodd"/>
                             </svg>
@@ -196,7 +182,7 @@
                     </a>
                     <a href="https://github.com/spyroslon"
                         target="_blank" 
-                        class="hover:text-gray-900">
+                        class="hover:text-fitness-dark-gray">
                         <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 .333A9.911 9.911 0 0 0 6.866 19.65c.5.092.678-.215.678-.477 0-.237-.01-1.017-.014-1.845-2.757.6-3.338-1.169-3.338-1.169a2.627 2.627 0 0 0-1.1-1.451c-.9-.615.07-.6.07-.6a2.084 2.084 0 0 1 1.518 1.021 2.11 2.11 0 0 0 2.884.823c.044-.503.268-.973.63-1.325-2.2-.25-4.516-1.1-4.516-4.9A3.832 3.832 0 0 1 4.7 7.068a3.56 3.56 0 0 1 .095-2.623s.832-.266 2.726 1.016a9.409 9.409 0 0 1 4.962 0c1.89-1.282 2.717-1.016 2.717-1.016.366.83.402 1.768.1 2.623a3.827 3.827 0 0 1 1.02 2.659c0 3.807-2.319 4.644-4.525 4.889a2.366 2.366 0 0 1 .673 1.834c0 1.326-.012 2.394-.012 2.72 0 .263.18.572.681.475A9.911 9.911 0 0 0 10 .333Z" clip-rule="evenodd"/>
                         </svg>

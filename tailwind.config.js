@@ -11,10 +11,11 @@ module.exports = {
     extend: {
       // --- Add your customizations here ---
       colors: {
-        'strava-orange': '#fc4c02',
-        'strava-dark-orange': '#e34402',
-        'strava-gray': '#666666',
-        'strava-text': '#242428',
+        'fitness-gray': '#4b5563', // Using the same color value as gray-600
+        'fitness-dark-gray': '#030712', // Using the same color value as gray-950
+        'fitness-green': '#16a34a',  // Using the same color value as green-600
+        'fitness-dark-green': '#14532d', // Using the same color value as green-800
+        'fitness-orange': '#ea580c', // Using the same color value as orange-600
       },
       fontFamily: {
         // This overrides the default sans-serif font stack

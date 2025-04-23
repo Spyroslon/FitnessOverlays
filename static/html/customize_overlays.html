@@ -39,7 +39,7 @@
         }
 
         input[type="color"]::-webkit-color-swatch {
-            border: 2px solid #fc4c02;
+            border: 2px solid #16a34a;
             border-radius: 8px;
             padding: 0;
             /* Keep conic gradient background */
@@ -52,7 +52,7 @@
 
         /* Firefox */
         input[type="color"]::-moz-color-swatch {
-            border: 2px solid #fc4c02;
+            border: 2px solid #16a34a;
             border-radius: 8px;
             padding: 0;
             /* Keep conic gradient background */
@@ -65,8 +65,9 @@
 
     </style>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-white bg-[radial-gradient(60%_120%_at_50%_50%,_#ffffff00_0%,_#ffd5c4_100%)]" style="touch-action: manipulation;">
-    
+
+<body class="font-sans antialiased text-gray-800 bg-white bg-[radial-gradient(60%_120%_at_50%_50%,_#ffffff00_0%,_#ffd5c4_100%)] min-h-screen flex flex-col flex-grow" style="touch-action: manipulation;">
+
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
         <nav class="container mx-auto px-2 sm:px-4 py-3 grid grid-cols-[60px_1fr_60px] sm:grid-cols-3 items-center max-w-[800px]">
             <div class="flex justify-start min-w-[40px]">
@@ -79,8 +80,8 @@
                              alt="Profile" 
                              class="w-10 h-10 rounded-full object-cover border border-gray-200/50">
                         
-                        <span class="absolute bottom-0 left-7 w-3.5 h-3.5 bg-green-600 border border-white dark:border-gray-800 rounded-full flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-black" viewBox="0 0 20 20" fill="currentColor">
+                        <span class="absolute bottom-0 left-7 w-3.5 h-3.5 bg-fitness-green border border-white dark:border-gray-800 rounded-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 14a1 1 0 01-.7-.3l-4-4a1 1 0 111.4-1.4L10 11.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-.7.3z" clip-rule="evenodd" />
                             </svg>
                         </span>
@@ -93,7 +94,7 @@
                         </div>
                         <div class="border-t border-gray-300"></div>
                         <button id="logout-button" 
-                                class="block w-full text-left px-4 py-2 text-sm text-gray-800 rounded-md hover:bg-[#fc4c02] hover:text-white transition-colors duration-200">
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-800 rounded-md hover:bg-fitness-green hover:text-white transition-colors duration-200">
                             Log out
                         </button>
                     </div>
@@ -102,13 +103,13 @@
 
             <div class="text-center flex justify-center items-center">
                 <a href="/" class="text-2xl sm:text-3xl font-bold hover:opacity-80 transition-opacity">
-                    <span class="text-green-600">Fitness</span><span class="text-gray-900">Overlays</span>
+                    <span class="text-fitness-green">Fitness</span><span class="text-gray-900">Overlays</span>
                 </a>
             </div>
 
             <div class="flex justify-end min-w-[40px]">
                 <a href="/activities" id="create-overlay-header-btn" 
-                   class="hidden bg-green-600 text-white rounded-lg 
+                   class="hidden bg-fitness-green text-white rounded-lg 
                           px-2 sm:px-4 py-2 sm:py-2
                           text-xs sm:text-base whitespace-nowrap
                           flex items-center justify-center font-medium
@@ -127,7 +128,7 @@
                 <div class="flex justify-between items-center">
                     <h2 id="activityName" class="text-lg text-gray-800"></h2>
                     <a id="stravaLink" href="#" target="_blank" 
-                       class="bg-strava-orange hover:bg-strava-dark-orange text-white p-3 rounded-lg text-sm font-medium transition-colors">
+                       class="bg-orange-600 hover:bg-black text-white p-3 rounded-lg text-sm font-medium transition-colors">
                         View on Strava
                     </a>
                 </div>
@@ -145,14 +146,14 @@
                 <!-- Section Contents -->
                 <div id="textSection" class="section-content space-y-4">
                     <div id="overlayOptions" class="grid grid-cols-3 md:grid-cols-4 gap-2">
-                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="distance">Distance</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="movingTime">Time</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="pace">Pace</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="averageSpeed">Avg Speed</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="avgHeartRate">Avg HR</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="maxHeartRate">Max HR</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="calories">Calories</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-strava-gray transition-colors text-sm" data-metric="elevationGain">Elevation</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="distance">Distance</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="movingTime">Time</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="pace">Pace</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="averageSpeed">Avg Speed</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="avgHeartRate">Avg HR</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="maxHeartRate">Max HR</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="calories">Calories</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="elevationGain">Elevation</button>
                     </div>
 
                     <!-- Unified Controls Container -->
@@ -169,7 +170,7 @@
                          <div class="flex flex-col items-center gap-1">
                             <!-- <div class="size-label">Align</div> -->
                              <button id="alignCycleBtn" 
-                                     class="flex flex-col items-center justify-center border-2 border-strava-orange bg-white text-strava-gray rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-gray-100"
+                                     class="flex flex-col items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-gray-100"
                                      title="Cycle Text Alignment">
                                  <!-- SVG inserted by JS, size class will be added there -->
                              </button>
@@ -177,7 +178,7 @@
                         <!-- Label Size Cycle Button -->
                          <div class="flex flex-col items-center gap-2">
                             <button id="labelSizeCycleBtn" 
-                                    class="flex items-center justify-center border-2 border-strava-orange bg-white text-strava-gray rounded-lg transition-all duration-200 font-bold p-1 w-12 h-12 text-sm text-center hover:bg-gray-100" 
+                                    class="flex items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 w-12 h-12 text-sm text-center hover:bg-gray-100" 
                                     title="Cycle Label Size">
                                 <span id="labelSizeIndicator">M</span>
                             </button>
@@ -185,7 +186,7 @@
                         <!-- Value Size Cycle Button -->
                          <div class="flex flex-col items-center gap-2">
                             <button id="valueSizeCycleBtn" 
-                                    class="flex items-center justify-center border-2 border-strava-orange bg-white text-strava-gray rounded-lg transition-all duration-200 font-bold p-1 w-12 h-12 text-sm text-center hover:bg-gray-100" 
+                                    class="flex items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 w-12 h-12 text-sm text-center hover:bg-gray-100" 
                                     title="Cycle Value Size">
                                 <span id="valueSizeIndicator">M</span>
                             </button>
@@ -193,7 +194,7 @@
                         <!-- Columns Cycle Button -->
                          <div class="flex flex-col items-center gap-2">
                             <button id="columnToggle" 
-                                    class="flex flex-col items-center justify-center border-2 border-strava-orange bg-white text-strava-gray rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-gray-100" 
+                                    class="flex flex-col items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-gray-100" 
                                     title="Toggle number of columns">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125Z" />
@@ -218,39 +219,39 @@
                 <div id="copyButtonsContainer" class="flex flex-row gap-2 mt-6 justify-center">
                     <div id="copyTextContainer" class="flex-1 flex flex-col items-center gap-1">
                         <button id="copyTextBtn" 
-                                class="w-14 h-14 bg-strava-text hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
+                                class="w-14 h-14 bg-black/70 hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5A3.375 3.375 0 0 0 6.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0 0 15 2.25h-1.5a2.251 2.251 0 0 0-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 0 0-9-9Z" />
                             </svg>
                         </button>
-                        <span class="text-xs text-center text-strava-text">Copy Text</span>
+                        <span class="text-xs text-center text-black/70">Copy Text</span>
                     </div>
                     <div id="copyImageContainer" class="flex-1 flex flex-col items-center gap-1">
                         <button id="copyImageBtn" 
-                                class="w-14 h-14 bg-strava-text hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
+                                class="w-14 h-14 bg-black/70 hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75" />
                             </svg>
                         </button>
-                        <span class="text-xs text-center text-strava-text">Copy Image</span>
+                        <span class="text-xs text-center text-text-black/70">Copy Image</span>
                     </div>
                     <div id="saveImageContainer" class="flex-1 flex flex-col items-center gap-1">
                         <button id="saveImageBtn" 
-                                class="w-14 h-14 bg-strava-text hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
+                                class="w-14 h-14 bg-black/70 hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                             </svg>
                         </button>
-                        <span class="text-xs text-center text-strava-text">Save Image</span>
+                        <span class="text-xs text-center text-black/70">Save Image</span>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <footer class="text-gray-800">
+    <footer class="text-fitness-dark-gray">
         <div class="mx-auto w-full max-w-screen-lg p-4 space-y-6">
-            <hr class="mb-6 border-gray-800 sm:mx-auto lg:mb-8" />
+            <hr class="mb-6 border-fitness-dark-gray sm:mx-auto lg:mb-8" />
             <div class="flex items-center justify-center">
                 <img src="/static/images/api_logo_pwrdBy_strava_horiz_black.svg" 
                      alt="Powered by Strava" 
@@ -267,7 +268,7 @@
                 <div class="flex space-x-5 justify-center">
                     <a href="https://x.com/spyroslon"
                         target="_blank"
-                        class="hover:text-gray-900">
+                        class="hover:text-fitness-dark-gray">
                             <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
                                 <path fill-rule="evenodd" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" clip-rule="evenodd"/>
                             </svg>
@@ -275,7 +276,7 @@
                     </a>
                     <a href="https://github.com/spyroslon"
                         target="_blank" 
-                        class="hover:text-gray-900">
+                        class="hover:text-fitness-dark-gray">
                         <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 .333A9.911 9.911 0 0 0 6.866 19.65c.5.092.678-.215.678-.477 0-.237-.01-1.017-.014-1.845-2.757.6-3.338-1.169-3.338-1.169a2.627 2.627 0 0 0-1.1-1.451c-.9-.615.07-.6.07-.6a2.084 2.084 0 0 1 1.518 1.021 2.11 2.11 0 0 0 2.884.823c.044-.503.268-.973.63-1.325-2.2-.25-4.516-1.1-4.516-4.9A3.832 3.832 0 0 1 4.7 7.068a3.56 3.56 0 0 1 .095-2.623s.832-.266 2.726 1.016a9.409 9.409 0 0 1 4.962 0c1.89-1.282 2.717-1.016 2.717-1.016.366.83.402 1.768.1 2.623a3.827 3.827 0 0 1 1.02 2.659c0 3.807-2.319 4.644-4.525 4.889a2.366 2.366 0 0 1 .673 1.834c0 1.326-.012 2.394-.012 2.72 0 .263.18.572.681.475A9.911 9.911 0 0 0 10 .333Z" clip-rule="evenodd"/>
                         </svg>
@@ -287,7 +288,7 @@
     </footer>
 
     <!-- Toast -->
-    <div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-strava-orange text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 pointer-events-none z-50 opacity-0">
+    <div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-fitness-green text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 pointer-events-none z-50 opacity-0">
         Copied to clipboard!
     </div>
 
@@ -440,12 +441,12 @@
                         const metric = button.dataset.metric;
                         if (!metricsAvailability[metric]) {
                             button.disabled = true;
-                            button.classList.remove('bg-strava-gray', 'bg-strava-orange');
+                            button.classList.remove('bg-fitness-gray', 'bg-fitness-green');
                             button.classList.add('bg-gray-300', 'cursor-not-allowed');
                         } else {
                             button.disabled = false;
                             button.classList.remove('bg-gray-300', 'cursor-not-allowed');
-                            button.classList.add('bg-strava-gray');
+                            button.classList.add('bg-fitness-gray');
                         }
                     });
 
@@ -464,7 +465,7 @@
                         const metric = button.dataset.metric;
 
                         // Reset classes and disabled state
-                        button.classList.remove('bg-strava-orange', 'bg-strava-gray', 'bg-gray-300', 'cursor-not-allowed');
+                        button.classList.remove('bg-fitness-green', 'bg-fitness-gray', 'bg-gray-300', 'cursor-not-allowed');
                         button.disabled = false;
 
                         if (!metricsAvailability[metric]) {
@@ -475,10 +476,10 @@
                             // Metric is Available
                             if (state.selectedMetrics.includes(metric)) {
                                 // State 2: Available AND Selected (including defaults) -> Strava Orange, Enabled
-                                button.classList.add('bg-strava-orange');
+                                button.classList.add('bg-fitness-green');
                             } else {
                                 // State 3: Available BUT Not Selected -> Strava Grey, Enabled
-                                button.classList.add('bg-strava-gray');
+                                button.classList.add('bg-fitness-gray');
                             }
                         }
                     });
@@ -715,13 +716,13 @@
                 option.addEventListener('click', () => {
                     const metric = option.dataset.metric;
                     
-                    if (option.classList.contains('bg-strava-orange')) {
-                        option.classList.remove('bg-strava-orange');
-                        option.classList.add('bg-strava-gray');
+                    if (option.classList.contains('bg-fitness-green')) {
+                        option.classList.remove('bg-fitness-green');
+                        option.classList.add('bg-fitness-gray');
                         state.selectedMetrics = state.selectedMetrics.filter(m => m !== metric);
                     } else {
-                        option.classList.remove('bg-strava-gray');
-                        option.classList.add('bg-strava-orange');
+                        option.classList.remove('bg-fitness-gray');
+                        option.classList.add('bg-fitness-green');
                         state.selectedMetrics.push(metric);
                     }
 
@@ -1252,7 +1253,7 @@
                     // Check availability from the existing metricsAvailability map (created during loadActivityFromSession)
                     const isAvailable = state.activityData ? !!metricsAvailability[metric] : false; // Now accesses the higher-scoped variable
 
-                    button.classList.remove('bg-strava-orange', 'bg-strava-gray', 'bg-gray-300', 'cursor-not-allowed');
+                    button.classList.remove('bg-fitness-green', 'bg-fitness-gray', 'bg-gray-300', 'cursor-not-allowed');
                     button.disabled = false;
 
                     if (!isAvailable) {
@@ -1260,9 +1261,9 @@
                         button.classList.add('bg-gray-300', 'cursor-not-allowed');
                     } else {
                         if (defaultMetrics.includes(metric)) {
-                            button.classList.add('bg-strava-orange');
+                            button.classList.add('bg-fitness-green');
                         } else {
-                            button.classList.add('bg-strava-gray');
+                            button.classList.add('bg-fitness-gray');
                         }
                     }
                 });

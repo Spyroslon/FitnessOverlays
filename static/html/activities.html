@@ -7,8 +7,8 @@
     <meta name="copyright" content="FitnessOverlays - Copyright (c) 2025 Spyros Lontos">
     <meta name="license" content="AGPL-3.0">
     <title>FitnessOverlays</title>
-    <!-- <link href="/static/css/tailwind.css" rel="stylesheet"> -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/static/css/tailwind.css" rel="stylesheet">
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <script src="/static/js/common.js" defer></script>
     <style>
         .spinner {
@@ -25,10 +25,24 @@
             border-color: #fc4c02 #0000;
             animation: spin 1s infinite;
         }
+        .sync-button-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .sync-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: width 1s linear;
+            border-radius: 0.5rem;
+            pointer-events: none;
+        }
     </style>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-white bg-[radial-gradient(60%_120%_at_50%_50%,_#ffffff00_0%,_#ffd5c4_100%)]" style="touch-action: manipulation;">
-    
+<body class="font-sans antialiased text-gray-800 bg-white bg-[radial-gradient(60%_120%_at_50%_50%,_#ffffff00_0%,_#ffd5c4_100%)] min-h-screen flex flex-col flex-grow" style="touch-action: manipulation;">
+
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
         <nav class="container mx-auto px-2 sm:px-4 py-3 grid grid-cols-[60px_1fr_60px] sm:grid-cols-3 items-center max-w-[800px]">
             <div class="flex justify-start min-w-[40px]">
@@ -41,8 +55,8 @@
                              alt="Profile" 
                              class="w-10 h-10 rounded-full object-cover border border-gray-200/50">
                         
-                        <span class="absolute bottom-0 left-7 w-3.5 h-3.5 bg-green-600 border border-white dark:border-gray-800 rounded-full flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-black" viewBox="0 0 20 20" fill="currentColor">
+                        <span class="absolute bottom-0 left-7 w-3.5 h-3.5 bg-fitness-green border border-white dark:border-gray-800 rounded-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 14a1 1 0 01-.7-.3l-4-4a1 1 0 111.4-1.4L10 11.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-.7.3z" clip-rule="evenodd" />
                             </svg>
                         </span>
@@ -55,7 +69,7 @@
                         </div>
                         <div class="border-t border-gray-300"></div>
                         <button id="logout-button" 
-                                class="block w-full text-left px-4 py-2 text-sm text-gray-800 rounded-md hover:bg-[#fc4c02] hover:text-white transition-colors duration-200">
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-800 rounded-md hover:bg-fitness-green hover:text-white transition-colors duration-200">
                             Log out
                         </button>
                     </div>
@@ -64,91 +78,87 @@
 
             <div class="text-center flex justify-center items-center">
                 <a href="/" class="text-2xl sm:text-3xl font-bold hover:opacity-80 transition-opacity">
-                    <span class="text-green-600">Fitness</span><span class="text-gray-900">Overlays</span>
+                    <span class="text-fitness-green">Fitness</span><span class="text-gray-900">Overlays</span>
                 </a>
             </div>
         </nav>
     </header>
 
-    <main class="flex-1 container mx-auto p-6">
-        <div class="max-w-[900px] mx-auto space-y-8">
-            <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-bold">My Activities</h1>
-                <div class="flex flex-col items-end gap-1">
+    <main class="flex-1 container mx-auto p-4">
+        <div class="max-w-[900px] mx-auto space-y-4">
+            <div class="space-y-2">
+                <div class="sync-button-wrapper">
+                    <div class="sync-progress" id="sync-progress"></div>
                     <button id="sync-button" 
-                            class="px-4 py-2 bg-[#fc4c02] text-white rounded-lg 
-                                   flex items-center gap-2 hover:bg-[#e34402] transition-colors
-                                   disabled:opacity-50 disabled:cursor-not-allowed">
+                            class="px-4 py-2 bg-orange-600 text-white rounded-lg 
+                                    flex items-center gap-2 hover:bg-orange-800 transition-colors
+                                    disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg id="sync-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                         <span id="sync-text">Sync Activities</span>
                     </button>
-                    <div class="flex flex-col text-sm text-gray-600">
-                        <div>Last Updated: <span id="last-sync">Never</span></div>
-                        <div id="next-sync-available" class="text-gray-500"></div>
-                    </div>
+                </div>
+                <div class="flex flex-col text-sm text-gray-600">
+                    <div>Last Updated: <span id="last-sync">Never</span></div>
                 </div>
             </div>
-            
             <!-- Activities Grid -->
-            <div id="activities-grid" class="space-y-4">
-                <!-- Activity tiles will be inserted here by JavaScript -->
-            </div>
+            <div id="activities-grid" class="space-y-4"></div>
 
             <!-- Loading State -->
             <div id="loading-state" class="flex flex-col items-center justify-center py-12 hidden">
                 <div class="custom-loader"></div>
                 <p class="mt-4 text-gray-600 font-medium">Loading activities...</p>
             </div>
-
-            <!-- Load More Button -->
-            <div id="load-more-container" class="flex justify-center mt-8">
-                <button id="load-more-button"
-                class="px-4 py-2 bg-[#fc4c02] text-white rounded-lg flex items-center gap-2 hover:bg-[#e34402] transition-colors hidden">
-                    Load More
-                </button>
-            </div>
         </div>
     </main>
 
-    <footer class="text-gray-800">
-        <div class="mx-auto w-full max-w-screen-lg p-4 space-y-6">
-            <hr class="mb-6 border-gray-800 sm:mx-auto lg:mb-8" />
-            <div class="flex items-center justify-center">
-                <img src="/static/images/api_logo_pwrdBy_strava_horiz_black.svg" 
-                     alt="Powered by Strava" 
-                     class="h-5 width-auto">
-            </div>
-            <div class="flex flex-col items-center space-y-4">
-                <span class="text-sm sm:text-center">&copy; 2025 FitnessOverlays - Licensed under 
-                    <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
-                        target="_blank" 
-                        class="transition-colors hover:underline">
-                        AGPL-3.0
-                    </a> 
-                </span>
-                <div class="flex space-x-5 justify-center">
-                    <a href="https://x.com/spyroslon"
-                        target="_blank"
-                        class="hover:text-gray-900">
-                            <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
-                                <path fill-rule="evenodd" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" clip-rule="evenodd"/>
+        <!-- Load More Button -->
+        <div id="load-more-container" class="flex justify-center">
+            <button id="load-more-button"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center gap-2 hover:bg-fitness-dark-green transition-colors hidden">
+                Load More
+            </button>
+        </div>
+
+        <footer class="text-fitness-dark-gray">
+            <div class="mx-auto w-full max-w-screen-lg p-4 space-y-6">
+                <hr class="mb-6 border-fitness-dark-gray sm:mx-auto lg:mb-8" />
+                <div class="flex items-center justify-center">
+                    <img src="/static/images/api_logo_pwrdBy_strava_horiz_black.svg" 
+                         alt="Powered by Strava" 
+                         class="h-5 width-auto">
+                </div>
+                <div class="flex flex-col items-center space-y-4">
+                    <span class="text-sm sm:text-center">&copy; 2025 FitnessOverlays - Licensed under 
+                        <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
+                            target="_blank" 
+                            class="transition-colors hover:underline">
+                            AGPL-3.0
+                        </a> 
+                    </span>
+                    <div class="flex space-x-5 justify-center">
+                        <a href="https://x.com/spyroslon"
+                            target="_blank"
+                            class="hover:text-fitness-dark-gray">
+                                <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" clip-rule="evenodd"/>
+                                </svg>
+                                <span class="sr-only">X page</span>
+                        </a>
+                        <a href="https://github.com/spyroslon"
+                            target="_blank" 
+                            class="hover:text-fitness-dark-gray">
+                            <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 .333A9.911 9.911 0 0 0 6.866 19.65c.5.092.678-.215.678-.477 0-.237-.01-1.017-.014-1.845-2.757.6-3.338-1.169-3.338-1.169a2.627 2.627 0 0 0-1.1-1.451c-.9-.615.07-.6.07-.6a2.084 2.084 0 0 1 1.518 1.021 2.11 2.11 0 0 0 2.884.823c.044-.503.268-.973.63-1.325-2.2-.25-4.516-1.1-4.516-4.9A3.832 3.832 0 0 1 4.7 7.068a3.56 3.56 0 0 1 .095-2.623s.832-.266 2.726 1.016a9.409 9.409 0 0 1 4.962 0c1.89-1.282 2.717-1.016 2.717-1.016.366.83.402 1.768.1 2.623a3.827 3.827 0 0 1 1.02 2.659c0 3.807-2.319 4.644-4.525 4.889a2.366 2.366 0 0 1 .673 1.834c0 1.326-.012 2.394-.012 2.72 0 .263.18.572.681.475A9.911 9.911 0 0 0 10 .333Z" clip-rule="evenodd"/>
                             </svg>
-                            <span class="sr-only">X page</span>
-                    </a>
-                    <a href="https://github.com/spyroslon"
-                        target="_blank" 
-                        class="hover:text-gray-900">
-                        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 .333A9.911 9.911 0 0 0 6.866 19.65c.5.092.678-.215.678-.477 0-.237-.01-1.017-.014-1.845-2.757.6-3.338-1.169-3.338-1.169a2.627 2.627 0 0 0-1.1-1.451c-.9-.615.07-.6.07-.6a2.084 2.084 0 0 1 1.518 1.021 2.11 2.11 0 0 0 2.884.823c.044-.503.268-.973.63-1.325-2.2-.25-4.516-1.1-4.516-4.9A3.832 3.832 0 0 1 4.7 7.068a3.56 3.56 0 0 1 .095-2.623s.832-.266 2.726 1.016a9.409 9.409 0 0 1 4.962 0c1.89-1.282 2.717-1.016 2.717-1.016.366.83.402 1.768.1 2.623a3.827 3.827 0 0 1 1.02 2.659c0 3.807-2.319 4.644-4.525 4.889a2.366 2.366 0 0 1 .673 1.834c0 1.326-.012 2.394-.012 2.72 0 .263.18.572.681.475A9.911 9.911 0 0 0 10 .333Z" clip-rule="evenodd"/>
-                        </svg>
-                        <span class="sr-only">GitHub account</span>
-                    </a>
+                            <span class="sr-only">GitHub account</span>
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-    </footer>
+        </footer>
 
     <script>
         // Global function to handle activity selection and redirect
@@ -327,6 +337,7 @@
             const syncButton = document.getElementById('sync-button');
             const syncIcon = document.getElementById('sync-icon');
             const syncText = document.getElementById('sync-text');
+            const syncProgress = document.getElementById('sync-progress');
             
             let displayedCount = 0;
             const itemsPerPage = 5;
@@ -358,7 +369,7 @@
                 syncButton.disabled = true;
                 syncText.textContent = 'Syncing...';
                 document.getElementById('last-sync').textContent = 'Syncing with Strava...';
-                document.getElementById('next-sync-available').textContent = '';
+                syncProgress.style.width = '0%';
 
                 let timeoutId = setTimeout(() => {
                     // Reset UI if request takes too long
@@ -366,7 +377,7 @@
                     syncButton.disabled = false;
                     syncText.textContent = 'Retry Sync';
                     document.getElementById('last-sync').textContent = 'Sync timed out. Please try again.';
-                    document.getElementById('next-sync-available').textContent = '';
+                    syncProgress.style.width = '0%';
                 }, 15000); // 15 second timeout
 
                 try {
@@ -387,6 +398,7 @@
                     }
 
                     const data = await response.json();
+                    console.log('Sync response:', data);
 
                     // First update the sync status and UI
                     syncIcon.classList.remove('spinner');
@@ -397,42 +409,49 @@
                     sessionStorage.setItem('lastSyncTime', lastSyncTime.toString());
                     document.getElementById('last-sync').textContent = 'Just now';
                     
-                    // Then handle cooldown if present
+                    // Handle cooldown with progress bar
                     if (data.cooldown && data.cooldown.active) {
-                        const countdownInterval = setInterval(() => {
-                            const remaining = Math.max(0, data.cooldown.seconds_remaining--);
-                            if (remaining <= 0) {
-                                clearInterval(countdownInterval);
+                        const totalCooldown = data.cooldown.seconds_remaining;
+                        let remainingTime = totalCooldown;
+                        let lastUpdate = Date.now();
+                        
+                        const updateProgress = () => {
+                            const now = Date.now();
+                            const elapsed = (now - lastUpdate) / 1000;
+                            remainingTime = Math.max(0, remainingTime - elapsed);
+                            lastUpdate = now;
+                            
+                            const progress = ((totalCooldown - remainingTime) / totalCooldown) * 100;
+                            syncProgress.style.width = `${progress}%`;
+                            
+                            if (remainingTime <= 0) {
+                                clearInterval(progressInterval);
                                 syncButton.disabled = false;
-                                document.getElementById('next-sync-available').textContent = '';
+                                syncProgress.style.width = '0%';
                                 document.getElementById('last-sync').textContent = formatRelativeTime(parseInt(sessionStorage.getItem('lastSyncTime')));
-                            } else {
-                                document.getElementById('next-sync-available').textContent = 
-                                    `Next refresh available in ${formatCountdownTime(remaining)}`;
+                                startRelativeTimeUpdates();
                             }
-                        }, 1000);
+                        };
+                        
+                        const progressInterval = setInterval(updateProgress, 100); // Update more frequently for smoother animation
+                        updateProgress(); // Initial update
                     } else {
-                        document.getElementById('next-sync-available').textContent = '';
+                        syncProgress.style.width = '0%';
                         startRelativeTimeUpdates();
                     }
 
-                    // Finally update activities if they're provided
+                    // Update activities if they're provided
                     if (data.activities) {
                         allActivities = data.activities;
-                        
-                        // Reset display
                         activitiesGrid.innerHTML = '';
                         displayedCount = 0;
                         renderMoreActivities();
-                        
-                        // Show load more button if there are more activities
                         loadMoreButton.classList.toggle('hidden', allActivities.length <= itemsPerPage);
                     }
 
                     // Handle warnings if present
                     if (data.warning) {
                         console.warn(data.warning);
-                        document.getElementById('next-sync-available').textContent = data.warning;
                     }
                 } catch (error) {
                     // Clear timeout if we got an error
@@ -443,7 +462,7 @@
                     syncButton.disabled = false;
                     syncText.textContent = 'Retry Sync';
                     document.getElementById('last-sync').textContent = 'Sync failed. Please try again.';
-                    document.getElementById('next-sync-available').textContent = error.message || 'An error occurred while syncing';
+                    syncProgress.style.width = '0%';
                     
                     // Keep existing activities displayed if any
                     if (allActivities.length > 0) {
@@ -466,8 +485,7 @@
                     const lastSyncTime = sessionStorage.getItem('lastSyncTime');
                     if (lastSyncTime) {
                         const lastSyncElement = document.getElementById('last-sync');
-                        // Only update if we're not showing a cooldown timer
-                        if (!document.getElementById('next-sync-available').textContent.includes('Next refresh available')) {
+                        if (lastSyncElement && !syncButton.disabled) {
                             lastSyncElement.textContent = formatRelativeTime(parseInt(lastSyncTime));
                         }
                     }
@@ -485,7 +503,7 @@
                 const profileDropdownContainer = document.getElementById('profile-dropdown-container');
                 const profilePicture = document.getElementById('profile-picture');
                 const firstlastname = document.getElementById('first-last-Name');
-                if (authStatus.athlete_profile && profileDropdownContainer && profilePictur && firstlastname) {
+                if (authStatus.athlete_profile && profileDropdownContainer && profilePicture && firstlastname) {
                     profilePicture.src = authStatus.athlete_profile;
                     profileDropdownContainer.classList.remove('hidden');
                     firstlastname.textContent = `${authStatus.athlete_name} ${authStatus.athlete_lastname}`;
