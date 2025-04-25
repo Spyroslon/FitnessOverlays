@@ -793,7 +793,7 @@ def create_sync_response(activities, page, per_page, sync_log, seconds_remaining
 
     return response
 
-@app.route('/api/activities/sync', methods=['GET', 'POST'])
+@app.route('/api/activities/sync', methods=['GET'])
 @login_required
 @limiter.limit("30 per minute")
 def sync_activities():
@@ -814,14 +814,11 @@ def sync_activities():
     ).first()
 
     seconds_remaining = sync_instance.get_cooldown_remaining()
-    force_sync = request.method == 'POST'
 
+    print(f"is_sync_allowed: {sync_instance.is_sync_allowed()}")
     # Return cached data if available and appropriate
-    if not force_sync or not sync_instance.is_sync_allowed():
-        if sync_log:
-            return jsonify(create_sync_response(sync_log.data, page, per_page, sync_log, seconds_remaining, using_cached=True))
-        elif not force_sync:
-            return jsonify(create_sync_response([], page, per_page, None, seconds_remaining))
+    if not sync_instance.is_sync_allowed() and sync_log:
+        return jsonify(create_sync_response(sync_log.data if sync_log else [], page, per_page, sync_log, seconds_remaining, using_cached=True))
 
     # Attempt to fetch fresh data from Strava
     try:
