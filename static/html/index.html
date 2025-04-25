@@ -67,7 +67,7 @@
             </div>
 
             <div class="flex justify-end min-w-[40px]">
-                <a href="/activities" id="create-overlay-header-btn" 
+                <a href="/activities" id="activities-header-btn" 
                    class="hidden bg-fitness-green text-white rounded-lg 
                           px-2 sm:px-4 py-2 sm:py-2
                           text-xs sm:text-base whitespace-nowrap
@@ -92,7 +92,7 @@
             <div id="connect-strava" class="inline-block transform hover:scale-110 transition-transform duration-200 cursor-pointer py-10">
                 <img src="/static/images/btn_strava_connect_with_orange_x2.svg" alt="Connect with Strava" class="h-12 drop-shadow-lg rounded-lg">
             </div>
-            <div id="create-overlay-btn" class="hidden flex justify-center py-10">
+            <div id="see-activities-btn" class="hidden flex justify-center py-10">
                 <a href="/activities" 
                     class="bg-fitness-green text-white font-bold py-4 px-6 rounded-lg
                             transform hover:scale-110 transition-all duration-200 
@@ -193,18 +193,16 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Get references to elements specific to this page
             const connectStravaBtn = document.getElementById('connect-strava');
-            const createOverlayBtn = document.getElementById('create-overlay-btn');
-            const createOverlayHeaderBtn = document.getElementById('create-overlay-header-btn');
-            const tryNowHeaderBtn = document.getElementById('try-now-header-btn');
+            const seeActivitiesBtn = document.getElementById('see-activities-btn');
+            const activitiesHeaderBtn = document.getElementById('activities-header-btn');
             const profileDropdownContainer = document.getElementById('profile-dropdown-container');
             const profilePicture = document.getElementById('profile-picture');
             const firstlastname = document.getElementById('first-last-Name');
 
             // Initialize UI state (hide elements by default until auth check completes)
             if (connectStravaBtn) connectStravaBtn.classList.add('hidden');
-            if (createOverlayBtn) createOverlayBtn.classList.add('hidden');
-            if (createOverlayHeaderBtn) createOverlayHeaderBtn.classList.add('hidden');
-            if (tryNowHeaderBtn) tryNowHeaderBtn.classList.add('hidden');
+            if (seeActivitiesBtn) seeActivitiesBtn.classList.add('hidden');
+            if (activitiesHeaderBtn) activitiesHeaderBtn.classList.add('hidden');
             if (profileDropdownContainer) profileDropdownContainer.classList.add('hidden');
 
             // Check authentication status using the common function
@@ -218,13 +216,11 @@
                     }
                     // Show create overlay buttons and hide connect button
                     if (connectStravaBtn) connectStravaBtn.classList.add('hidden');
-                    if (createOverlayBtn) createOverlayBtn.classList.remove('hidden');
-                    if (createOverlayHeaderBtn) createOverlayHeaderBtn.classList.remove('hidden');
-                    if (tryNowHeaderBtn) tryNowHeaderBtn.classList.add('hidden');
+                    if (seeActivitiesBtn) seeActivitiesBtn.classList.remove('hidden');
+                    if (activitiesHeaderBtn) activitiesHeaderBtn.classList.remove('hidden');
                 } else {
                     // Show connect button for unauthenticated users
                     if (connectStravaBtn) connectStravaBtn.classList.remove('hidden');
-                    if (tryNowHeaderBtn) tryNowHeaderBtn.classList.remove('hidden');
                 }
             });
 

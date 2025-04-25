@@ -162,16 +162,12 @@
                     return;
                 }
 
-                // Show profile picture if available
-                console.log('authStatus', authStatus)
                 const profileDropdownContainer = document.getElementById('profile-dropdown-container');
                 const profilePicture = document.getElementById('profile-picture');
                 const firstlastname = document.getElementById('first-last-Name');
                 if (authStatus.athlete_profile && profileDropdownContainer && profilePicture && firstlastname) {
                     profilePicture.src = authStatus.athlete_profile;
                     profileDropdownContainer.classList.remove('hidden');
-                    console.log('writing first name and last name')
-                    console.log(authStatus.athlete_first_name, authStatus.athlete_last_name)
                     firstlastname.textContent = `${authStatus.athlete_first_name} ${authStatus.athlete_last_name}`;
                 }
             });
