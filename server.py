@@ -391,11 +391,11 @@ def login():
     try:
         # Generate the dynamic callback URL
         callback_url = url_for('callback', _external=True)
-        logger.info(f"Generated dynamic callback URL: {callback_url}") # Log the generated URL for debugging
+        logger.info(f"Generated dynamic callback URL: {callback_url}")
 
         oauth = OAuth2Session(
             CLIENT_ID,
-            redirect_uri=callback_url, # Use the dynamic URL
+            redirect_uri=callback_url,
             scope=["activity:read_all"]
         )
         authorization_url, state = oauth.authorization_url(AUTH_BASE_URL)
@@ -770,6 +770,29 @@ def activities():
     # Serve activities.html from static/html
     return send_from_directory('static/html', 'activities.html')
 
+def create_sync_response(activities, page, per_page, sync_log, seconds_remaining, warning=None, using_cached=False):
+    """Helper function to create a consistent sync response"""
+    response = {
+        "activities": activities,
+        "pagination": {"page": page, "per_page": per_page},
+        "cooldown": {
+            "active": seconds_remaining > 0,
+            "seconds_remaining": seconds_remaining,
+            "total_cooldown": ActivityLists.SYNC_COOLDOWN.total_seconds()
+        },
+        "cached": using_cached
+    }
+    
+    if sync_log and sync_log.last_synced:
+        response["last_synced"] = sync_log.last_synced.isoformat()
+    elif not sync_log:
+        response["last_synced"] = datetime.now(timezone.utc).isoformat()
+    
+    if warning:
+        response["warning"] = warning
+
+    return response
+
 @app.route('/api/activities/sync', methods=['GET', 'POST'])
 @login_required
 @limiter.limit("30 per minute")
@@ -780,44 +803,27 @@ def sync_activities():
     if not athlete_id:
         return jsonify({"error": "Not authenticated"}), 401
 
-    # Get pagination parameters with defaults
-    page = request.args.get('page', 1, type=int)
+    page = max(1, request.args.get('page', 1, type=int))
     per_page = min(request.args.get('per_page', 30, type=int), ActivityLists.ITEMS_PER_PAGE)
 
-    if page < 1 or per_page < 1:
-        return jsonify({"error": "Invalid pagination parameters"}), 400
-
-    # Create a dummy instance to use the helper methods
     sync_instance = ActivityLists(athlete_id=athlete_id)
-    
-    # Get the latest cached data
     sync_log = ActivityLists.query.filter_by(
         athlete_id=athlete_id,
         page=page,
         per_page=per_page
     ).first()
 
-    # For GET requests or when sync is not allowed, try to return cached data first
+    seconds_remaining = sync_instance.get_cooldown_remaining()
     force_sync = request.method == 'POST'
-    if not force_sync or not sync_instance.is_sync_allowed():
-        seconds_remaining = sync_instance.get_cooldown_remaining()
-        
-        if sync_log:
-            return jsonify({
-                "activities": sync_log.data,
-                "pagination": {"page": page, "per_page": per_page},
-                "cooldown": {
-                    "active": seconds_remaining > 0,
-                    "seconds_remaining": seconds_remaining,
-                    "total_cooldown": ActivityLists.SYNC_COOLDOWN.total_seconds()
-                },
-                "cached": True
-            })
-        elif not force_sync:
-            # For GET requests with no cache, proceed to fetch from Strava
-            force_sync = True
 
-    # If we reach here, we either need to sync (POST) or have no cached data (GET)
+    # Return cached data if available and appropriate
+    if not force_sync or not sync_instance.is_sync_allowed():
+        if sync_log:
+            return jsonify(create_sync_response(sync_log.data, page, per_page, sync_log, seconds_remaining, using_cached=True))
+        elif not force_sync:
+            return jsonify(create_sync_response([], page, per_page, None, seconds_remaining))
+
+    # Attempt to fetch fresh data from Strava
     try:
         response = requests.get(
             "https://www.strava.com/api/v3/athlete/activities",
@@ -827,63 +833,52 @@ def sync_activities():
         )
 
         if not response.ok:
-            logger.error(f'Failed to fetch activities from Strava. Status: {response.status_code}')
-            if sync_log:
-                return jsonify({
-                    "activities": sync_log.data,
-                    "pagination": {"page": page, "per_page": per_page},
-                    "warning": "Failed to fetch fresh data, showing cached data",
-                    "cached": True
-                })
-            return jsonify({"error": "Failed to fetch activities"}), response.status_code
+            return jsonify(create_sync_response(
+                sync_log.data if sync_log else [],
+                page,
+                per_page,
+                sync_log,
+                seconds_remaining,
+                warning="Failed to fetch fresh data, showing cached data" if sync_log else None,
+                using_cached=True
+            )), response.status_code if not sync_log else 200
 
         activities = response.json()
+        current_time = datetime.now(timezone.utc)
 
         # Update or create sync log
         try:
             if sync_log:
                 sync_log.data = activities
-                sync_log.last_synced = datetime.now(timezone.utc)
+                sync_log.last_synced = current_time
             else:
                 sync_log = ActivityLists(
                     athlete_id=athlete_id,
                     data=activities,
                     page=page,
-                    per_page=per_page
+                    per_page=per_page,
+                    last_synced=current_time
                 )
                 db.session.add(sync_log)
-
             db.session.commit()
-            
-            return jsonify({
-                "activities": activities,
-                "pagination": {"page": page, "per_page": per_page},
-                "cooldown": {
-                    "active": True,
-                    "seconds_remaining": ActivityLists.SYNC_COOLDOWN.total_seconds(),
-                    "total_cooldown": ActivityLists.SYNC_COOLDOWN.total_seconds()
-                },
-                "cached": False
-            })
-
+            return jsonify(create_sync_response(activities, page, per_page, sync_log, seconds_remaining, using_cached=False))
         except Exception as db_error:
             db.session.rollback()
             logger.error(f'Database error: {str(db_error)}')
             raise
 
     except Exception as e:
-        db.session.rollback()
         logger.error(f'Error syncing activities: {str(e)}')
-        if sync_log:
-            return jsonify({
-                "activities": sync_log.data,
-                "pagination": {"page": page, "per_page": per_page},
-                "warning": "Failed to fetch fresh data, showing cached data",
-                "cached": True
-            })
-        return jsonify({"error": "Failed to sync activities"}), 500
+        return jsonify(create_sync_response(
+            sync_log.data if sync_log else [],
+            page,
+            per_page,
+            sync_log,
+            seconds_remaining,
+            warning="Failed to sync data, showing cached data" if sync_log else None,
+            using_cached=True
+        )), 500 if not sync_log else 200
 
 if __name__ == '__main__':
-    logging.info("--- Preparing to run Flask app ---") # Add this log line
-    logging.info("Starting Flask application...") # Example log at startup
+    logging.info("Starting Flask application...")
     app.run(debug=DEBUG_MODE, port=5000)

@@ -17,14 +17,6 @@
         @keyframes spin {
             to { transform: rotate(180deg); }
         }
-        .custom-loader {
-            width: 50px;
-            aspect-ratio: 1;
-            border-radius: 50%;
-            border: 8px solid;
-            border-color: #fc4c02 #0000;
-            animation: spin 1s infinite;
-        }
         .sync-button-wrapper {
             position: relative;
             display: inline-block;
@@ -105,12 +97,6 @@
             </div>
             <!-- Activities Grid -->
             <div id="activities-grid" class="space-y-4"></div>
-
-            <!-- Loading State -->
-            <div id="loading-state" class="flex flex-col items-center justify-center py-12 hidden">
-                <div class="custom-loader"></div>
-                <p class="mt-4 text-gray-600 font-medium">Loading activities...</p>
-            </div>
         </div>
     </main>
 
@@ -318,20 +304,7 @@
                 return tile;
             }
 
-            // Function to handle generating overlay
-            function generateOverlay(activityId) {
-                // Store the selected activity in sessionStorage
-                const activities = JSON.parse(sessionStorage.getItem('activities'));
-                const activity = activities.find(a => a.id.toString() === activityId.toString());
-                
-                if (activity) {
-                    sessionStorage.setItem('currentActivity', JSON.stringify(activity));
-                    window.location.href = '/customize_overlays';
-                }
-            }
-
             const activitiesGrid = document.getElementById('activities-grid');
-            const loadingState = document.getElementById('loading-state');
             const loadMoreButton = document.getElementById('load-more-button');
             const syncButton = document.getElementById('sync-button');
             const syncIcon = document.getElementById('sync-icon');
@@ -363,112 +336,81 @@
             syncButton.addEventListener('click', syncActivities);
 
             async function syncActivities() {
-                // Reset state
-                syncIcon.classList.add('spinner');
-                syncButton.disabled = true;
-                syncText.textContent = 'Syncing...';
-                document.getElementById('last-sync').textContent = 'Syncing with Strava...';
-                syncProgress.style.width = '0%';
-
-                let timeoutId = setTimeout(() => {
-                    // Reset UI if request takes too long
-                    syncIcon.classList.remove('spinner');
-                    syncButton.disabled = false;
-                    syncText.textContent = 'Retry Sync';
-                    document.getElementById('last-sync').textContent = 'Sync timed out. Please try again.';
-                    syncProgress.style.width = '0%';
-                }, 15000); // 15 second timeout
-
-                try {
-                    const response = await fetch('/api/activities/sync', {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-CSRF-Token': csrfToken
-                        },
-                        credentials: 'include'
-                    });
-
-                    // Clear timeout since we got a response
-                    clearTimeout(timeoutId);
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    console.log('Sync response:', data);
-
-                    // First update the sync status and UI
-                    syncIcon.classList.remove('spinner');
-                    syncButton.disabled = data.cooldown?.active ?? false;
-                    syncText.textContent = 'Sync Activities';
+                const handleSyncResponse = (data) => {
+                    console.log('Server response:', data);
                     
-                    const lastSyncTime = Date.now();
-                    sessionStorage.setItem('lastSyncTime', lastSyncTime.toString());
-                    document.getElementById('last-sync').textContent = 'Just now';
-                    
-                    // Handle cooldown with progress bar
-                    if (data.cooldown && data.cooldown.active) {
-                        const totalCooldown = data.cooldown.seconds_remaining;
-                        let remainingTime = totalCooldown;
-                        let lastUpdate = Date.now();
-                        
-                        const updateProgress = () => {
-                            const now = Date.now();
-                            const elapsed = (now - lastUpdate) / 1000;
-                            remainingTime = Math.max(0, remainingTime - elapsed);
-                            lastUpdate = now;
-                            
-                            const progress = ((totalCooldown - remainingTime) / totalCooldown) * 100;
-                            syncProgress.style.width = `${progress}%`;
-                            
-                            if (remainingTime <= 0) {
-                                clearInterval(progressInterval);
-                                syncButton.disabled = false;
-                                syncProgress.style.width = '0%';
-                                document.getElementById('last-sync').textContent = formatRelativeTime(parseInt(sessionStorage.getItem('lastSyncTime')));
-                                startRelativeTimeUpdates();
-                            }
-                        };
-                        
-                        const progressInterval = setInterval(updateProgress, 100); // Update more frequently for smoother animation
-                        updateProgress(); // Initial update
-                    } else {
-                        syncProgress.style.width = '0%';
-                        startRelativeTimeUpdates();
-                    }
-
-                    // Update activities if they're provided
+                    // Update activities
                     if (data.activities) {
                         allActivities = data.activities;
                         activitiesGrid.innerHTML = '';
                         displayedCount = 0;
                         renderMoreActivities();
-                        loadMoreButton.classList.toggle('hidden', allActivities.length <= itemsPerPage);
                     }
 
-                    // Handle warnings if present
+                    // Update last sync time
+                    const lastSyncElement = document.getElementById('last-sync');
+                    if (data.last_synced) {
+                        const syncTime = new Date(data.last_synced);
+                        sessionStorage.setItem('lastSyncTime', syncTime.getTime().toString());
+                        lastSyncElement.textContent = 'Just now';
+                        startRelativeTimeUpdates();
+                    }
+
+                    // Show/hide load more button
+                    loadMoreButton.classList.toggle('hidden', displayedCount >= allActivities.length);
+                };
+
+                const updateUIState = (state, cooldown = null) => {
+                    syncIcon.classList.toggle('spinner', state === 'syncing');
+                    syncButton.disabled = state === 'syncing' || state === 'cooldown';
+                    syncText.textContent = state === 'syncing' ? 'Syncing...' : 'Sync Activities';
+                    syncProgress.style.width = '0%';
+
+                    if (cooldown && cooldown.active) {
+                        const updateCooldownProgress = () => {
+                            const progressPercent = ((cooldown.total_cooldown - cooldown.seconds_remaining) / cooldown.total_cooldown) * 100;
+                            syncProgress.style.width = `${progressPercent}%`;
+                        };
+                        updateCooldownProgress();
+                        
+                        if (cooldown.seconds_remaining > 0) {
+                            const intervalId = setInterval(() => {
+                                cooldown.seconds_remaining--;
+                                if (cooldown.seconds_remaining <= 0) {
+                                    clearInterval(intervalId);
+                                    updateUIState('ready');
+                                } else {
+                                    updateCooldownProgress();
+                                }
+                            }, 1000);
+                        }
+                    }
+                };
+
+                try {
+                    updateUIState('syncing');
+
+                    const response = await fetch('/api/activities/sync', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-Token': csrfToken },
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                    const data = await response.json();
+                    console.log('Full sync response:', data);
+                    
+                    handleSyncResponse(data);
+                    updateUIState('cooldown', data.cooldown);
+
                     if (data.warning) {
-                        console.warn(data.warning);
+                        console.warn('Sync warning:', data.warning);
                     }
                 } catch (error) {
-                    // Clear timeout if we got an error
-                    clearTimeout(timeoutId);
-                    
                     console.error('Error syncing activities:', error);
-                    syncIcon.classList.remove('spinner');
-                    syncButton.disabled = false;
-                    syncText.textContent = 'Retry Sync';
+                    updateUIState('ready');
                     document.getElementById('last-sync').textContent = 'Sync failed. Please try again.';
-                    syncProgress.style.width = '0%';
-                    
-                    // Keep existing activities displayed if any
-                    if (allActivities.length > 0) {
-                        activitiesGrid.innerHTML = '';
-                        displayedCount = 0;
-                        renderMoreActivities();
-                    }
                 }
             }
 
