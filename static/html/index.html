@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,10 +17,6 @@
         }
         .fade-in {
             animation: fadeIn 1s ease-out forwards;
-        }
-        /* Add custom styles or overrides here if needed */
-        html {
-            scroll-behavior: smooth;
         }
         .carousel img {
             pointer-events: none;
@@ -204,53 +200,32 @@
             const profilePicture = document.getElementById('profile-picture');
             const firstlastname = document.getElementById('first-last-Name');
 
+            // Initialize UI state (hide elements by default until auth check completes)
+            if (connectStravaBtn) connectStravaBtn.classList.add('hidden');
+            if (createOverlayBtn) createOverlayBtn.classList.add('hidden');
+            if (createOverlayHeaderBtn) createOverlayHeaderBtn.classList.add('hidden');
+            if (tryNowHeaderBtn) tryNowHeaderBtn.classList.add('hidden');
+            if (profileDropdownContainer) profileDropdownContainer.classList.add('hidden');
+
             // Check authentication status using the common function
             checkAuth().then(authStatus => {
-                if (!authStatus) return; // Exit if checkAuth failed critically
-
                 if (authStatus.authenticated) {
-                    console.log('User is authenticated on index page:', authStatus);
                     // Show profile picture dropdown if available
                     if (authStatus.athlete_profile && profileDropdownContainer && profilePicture && firstlastname) {
                         profilePicture.src = authStatus.athlete_profile;
                         profileDropdownContainer.classList.remove('hidden');
-                        firstlastname.textContent = `${authStatus.athlete_name} ${authStatus.athlete_lastname}`;
-                    } else if (profileDropdownContainer) {
-                        profileDropdownContainer.classList.add('hidden'); // Hide if no profile pic
+                        firstlastname.textContent = `${authStatus.athlete_first_name} ${authStatus.athlete_last_name}`;
                     }
-                    // Hide connect button and show create overlay buttons
+                    // Show create overlay buttons and hide connect button
                     if (connectStravaBtn) connectStravaBtn.classList.add('hidden');
                     if (createOverlayBtn) createOverlayBtn.classList.remove('hidden');
                     if (createOverlayHeaderBtn) createOverlayHeaderBtn.classList.remove('hidden');
                     if (tryNowHeaderBtn) tryNowHeaderBtn.classList.add('hidden');
-
                 } else {
-                    console.log('User is not authenticated on index page:', authStatus);
-                    // Hide profile picture dropdown and create buttons when not authenticated
-                    if (profileDropdownContainer) profileDropdownContainer.classList.add('hidden');
-                    if (createOverlayHeaderBtn) createOverlayHeaderBtn.classList.add('hidden');
-                    // Show connect button and hide create overlay button when not authenticated
+                    // Show connect button for unauthenticated users
                     if (connectStravaBtn) connectStravaBtn.classList.remove('hidden');
-                    if (createOverlayBtn) createOverlayBtn.classList.add('hidden');
                     if (tryNowHeaderBtn) tryNowHeaderBtn.classList.remove('hidden');
-
-                    // If authStatus explicitly requires login (e.g., due to redirect from checkAuth), handle it
-                    // Note: checkAuth already handles redirects for protected pages, 
-                    // but this handles the case where index might still load briefly.
-                    if (authStatus.require_login) {
-                         // Decide if index should redirect too, or just show the connect button.
-                         // Currently, it just shows the connect button.
-                         console.log("Auth required, showing connect button.");
-                    }
                 }
-            }).catch(error => {
-                 console.error("Error processing auth status on index page:", error);
-                 // Fallback: Ensure connect button is visible, others hidden
-                 if (profileDropdownContainer) profileDropdownContainer.classList.add('hidden');
-                 if (createOverlayHeaderBtn) createOverlayHeaderBtn.classList.add('hidden');
-                 if (connectStravaBtn) connectStravaBtn.classList.remove('hidden');
-                 if (createOverlayBtn) createOverlayBtn.classList.add('hidden');
-                 if (tryNowHeaderBtn) tryNowHeaderBtn.classList.remove('hidden');
             });
 
             // Add click handler for Strava connect button

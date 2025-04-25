@@ -333,29 +333,20 @@ def add_security_headers(response: Response) -> Response:
     response.headers.pop('Server', None)
     return response
 
-def add_cache_control_headers(response):
-    """Add cache control headers to prevent caching of sensitive data"""
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
-
-# Update app.after_request to include cache control
 @app.after_request
 def after_request(response):
     """Apply security and cache control headers to all responses"""
+    # Apply security headers to all responses
     response = add_security_headers(response)
     
-    # Add cache control headers to sensitive endpoints
-    sensitive_endpoints = {'/status', '/fetch_activity', '/activities', '/callback', '/login'}
-    if any(request.path.startswith(endpoint) for endpoint in sensitive_endpoints):
-        response = add_cache_control_headers(response)
-    elif request.path.startswith('/static/'):
-        # Allow caching for static assets with 1 hour max age
+    # Simple and clear caching rules
+    if request.path.startswith('/static/'):
+        # Cache static assets for 1 hour
         response.headers['Cache-Control'] = 'public, max-age=3600'
     else:
-        # Default no-cache policy for other endpoints
-        response.headers['Cache-Control'] = 'no-store, max-age=0'
+        # No caching for all other routes (API endpoints, dynamic pages)
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
     
     return response
 
@@ -418,6 +409,11 @@ def login():
 def callback():
     """Handle the OAuth callback from Strava"""
     try:
+        # Check if user denied authorization
+        if 'error' in request.args:
+            logger.info(f"User denied Strava authorization - IP: {get_remote_address()}")
+            return redirect('/')
+
         # Generate the dynamic callback URL consistently
         callback_url = url_for('callback', _external=True)
         logger.info(f"Using dynamic callback URL in callback handler: {callback_url}") 
@@ -440,7 +436,7 @@ def callback():
         
         if not athlete_id:
             logger.error('No athlete ID in token response')
-            return jsonify({"error": "Authentication failed"}), 400
+            return redirect('/')
             
         try:
             # Find existing athlete or create new one
@@ -470,14 +466,14 @@ def callback():
         except Exception as db_error:
             db.session.rollback()
             logger.error(f'Database error during callback: {str(db_error)}')
-            return jsonify({"error": "Database error during authentication"}), 500
+            return redirect('/')
         
         return redirect('/')
     except Exception as e:
         logger.error(f'OAuth callback error details: {str(e)} - IP: {get_remote_address()}')
-        return jsonify({"error": "Authentication failed. Please try again."}), 400
+        return redirect('/')
 
-@app.route('/logout', methods=['POST'])  # Add POST method
+@app.route('/logout', methods=['POST'])
 def logout():
     """Clear the session data"""
     session.clear()
@@ -490,19 +486,23 @@ def home():
 
 @app.before_request
 def require_authentication():
-    """Serve the authentication required page for unauthenticated users."""
+    """Handle authentication requirements for different types of requests."""
     # Allow requests to static files, login, callback, and root path
     if request.path.startswith('/static/') or request.path in ['/login', '/callback', '/']:
         return
 
-    if 'athlete_id' not in session:
-        # Serve auth_required.html from static/html
+    # For API endpoints, return JSON response when not authenticated
+    if request.path.startswith('/api/') or request.path == '/status':
+        if 'athlete_id' not in session:
+            return jsonify({
+                "authenticated": False,
+                "require_login": True,
+                "error": "Authentication required"
+            })
+    elif 'athlete_id' not in session:
         return send_from_directory('static/html', 'auth_required.html')
 
-ALLOWED_EXTENSIONS = {
-    '.css', '.js', '.png', '.jpg', '.jpeg', '.gif', 
-    '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot'
-}
+ALLOWED_EXTENSIONS = {'.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico'}
 
 @app.route('/static/<path:path>')
 def serve_static(path):
@@ -540,84 +540,93 @@ def serve_static(path):
 
 @app.route("/status")
 def status():
-    """Check if user is authenticated, provide CSRF token and handle token refresh"""
-    logger.info(f"Status endpoint called - Session: {session}")
+    """Check if user is authenticated and handle token refresh"""
+    logger.info(f"Status endpoint called - IP: {get_remote_address()}")
+    
     try:
-        if "access_token" in session:
-            csrf_token = generate_csrf_token()
-            
-            # Check if token needs refresh
-            if "expires_at" in session:
-                current_time = time.time()
-                # Add 5 minute buffer to token expiry
-                if session["expires_at"] - current_time < 300:  # 5 minutes
-                    new_token = refresh_access_token(session.get("refresh_token"))
-                    if new_token:
-                        try:
-                            # Validate token response
-                            required_fields = ['access_token', 'refresh_token', 'expires_at']
-                            if not all(field in new_token for field in required_fields):
-                                raise ValueError('Invalid token response structure')
-                            
-                            session["access_token"] = new_token["access_token"]
-                            session["refresh_token"] = new_token["refresh_token"]
-                            session["expires_at"] = new_token["expires_at"]
-                            
-                            # Log successful token refresh
-                            logger.info(f'Token refreshed successfully for athlete: {session.get("athlete_id")}')
-                        except (KeyError, ValueError) as e:
-                            logger.error(f'Invalid token response format: {str(e)}')
-                            session.clear()
-                            return jsonify({
-                                "authenticated": False,
-                                "error": "Authentication error. Please log in again.",
-                                "require_login": True,
-                                "csrf_token": csrf_token
-                            })
-                    else:
-                        # Clear session if refresh fails
-                        logger.warning(f'Token refresh failed for athlete: {session.get("athlete_id")}')
-                        session.clear()
-                        return jsonify({
-                            "authenticated": False,
-                            "error": "Session expired. Please log in again.",
-                            "require_login": True,
-                            "csrf_token": csrf_token
-                        })
-                elif session["expires_at"] < current_time:  # Token already expired
-                    logger.warning(f'Token expired for athlete: {session.get("athlete_id")}')
-                    session.clear()
-                    return jsonify({
-                        "authenticated": False,
-                        "error": "Session expired. Please log in again.",
-                        "require_login": True,
-                        "csrf_token": csrf_token
-                    })
-            
-            # Return successful status with profile picture
+        csrf_token = generate_csrf_token()
+        current_time = time.time()
+        
+        # Not authenticated case
+        if "access_token" not in session:
+            logger.info("Status: No access token in session")
             return jsonify({
-                "authenticated": True,
-                "athlete_id": session.get("athlete_id"),
-                "athlete_username": session.get("athlete_username"),
-                "athlete_first_name": session.get("athlete_first_name"),
-                "athlete_last_name": session.get("athlete_last_name"),
-                "athlete_profile": session.get("athlete_profile"),  # Include profile picture URL
-                "expires_at": session.get("expires_at"),
+                "authenticated": False,
                 "csrf_token": csrf_token
             })
+
+        # Check token expiry
+        if "expires_at" not in session:
+            logger.warning("Status: Token exists but no expiry time found")
+            session.clear()
+            return jsonify({
+                "authenticated": False,
+                "error": "Invalid session state",
+                "require_login": True,
+                "csrf_token": csrf_token
+            })
+
+        token_expires_at = session["expires_at"]
+        time_until_expiry = token_expires_at - current_time
+        
+        logger.info(f"Status: Token expires in {time_until_expiry:.2f} seconds")
+
+        # Token expired
+        if time_until_expiry <= 0:
+            logger.info("Status: Token has expired, attempting refresh")
+            new_token = refresh_access_token(session.get("refresh_token"))
             
+            if not new_token:
+                logger.warning("Status: Token refresh failed")
+                session.clear()
+                return jsonify({
+                    "authenticated": False,
+                    "error": "Session expired. Please log in again.",
+                    "require_login": True,
+                    "csrf_token": csrf_token
+                })
+                
+            # Update session with new token info
+            session["access_token"] = new_token["access_token"]
+            session["refresh_token"] = new_token["refresh_token"]
+            session["expires_at"] = new_token["expires_at"]
+            logger.info("Status: Token successfully refreshed")
+            
+        # Token about to expire (within 5 minutes)
+        elif time_until_expiry < 300:
+            logger.info("Status: Token expiring soon, attempting proactive refresh")
+            new_token = refresh_access_token(session.get("refresh_token"))
+            
+            if new_token:
+                session["access_token"] = new_token["access_token"]
+                session["refresh_token"] = new_token["refresh_token"]
+                session["expires_at"] = new_token["expires_at"]
+                logger.info("Status: Token proactively refreshed")
+            else:
+                logger.warning("Status: Proactive token refresh failed, but current token still valid")
+                # Continue with current token since it's still valid
+
+        # Return successful authentication response
+        logger.info(f"Status: Returning successful auth for athlete {session.get('athlete_id')}")
         return jsonify({
-            "authenticated": False,
-            "csrf_token": generate_csrf_token()
+            "authenticated": True,
+            "athlete_id": session.get("athlete_id"),
+            "athlete_username": session.get("athlete_username"),
+            "athlete_first_name": session.get("athlete_first_name"),
+            "athlete_last_name": session.get("athlete_last_name"),
+            "athlete_profile": session.get("athlete_profile"),
+            "expires_at": session.get("expires_at"),
+            "csrf_token": csrf_token
         })
+
     except Exception as e:
-        logger.error(f'Status check error: {str(e)}')
-        session.clear()  # Clear session on unexpected errors
+        logger.error(f"Status: Unexpected error: {str(e)}")
+        session.clear()
         return jsonify({
             "authenticated": False,
             "error": "Authentication error. Please try again.",
             "require_login": True,
-            "csrf_token": generate_csrf_token()
+            "csrf_token": csrf_token
         }), 500
 
 @app.errorhandler(RateLimitExceeded)

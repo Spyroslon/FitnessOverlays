@@ -78,99 +78,29 @@ function initializeProfileDropdown() {
 async function checkAuth() {
     try {
         const response = await fetch("/status", { credentials: "include" });
-        
-        // --- Handle non-OK responses first --- 
-        if (!response.ok) {
-            // For expected auth errors (401/403), log minimally and handle redirect/return
-            if (response.status === 401 || response.status === 403) {
-                console.debug(`Auth check returned status ${response.status}. User likely not authenticated.`);
-                const publicPages = ['/', '/404', '/auth_required'];
-                if (!publicPages.includes(window.location.pathname)) {
-                    window.location.href = "/auth_required";
-                }
-                return { authenticated: false, require_login: true };
-            }
-
-            // For other non-OK statuses, it might be a server error.
-            console.warn(`Auth check received unexpected non-OK status: ${response.status}`);
-            let errorData = { error: `HTTP error! status: ${response.status}` }; // Default error
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.includes("application/json")) {
-                try {
-                    errorData = await response.json();
-                } catch (e) {
-                    console.error("Failed to parse JSON error response:", e);
-                }
-            } else {
-                 console.warn(`Non-OK response (${response.status}) Content-Type is not JSON (${contentType}). Body not parsed.`);
-            }
-            
-             // Check if the parsed error data indicates require_login
-             if (errorData?.require_login) {
-                 const publicPages = ['/', '/404', '/auth_required'];
-                 if (!publicPages.includes(window.location.pathname)) {
-                     window.location.href = "/auth_required";
-                 }
-                 return { authenticated: false, require_login: true };
-             }
-
-            // Throw an error based on parsed data or the status code
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        }
-        
-        // --- Handle OK responses --- 
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-             // This is an error because an OK response *should* be JSON
-            //  console.error(`Auth check received OK status but Content-Type is not JSON: ${contentType}`); 
-             return { authenticated: false, require_login: false, error: "Invalid response format from server." }; 
-        }
-
-        // Only parse if response is OK and Content-Type is JSON
         const data = await response.json();
-        csrfToken = data.csrf_token; // Store CSRF token globally
-        athleteId = data.athlete_id; // Store athlete ID globally
-
-        // Start token expiry check timer if expiry time is provided
-        if (data.expires_at) {
-            const nowSeconds = Date.now() / 1000;
-            const timeToExpiry = data.expires_at - nowSeconds;
-            console.log(`Token expires in ${Math.round(timeToExpiry / 60)} minutes.`);
-
-            if (timeToExpiry > 0) {
-                // Check auth status 5 minutes before expiry, but not more frequently than every minute
-                const checkInterval = Math.max(60 * 1000, (timeToExpiry - 300) * 1000); 
-                // Use setTimeout for a single check before expiry
-                setTimeout(checkAuth, checkInterval); 
-                console.log(`Scheduled re-check in ${Math.round(checkInterval / 1000 / 60)} minutes.`);
-            } else if (timeToExpiry <= 0 && data.authenticated) {
-                 // If already expired but backend said authenticated (edge case?), trigger re-auth flow
-                 console.warn("Token expired according to client clock, but server reported authenticated. Re-checking.");
-                 // We might redirect here, or just let the next action fail & trigger auth
-                 // For now, just return the potentially stale 'authenticated' status but log it.
-            }
+        
+        // Store CSRF token if provided
+        if (data.csrf_token) {
+            csrfToken = data.csrf_token;
         }
 
-        return { // Return relevant auth details
-            authenticated: data.authenticated,
-            athlete_username: data.athlete_username,
-            athlete_profile: data.athlete_profile,
-            athlete_name: data.athlete_first_name,
-            athlete_lastname: data.athlete_last_name,
-            athleteId: data.athlete_id, // Return athleteId too
-            require_login: data.require_login // Pass this through
-        };
+        // If authenticated, store athlete ID globally
+        if (data.authenticated && data.athlete_id) {
+            athleteId = data.athlete_id;
+        }
 
+        console.log("checkAuth response:", data); // Debug log
+        return data;
     } catch (error) {
-        console.error("Auth check failed:", error);
-        // Return a clearly unauthenticated state on error
-        return { authenticated: false, require_login: false, error: error.message }; 
+        console.error('checkAuth: Unexpected error:', error);
+        return { 
+            authenticated: false, 
+            require_login: true 
+        };
     }
 }
 
-// Initialize common elements listeners after the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     initializeProfileDropdown(); 
-    // Note: checkAuth() is NOT called here automatically. 
-    // Each page should call it explicitly if needed within its own DOMContentLoaded handler.
 });
