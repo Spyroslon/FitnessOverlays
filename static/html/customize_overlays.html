@@ -361,7 +361,7 @@
                     if (authStatus.athlete_profile && profileDropdownContainer && profilePicture && firstlastname) {
                         profilePicture.src = authStatus.athlete_profile;
                         profileDropdownContainer.classList.remove('hidden');
-                        firstlastname.textContent = `${authStatus.athlete_name} ${authStatus.athlete_lastname}`;
+                        firstlastname.textContent = `${authStatus.athlete_first_name} ${authStatus.athlete_last_name}`;
                     } else if (profileDropdownContainer) {
                         profileDropdownContainer.classList.add('hidden'); // Hide if no profile pic
                     }

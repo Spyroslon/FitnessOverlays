@@ -15,7 +15,8 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin {
-            to { transform: rotate(180deg); }
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
         .sync-button-wrapper {
             position: relative;
@@ -79,20 +80,26 @@
     <main class="flex-1 container mx-auto p-4">
         <div class="max-w-[900px] mx-auto space-y-4">
             <div class="space-y-2">
-                <div class="sync-button-wrapper">
+                <div class="sync-button-wrapper inline-block" id="sync-wrapper">
                     <div class="sync-progress" id="sync-progress"></div>
                     <button id="sync-button" 
                             class="px-4 py-2 bg-orange-600 text-white rounded-lg 
-                                    flex items-center gap-2 hover:bg-orange-800 transition-colors
+                                    flex items-center gap-2 transition-colors
                                     disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg id="sync-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                         <span id="sync-text">Sync Activities</span>
                     </button>
+            
+                    <!-- Sync bar directly below button, will match its width via JS -->
+                    <div id="sync-bar-container" class="bg-fitness-gray rounded-lg h-2 mt-0.5 hidden">
+                        <div id="sync-bar" class="bg-fitness-green rounded-lg h-2" style="width:0%"></div>
+                    </div>
                 </div>
-                <div class="flex flex-col text-sm text-gray-600">
-                    <div>Last Updated: <span id="last-sync">Never</span></div>
+            
+                <div class="flex flex-col text-sm text-fitness-gray">
+                    <div>Last Updated: <span id="last-sync">...</span></div>
                 </div>
             </div>
             <!-- Activities Grid -->
@@ -103,7 +110,7 @@
         <!-- Load More Button -->
         <div id="load-more-container" class="flex justify-center">
             <button id="load-more-button"
-            class="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center gap-2 hover:bg-fitness-dark-green transition-colors hidden">
+            class="px-4 py-2 bg-fitness-green text-white rounded-lg flex items-center gap-2 hover:bg-fitness-dark-green transition-colors hidden">
                 Load More
             </button>
         </div>
@@ -156,13 +163,16 @@
                 }
 
                 // Show profile picture if available
+                console.log('authStatus', authStatus)
                 const profileDropdownContainer = document.getElementById('profile-dropdown-container');
                 const profilePicture = document.getElementById('profile-picture');
                 const firstlastname = document.getElementById('first-last-Name');
                 if (authStatus.athlete_profile && profileDropdownContainer && profilePicture && firstlastname) {
                     profilePicture.src = authStatus.athlete_profile;
                     profileDropdownContainer.classList.remove('hidden');
-                    firstlastname.textContent = `${authStatus.athlete_name} ${authStatus.athlete_lastname}`;
+                    console.log('writing first name and last name')
+                    console.log(authStatus.athlete_first_name, authStatus.athlete_last_name)
+                    firstlastname.textContent = `${authStatus.athlete_first_name} ${authStatus.athlete_last_name}`;
                 }
             });
 
@@ -172,6 +182,7 @@
             let displayedCount = 0;
             const itemsPerPage = 5;
             let allActivities = [];
+            let cooldownIntervalId;
     
             function createActivityTile(activity) {
                 const tile = document.createElement('div');
@@ -190,7 +201,7 @@
                                     </div>
                                     <h3 class="font-bold text-lg leading-tight">${activity.name}</h3>
                                 </div>
-                                <div class="text-sm opacity-90">${formatDate(activity.start_date)}</div>
+                                <div class="text-sm text-end w-32 shrink-0 h-full">${formatDate(activity.start_date).replace(/, ([^,]*)$/, '<br/>$1')}</div>
                             </div>
                         </div>
                         <div class="p-4 bg-white">
@@ -256,7 +267,7 @@
                 return `${minutes}:${remainingSeconds.toString().padStart(2, '0')} /km`;
             }
     
-            function formatRelativeTime(timestamp) {
+            function formatSyncTime(timestamp) {
                 const diffSec = Math.floor((Date.now() - timestamp) / 1000);
                 if (diffSec < 60) return 'Just now';
                 const min = Math.floor(diffSec / 60);
@@ -281,21 +292,37 @@
                 loadMoreButton.classList.toggle('hidden', displayedCount >= allActivities.length);
             }
 
-            function handleSyncResponse(data) {
-                console.log('Sync response:', data);
-                if (data.activities) {
-                    allActivities = data.activities;
-                    activitiesGrid.innerHTML = '';
-                    displayedCount = 0;
-                    renderMoreActivities();
-                }
-                loadMoreButton.classList.toggle('hidden', displayedCount >= allActivities.length);
+            function syncActivities(method = 'GET') {
+                const icon = document.getElementById('sync-icon');
+                icon.classList.add('spinner');
+                fetch('/api/activities/sync', { method, credentials: 'include' })
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log('Sync response:', data);
+                        if (data.activities) {
+                            allActivities = data.activities;
+                            activitiesGrid.innerHTML = '';
+                            displayedCount = 0;
+                            renderMoreActivities();
+                        }
+                        loadMoreButton.classList.toggle('hidden', displayedCount >= allActivities.length);
+                        if (data.cooldown) {
+                            if (data.cooldown.active) {
+                                startCooldownBar(data.cooldown.seconds_remaining, data.cooldown.total_cooldown);
+                            } else {
+                                hideCooldownBar();
+                            }
+                        }
+                    })
+                .finally(() => {
+                    icon.classList.remove('spinner');
+                });
             }
     
             let lastSyncedTimestamp = null;
             function updateDisplay() {
                 if (lastSyncedTimestamp) {
-                    document.getElementById('last-sync').textContent = formatRelativeTime(lastSyncedTimestamp);
+                    document.getElementById('last-sync').textContent = formatSyncTime(lastSyncedTimestamp);
                 }
             }
 
@@ -315,13 +342,33 @@
                     });
             }
 
-            function syncActivities(method = 'GET') {
-                fetch('/api/activities/sync', { method, credentials: 'include' })
-                    .then(res => res.json())
-                    .then(handleSyncResponse);
+            function startCooldownBar(seconds_remaining, total_cooldown) {
+                clearInterval(cooldownIntervalId);
+                const container = document.getElementById('sync-bar-container');
+                const bar = document.getElementById('sync-bar');
+                let sec = seconds_remaining;
+                if (!container || !bar) return;
+                container.classList.remove('hidden');
+                const updateBar = () => {
+                    const progress = Math.round(((total_cooldown - sec) / total_cooldown) * 100);
+                    bar.style.width = `${progress}%`;
+                    if (sec <= 0) {
+                        clearInterval(cooldownIntervalId);
+                        container.classList.add('hidden');
+                    }
+                    sec--;
+                };
+                updateBar();
+                cooldownIntervalId = setInterval(updateBar, 1000);
             }
 
-            syncButton.addEventListener('click', () => syncActivities('GET'));
+            function hideCooldownBar() {
+                clearInterval(cooldownIntervalId);
+                const container = document.getElementById('sync-bar-container');
+                if (container) container.classList.add('hidden');
+            }
+
+            syncButton.addEventListener('click', () => { syncActivities('GET'); updateLastSynced(); });
             loadMoreButton.addEventListener('click', renderMoreActivities);
 
             syncActivities('GET');
