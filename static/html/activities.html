@@ -197,7 +197,7 @@
                                     </div>
                                     <h3 class="font-bold text-lg leading-tight">${activity.name}</h3>
                                 </div>
-                                <div class="text-sm text-end w-32 shrink-0 h-full">${formatDate(activity.start_date).replace(/, ([^,]*)$/, '<br/>$1')}</div>
+                                <div class="text-sm text-end w-32 shrink-0 h-full">${formatDate(activity.start_date)}</div>
                             </div>
                         </div>
                         <div class="p-4 bg-white">
@@ -231,13 +231,17 @@
         
             function formatDate(dateStr) {
                 const date = new Date(dateStr);
-                return date.toLocaleString('en-US', {
+                const formattedDate = date.toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
                 });
+                const formattedTime = date.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                });
+                return `${formattedDate}<br>${formattedTime}`;
             }
     
             function formatDuration(seconds) {
