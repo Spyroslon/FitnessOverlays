@@ -223,17 +223,42 @@ class Activities(db.Model):
     activity_id = db.Column(db.BigInteger, primary_key=True)
     athlete_id = db.Column(db.BigInteger, db.ForeignKey('athletes.athlete_id'), index=True, nullable=False)
     data = db.Column(db.JSON, nullable=False)
-    last_fetched = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    FETCH_COOLDOWN = timedelta(minutes=5)
+    last_synced = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    SYNC_COOLDOWN = timedelta(minutes=5)
 
     def __repr__(self):
         return f'<Activities {self.athlete_id}:{self.activity_id}>'
 
-    def is_fetch_allowed(self):
-        """Check if enough time has passed since last fetch"""
-        if not self.last_fetched:
+    @classmethod
+    def get_last_sync(cls, athlete_id, activity_id):
+        """Get the most recent sync time for an athlete across all pages"""
+        last_sync = cls.query.filter_by(athlete_id=athlete_id, activity_id=activity_id).order_by(cls.last_synced.desc()).first()
+        if last_sync and last_sync.last_synced:
+            # Ensure the datetime is timezone-aware
+            if last_sync.last_synced.tzinfo is None:
+                return last_sync.last_synced.replace(tzinfo=timezone.utc)
+            return last_sync.last_synced
+        return None
+
+    def is_sync_allowed(self):
+        """Check if enough time has passed since last sync for this athlete"""
+        last_sync = self.get_last_sync(self.athlete_id)
+        if not last_sync:
             return True
-        return datetime.now(timezone.utc) - self.last_fetched > self.FETCH_COOLDOWN
+        current_time = datetime.now(timezone.utc)
+        time_since_sync = current_time - last_sync
+        return time_since_sync > self.SYNC_COOLDOWN
+
+    def get_cooldown_remaining(self):
+        """Get remaining cooldown time in seconds"""
+        last_sync = self.get_last_sync(self.athlete_id)
+        if not last_sync:
+            return 0
+        current_time = datetime.now(timezone.utc)
+        time_since_sync = current_time - last_sync
+        if time_since_sync > self.SYNC_COOLDOWN:
+            return 0
+        return int((self.SYNC_COOLDOWN - time_since_sync).total_seconds())
 
 # Define the ActivityLists model
 class ActivityLists(db.Model):
@@ -354,7 +379,7 @@ def after_request(response):
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["100 per day", "30 per hour"]
+    default_limits=["10000 per day", "1000 per hour"]
 )
 
 def generate_csrf_token():
