@@ -775,15 +775,15 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@app.route('/customize_overlays')
+@app.route('/customize')
 @login_required
-def customize_overlays():
+def customize():
     """Serve the generate overlays page for authenticated users"""
     if not session.get('access_token'):
         return redirect(url_for('login'))
     
-    # Serve customize_overlays.html from static/html
-    return send_from_directory('static/html', 'customize_overlays.html')
+    # Serve customize.html from static/html
+    return send_from_directory('static/html', 'customize.html')
 
 @app.route('/activities')
 @login_required
