@@ -8,20 +8,10 @@ FitnessOverlays lets you quickly create stylish overlays from your Strava activi
 
 ---
 
-## Features
-
-* **Strava Connect**: Securely link your account with a single click.
-* **Paste & Go**: Just drop in your Strava activity link—no manual data entry.
-* **Customize Everything**: Choose which metrics to show, pick colors, adjust text size, alignment, and columns.
-* **Story-Ready**: Get transparent, high-res overlays sized perfectly for Instagram Stories.
-* **Copy or Save**: Copy overlay text, copy the cropped overlay image, or save it (mobile and desktop supported).
-
----
-
 ## How It Works
 
 1. **Connect**: Click the Strava button to securely link your account.
-2. **Input Activity**: Paste your Strava activity link or ID on the input page.
+2. **Select Activity**: Browse your activities and select the one you want to use.
 3. **Customize**: Select which stats to show, pick colors, adjust text size, alignment, and columns.
 4. **Copy & Share**: Copy the overlay image (with transparent background) or text, and share it in your Instagram Story or anywhere you like.
 

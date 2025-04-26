@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+@layer utilities {
+    .bg-fitness-radial {
+      background-image: radial-gradient(100% 50% at 50% 0%, rgba(0, 163, 255, 0.3) 0%, rgba(0, 163, 255, 0.15) 40%, rgba(0, 163, 255, 0) 100%);
+    }
+    .bg-grid-pattern {
+      background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+    }
+    .bg-grid-size {
+      background-size: 16px 16px;
+    }
+}

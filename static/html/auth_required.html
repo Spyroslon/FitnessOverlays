@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,27 +7,19 @@
     <meta name="copyright" content="FitnessOverlays - Copyright (c) 2025 Spyros Lontos">
     <meta name="license" content="AGPL-3.0">
     <title>FitnessOverlays</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="/static/css/tailwind.css" rel="stylesheet">
-    <style>
-        html {
-            scroll-behavior: smooth;
-        }
-    </style>
-    <!-- Include common JS file (optional here, but for consistency) -->
-    <script src="/static/js/common.js" defer></script> 
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+    <script src="/static/js/common.js" defer></script>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gradient-to-br from-white to-[#fc4c02]/40 min-h-screen flex flex-col" style="touch-action: manipulation;">
+<body class="font-sans antialiased text-gray-800 bg-white bg-fitness-radial min-h-screen flex flex-col flex-grow" style="touch-action: manipulation;">
 
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
-        <nav class="container mx-auto px-4 py-3 grid grid-cols-3 items-center max-w-[900px]">
-            <div class="flex justify-start min-w-[40px]"></div>
+        <nav class="container mx-auto px-2 sm:px-4 py-3 sm:grid-cols-3 items-center max-w-[800px]">
             <div class="text-center flex justify-center items-center">
-                <a href="/" class="text-3xl font-bold hover:opacity-80 transition-opacity">
-                    <span class="text-[#fc4c02]">Fitness</span><span class="text-gray-900">Overlays</span>
+                <a href="/" class="text-2xl sm:text-3xl font-bold hover:opacity-80 transition-opacity">
+                    <span class="text-fitness-green">Fitness</span><span class="text-gray-900">Overlays</span>
                 </a>
             </div>
-            <div class="flex justify-end min-w-[40px]"></div>
         </nav>
     </header>
 
@@ -39,7 +31,7 @@
             <p class="text-lg text-gray-600 mb-8">
                 Connect your Strava account to unlock all the amazing features and create your own stunning activity overlays!
             </p>
-            <a href="/" class="inline-block bg-[#fc4c02] text-white font-bold py-3 px-8 rounded-lg 
+            <a href="/" class="inline-block bg-fitness-green text-white font-bold py-3 px-8 rounded-lg 
                               transform hover:scale-110 transition-all duration-200 
                               drop-shadow-lg">
                 Back to Home
@@ -47,24 +39,43 @@
         </div>
     </main>
 
-
-    <footer class="bg-gray-900/80 backdrop-blur-sm text-gray-300 text-sm py-6 border-t border-gray-700/50">
-        <div class="container mx-auto px-4 flex flex-col items-center space-y-4">
-            <div class="text-center">
-                &copy; 2025 FitnessOverlays - Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
-                   target="_blank" 
-                   class="hover:text-strava-orange transition-colors">
-                    AGPL-3.0
-                </a>
+    <footer class="text-fitness-dark-gray">
+        <div class="mx-auto w-full max-w-screen-lg p-4 space-y-4">
+            <hr class="border-fitness-dark-gray sm:mx-auto" />
+            <div class="flex justify-center mb-4"> 
+                <span class="text-sm sm:text-center">&copy; 2025 FitnessOverlays - Licensed under 
+                    <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
+                        target="_blank" 
+                        class="transition-colors hover:underline">
+                        AGPL-3.0
+                    </a> 
+                </span>
             </div>
-            <div>
-                <img src="/static/images/api_logo_pwrdBy_strava_horiz_white.svg" 
+            <div class="flex items-center justify-center space-x-5">
+                <img src="/static/images/api_logo_pwrdBy_strava_horiz_black.svg" 
                      alt="Powered by Strava" 
-                     class="h-4 width-auto mx-auto">
+                     class="h-5 width-auto">
+                <div class="flex justify-center space-x-5">
+                    <a href="https://x.com/spyroslon"
+                        target="_blank"
+                        class="hover:text-fitness-dark-gray">
+                            <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="sr-only">X page</span>
+                    </a>
+                    <a href="https://github.com/spyroslon"
+                        target="_blank" 
+                        class="hover:text-fitness-dark-gray">
+                        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 .333A9.911 9.911 0 0 0 6.866 19.65c.5.092.678-.215.678-.477 0-.237-.01-1.017-.014-1.845-2.757.6-3.338-1.169-3.338-1.169a2.627 2.627 0 0 0-1.1-1.451c-.9-.615.07-.6.07-.6a2.084 2.084 0 0 1 1.518 1.021 2.11 2.11 0 0 0 2.884.823c.044-.503.268-.973.63-1.325-2.2-.25-4.516-1.1-4.516-4.9A3.832 3.832 0 0 1 4.7 7.068a3.56 3.56 0 0 1 .095-2.623s.832-.266 2.726 1.016a9.409 9.409 0 0 1 4.962 0c1.89-1.282 2.717-1.016 2.717-1.016.366.83.402 1.768.1 2.623a3.827 3.827 0 0 1 1.02 2.659c0 3.807-2.319 4.644-4.525 4.889a2.366 2.366 0 0 1 .673 1.834c0 1.326-.012 2.394-.012 2.72 0 .263.18.572.681.475A9.911 9.911 0 0 0 10 .333Z" clip-rule="evenodd"/>
+                        </svg>
+                        <span class="sr-only">GitHub account</span>
+                    </a>
+                </div>
             </div>
         </div>
     </footer>
-
 
 </body>
 </html>

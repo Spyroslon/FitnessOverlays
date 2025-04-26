@@ -1,7 +1,7 @@
 # FitnessOverlays - Copyright (c) 2025 Spyros Lontos
 # Licensed under AGPL-3.0
 
-from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response, send_file
+from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response
 import os
 import time
 import requests
@@ -15,7 +15,6 @@ from requests_oauthlib import OAuth2Session
 from dotenv import load_dotenv
 from flask_limiter.errors import RateLimitExceeded
 from werkzeug.utils import secure_filename, safe_join
-import re
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone, timedelta
@@ -23,9 +22,6 @@ from datetime import datetime, timezone, timedelta
 # Add this log line right at the top
 logging.basicConfig(level=logging.INFO) # Basic config if logger not set up yet
 logging.info("--- server.py script started execution ---")
-
-# Load environment variables from .env file
-load_dotenv()
 
 # --- Environment Variable Validation ---
 def check_env_vars():
@@ -42,9 +38,10 @@ def check_env_vars():
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     if missing_vars:
         raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
+    logging.info('All required environment variables are set.')
 
-check_env_vars() # Execute validation immediately
-# --- End Validation ---
+# Load environment variables from .env file
+load_dotenv()
 
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
@@ -72,9 +69,10 @@ CORS(app, supports_credentials=True)
 # Use a consistent secret key from environment variables
 app.secret_key = os.getenv("SECRET_KEY")
 if not app.secret_key:
-    # Optionally, log an error or provide a default for local dev (not recommended for prod)
-    # For production, it's better to fail fast if the key is missing.
     raise ValueError("SECRET_KEY environment variable not set. Cannot run application securely.")
+
+# Validation of environment variables
+check_env_vars()
 
 # Configure logging
 if not os.path.exists('logs'):
@@ -191,17 +189,120 @@ if ENVIRONMENT != "prod":
     )
 db = SQLAlchemy(app)
 
-# Define the ActivityCache model
-class ActivityCache(db.Model):
-    activity_id = db.Column(db.BigInteger, primary_key=True)
-    athlete_id = db.Column(db.BigInteger, index=True, nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    fetched_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+# Define the Athletes model
+class Athletes(db.Model):
+    athlete_id = db.Column(db.BigInteger, primary_key=True)  # Primary key
+    access_token = db.Column(db.String(100), nullable=False)
+    refresh_token = db.Column(db.String(100), nullable=False)
+    expires_at = db.Column(db.BigInteger, nullable=False)  # Epoch timestamp
+    athlete_username = db.Column(db.String(100))  # Optional
+    athlete_first_name = db.Column(db.String(100))  # Optional
+    athlete_last_name = db.Column(db.String(100))  # Optional
+    athlete_profile = db.Column(db.String(255))  # Optional - URL to profile picture
+    first_authentication = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    last_authentication = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
-        return f'<ActivityCache {self.athlete_id}:{self.activity_id}>'
+        return f'<Athletes {self.athlete_id}>'
 
-# Create database tables if they don't exist
+    def update_from_token(self, token_data, athlete_data=None):
+        """Update athlete data from token response and athlete info"""
+        self.access_token = token_data['access_token']
+        self.refresh_token = token_data['refresh_token']
+        self.expires_at = token_data['expires_at']
+        self.last_authentication = datetime.now(timezone.utc)
+        
+        if athlete_data:
+            self.athlete_username = athlete_data.get('username')
+            self.athlete_first_name = athlete_data.get('firstname')
+            self.athlete_last_name = athlete_data.get('lastname')
+            self.athlete_profile = athlete_data.get('profile')
+
+# Define the Activities model
+class Activities(db.Model):
+    activity_id = db.Column(db.BigInteger, primary_key=True)
+    athlete_id = db.Column(db.BigInteger, db.ForeignKey('athletes.athlete_id'), index=True, nullable=False)
+    data = db.Column(db.JSON, nullable=False)
+    last_synced = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    SYNC_COOLDOWN = timedelta(minutes=5)
+
+    def __repr__(self):
+        return f'<Activities {self.athlete_id}:{self.activity_id}>'
+
+    @classmethod
+    def get_last_sync(cls, athlete_id, activity_id):
+        """Get the most recent sync time for an athlete across all pages"""
+        last_sync = cls.query.filter_by(athlete_id=athlete_id, activity_id=activity_id).order_by(cls.last_synced.desc()).first()
+        if last_sync and last_sync.last_synced:
+            # Ensure the datetime is timezone-aware
+            if last_sync.last_synced.tzinfo is None:
+                return last_sync.last_synced.replace(tzinfo=timezone.utc)
+            return last_sync.last_synced
+        return None
+
+    def is_sync_allowed(self):
+        """Check if enough time has passed since last sync for this athlete"""
+        last_sync = self.get_last_sync(self.athlete_id)
+        if not last_sync:
+            return True
+        current_time = datetime.now(timezone.utc)
+        time_since_sync = current_time - last_sync
+        return time_since_sync > self.SYNC_COOLDOWN
+
+    def get_cooldown_remaining(self):
+        """Get remaining cooldown time in seconds"""
+        last_sync = self.get_last_sync(self.athlete_id)
+        if not last_sync:
+            return 0
+        current_time = datetime.now(timezone.utc)
+        time_since_sync = current_time - last_sync
+        if time_since_sync > self.SYNC_COOLDOWN:
+            return 0
+        return int((self.SYNC_COOLDOWN - time_since_sync).total_seconds())
+
+# Define the ActivityLists model
+class ActivityLists(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    athlete_id = db.Column(db.BigInteger, db.ForeignKey('athletes.athlete_id'), index=True, nullable=False)
+    data = db.Column(db.JSON, nullable=False)
+    last_synced = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    page = db.Column(db.Integer, nullable=False, default=1)
+    per_page = db.Column(db.Integer, nullable=False, default=30)
+    SYNC_COOLDOWN = timedelta(minutes=1)
+    ITEMS_PER_PAGE = 30
+
+    @classmethod
+    def get_last_sync(cls, athlete_id):
+        """Get the most recent sync time for an athlete across all pages"""
+        last_sync = cls.query.filter_by(athlete_id=athlete_id).order_by(cls.last_synced.desc()).first()
+        if last_sync and last_sync.last_synced:
+            # Ensure the datetime is timezone-aware
+            if last_sync.last_synced.tzinfo is None:
+                return last_sync.last_synced.replace(tzinfo=timezone.utc)
+            return last_sync.last_synced
+        return None
+
+    def is_sync_allowed(self):
+        """Check if enough time has passed since last sync for this athlete"""
+        last_sync = self.get_last_sync(self.athlete_id)
+        if not last_sync:
+            return True
+        current_time = datetime.now(timezone.utc)
+        time_since_sync = current_time - last_sync
+        return time_since_sync > self.SYNC_COOLDOWN
+
+    def get_cooldown_remaining(self):
+        """Get remaining cooldown time in seconds"""
+        last_sync = self.get_last_sync(self.athlete_id)
+        if not last_sync:
+            return 0
+        current_time = datetime.now(timezone.utc)
+        time_since_sync = current_time - last_sync
+        if time_since_sync > self.SYNC_COOLDOWN:
+            return 0
+        return int((self.SYNC_COOLDOWN - time_since_sync).total_seconds())
+
+# Create database tables
 with app.app_context():
     db.create_all()
 
@@ -257,29 +358,20 @@ def add_security_headers(response: Response) -> Response:
     response.headers.pop('Server', None)
     return response
 
-def add_cache_control_headers(response):
-    """Add cache control headers to prevent caching of sensitive data"""
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
-
-# Update app.after_request to include cache control
 @app.after_request
 def after_request(response):
     """Apply security and cache control headers to all responses"""
+    # Apply security headers to all responses
     response = add_security_headers(response)
     
-    # Add cache control headers to sensitive endpoints
-    sensitive_endpoints = {'/status', '/fetch_activity', '/activities', '/callback', '/login'}
-    if any(request.path.startswith(endpoint) for endpoint in sensitive_endpoints):
-        response = add_cache_control_headers(response)
-    elif request.path.startswith('/static/'):
-        # Allow caching for static assets with 1 hour max age
+    # Simple and clear caching rules
+    if request.path.startswith('/static/'):
+        # Cache static assets for 1 hour
         response.headers['Cache-Control'] = 'public, max-age=3600'
     else:
-        # Default no-cache policy for other endpoints
-        response.headers['Cache-Control'] = 'no-store, max-age=0'
+        # No caching for all other routes (API endpoints, dynamic pages)
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
     
     return response
 
@@ -287,7 +379,7 @@ def after_request(response):
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["100 per day", "30 per hour"]
+    default_limits=["10000 per day", "1000 per hour"]
 )
 
 def generate_csrf_token():
@@ -307,9 +399,16 @@ def validate_csrf_token():
 
 @app.before_request
 def csrf_protect():
-    """Protect all state-changing requests with CSRF validation"""
-    if not validate_csrf_token():
-        return jsonify({"error": "Invalid CSRF token"}), 403
+    """Protect state-changing requests with CSRF validation"""
+    # Skip CSRF check for certain API endpoints that handle their own authentication
+    if request.path == '/api/activities/sync':
+        return
+        
+    if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
+        token = request.headers.get('X-CSRF-Token')
+        if not token or token != session.get('csrf_token'):
+            logger.warning(f'CSRF validation failed - IP: {get_remote_address()}')
+            return jsonify({"error": "Invalid CSRF token"}), 403
 
 @app.route('/login')
 def login():
@@ -317,11 +416,11 @@ def login():
     try:
         # Generate the dynamic callback URL
         callback_url = url_for('callback', _external=True)
-        logger.info(f"Generated dynamic callback URL: {callback_url}") # Log the generated URL for debugging
+        logger.info(f"Generated dynamic callback URL: {callback_url}")
 
         oauth = OAuth2Session(
             CLIENT_ID,
-            redirect_uri=callback_url, # Use the dynamic URL
+            redirect_uri=callback_url,
             scope=["activity:read_all"]
         )
         authorization_url, state = oauth.authorization_url(AUTH_BASE_URL)
@@ -335,39 +434,71 @@ def login():
 def callback():
     """Handle the OAuth callback from Strava"""
     try:
+        # Check if user denied authorization
+        if 'error' in request.args:
+            logger.info(f"User denied Strava authorization - IP: {get_remote_address()}")
+            return redirect('/')
+
         # Generate the dynamic callback URL consistently
         callback_url = url_for('callback', _external=True)
-        logger.info(f"Using dynamic callback URL in callback handler: {callback_url}") # Log for debugging
+        logger.info(f"Using dynamic callback URL in callback handler: {callback_url}") 
 
         oauth = OAuth2Session(
             CLIENT_ID,
             state=session.get('oauth_state'),
-            redirect_uri=callback_url # Use the dynamic URL here as well
+            redirect_uri=callback_url
         )
         token = oauth.fetch_token(
             TOKEN_URL,
             client_secret=CLIENT_SECRET,
-            authorization_response=request.url, # Keep using request.url here, it contains the code from Strava
+            authorization_response=request.url,
             include_client_id=True
         )
         
-        # Store athlete info in session
-        athlete = token.get('athlete', {})
-        session['athlete_id'] = athlete.get('id')
-        session['athlete_username'] = athlete.get('username')
-        session['athlete_first_name'] = athlete.get('firstname')
-        session['athlete_last_name'] = athlete.get('lastname')
-        session['athlete_profile'] = athlete.get('profile_medium')  # Store profile picture URL
-        session['access_token'] = token['access_token']
-        session['refresh_token'] = token['refresh_token']
-        session['expires_at'] = token['expires_at']
+        # Get athlete info from token response
+        athlete_data = token.get('athlete', {})
+        athlete_id = athlete_data.get('id')
+        
+        if not athlete_id:
+            logger.error('No athlete ID in token response')
+            return redirect('/')
+            
+        try:
+            # Find existing athlete or create new one
+            athlete = db.session.get(Athletes, athlete_id)
+            if not athlete:
+                athlete = Athletes(athlete_id=athlete_id)
+                db.session.add(athlete)
+                logger.info(f'Creating new athlete record for ID: {athlete_id}')
+            else:
+                logger.info(f'Updating existing athlete record for ID: {athlete_id}')
+            
+            # Update athlete data with new tokens and info
+            athlete.update_from_token(token, athlete_data)
+            db.session.commit()
+            logger.info(f'Successfully updated athlete data in database for ID: {athlete_id}')
+            
+            # Store athlete info in session
+            session['athlete_id'] = athlete_id
+            session['athlete_username'] = athlete_data.get('username')
+            session['athlete_first_name'] = athlete_data.get('firstname')
+            session['athlete_last_name'] = athlete_data.get('lastname')
+            session['athlete_profile'] = athlete_data.get('profile_medium')
+            session['access_token'] = token['access_token']
+            session['refresh_token'] = token['refresh_token']
+            session['expires_at'] = token['expires_at']
+            
+        except Exception as db_error:
+            db.session.rollback()
+            logger.error(f'Database error during callback: {str(db_error)}')
+            return redirect('/')
         
         return redirect('/')
     except Exception as e:
         logger.error(f'OAuth callback error details: {str(e)} - IP: {get_remote_address()}')
-        return jsonify({"error": "Authentication failed. Please try again."}), 400
+        return redirect('/')
 
-@app.route('/logout', methods=['POST'])  # Add POST method
+@app.route('/logout', methods=['POST'])
 def logout():
     """Clear the session data"""
     session.clear()
@@ -380,19 +511,23 @@ def home():
 
 @app.before_request
 def require_authentication():
-    """Serve the authentication required page for unauthenticated users."""
+    """Handle authentication requirements for different types of requests."""
     # Allow requests to static files, login, callback, and root path
     if request.path.startswith('/static/') or request.path in ['/login', '/callback', '/']:
         return
 
-    if 'athlete_id' not in session:
-        # Serve auth_required.html from static/html
+    # For API endpoints, return JSON response when not authenticated
+    if request.path.startswith('/api/') or request.path == '/status':
+        if 'athlete_id' not in session:
+            return jsonify({
+                "authenticated": False,
+                "require_login": True,
+                "error": "Authentication required"
+            })
+    elif 'athlete_id' not in session:
         return send_from_directory('static/html', 'auth_required.html')
 
-ALLOWED_EXTENSIONS = {
-    '.css', '.js', '.png', '.jpg', '.jpeg', '.gif', 
-    '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot'
-}
+ALLOWED_EXTENSIONS = {'.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico'}
 
 @app.route('/static/<path:path>')
 def serve_static(path):
@@ -428,372 +563,108 @@ def serve_static(path):
         logger.error(f'Error serving static file: {str(e)} - IP: {get_remote_address()} - Path: {path}')
         return jsonify({"error": "Error accessing file"}), 500
 
-def save_or_update_activity(athlete_id, activity_id, data):
-    """Save or update activity data in the database"""
-    try:
-        existing_activity = db.session.get(ActivityCache, activity_id) # Use db.session.get for primary key lookup
-        if existing_activity:
-            # Verify athlete ID match before updating
-            if existing_activity.athlete_id != athlete_id:
-                 logger.warning(f'Attempt to update activity {activity_id} belonging to athlete {existing_activity.athlete_id} by athlete {athlete_id}')
-                 return False, jsonify({"error": "Unauthorized access to update activity"}), 403
-
-            existing_activity.data = data
-            existing_activity.fetched_at = datetime.now(timezone.utc)
-            db.session.commit()
-            logger.info(f'Updated activity {activity_id} for athlete {athlete_id} in DB')
-            return True, jsonify(data), 200
-        else:
-            new_activity = ActivityCache(
-                athlete_id=athlete_id,
-                activity_id=activity_id,
-                data=data
-            )
-            db.session.add(new_activity)
-            db.session.commit()
-            logger.info(f'Saved new activity {activity_id} for athlete {athlete_id} to DB')
-            return True, jsonify(data), 200
-    except Exception as e:
-        db.session.rollback() # Rollback on error
-        logger.error(f"Database error saving/updating activity {activity_id} for athlete {athlete_id}: {str(e)}")
-        return False, jsonify({"error": "Database error saving activity data"}), 500
-
-def resolve_strava_link(link):
-    """Resolve a Strava deep link to get the actual activity ID"""
-    try:
-        # Clean the input
-        link = link.strip()
-        
-        # First check if it's already a direct link
-        direct_pattern = r'^(?:https?:\/\/)?(?:www\.)?strava\.com\/activities\/(\d+)(?:\/.*)?$'
-        direct_match = re.match(direct_pattern, link)
-        if direct_match:
-            return direct_match.group(1)
-        
-        # Check if it's a deep link
-        deep_link_pattern = r'^(?:https?:\/\/)?strava\.app\.link\/[A-Za-z0-9_-]+$'
-        if not re.match(deep_link_pattern, link):
-            return None
-
-        # First request with mobile User-Agent to get redirect
-        mobile_headers = {
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1'
-        }
-            
-        response = requests.head(
-            link,
-            allow_redirects=True,
-            timeout=10,
-            headers=mobile_headers,
-            verify=True
-        )
-        
-        # Get the final URL after redirects
-        final_url = response.url
-        logger.info(f'Resolved deep link to: {final_url}')
-        
-        # Try to match activity ID from various URL patterns
-        patterns = [
-            r'activities/(\d+)',
-            r'activity/(\d+)',
-            r'workout/(\d+)'
-        ]
-        
-        for pattern in patterns:
-            match = re.search(pattern, final_url)
-            if match:
-                activity_id = match.group(1)
-                is_valid, error = validate_activity_id(activity_id)
-                if is_valid:
-                    return activity_id
-        
-        return None
-        
-    except requests.RequestException as e:
-        logger.error(f'Failed to resolve deep link: {str(e)}')
-        return None
-    except Exception as e:
-        logger.error(f'Unexpected error resolving deep link: {str(e)}')
-        return None
-
-@app.route('/fetch_activity/<athlete_id>/<path:activity_input>', methods=['POST'])
-@limiter.limit("5 per minute;20 per hour;100 per day")
-def get_activity(athlete_id, activity_input):
-    """Fetch activity from DB or Strava, with validation"""
-    if 'athlete_id' not in session:
-        logger.warning(f'Unauthenticated access attempt - URL athlete {athlete_id}, session athlete {session_athlete_id} - IP: {get_remote_address()}')
-        return jsonify({"error": "Unauthorized access"}), 403
-
-    try:
-        # Validate athlete_id from URL against session
-        session_athlete_id = session['athlete_id']
-        if int(athlete_id) != session_athlete_id:
-            logger.warning(f'Unauthorized athlete access attempt - URL athlete {athlete_id}, session athlete {session_athlete_id} - IP: {get_remote_address()}')
-            return jsonify({"error": "Unauthorized access"}), 403
-    except (ValueError, KeyError):
-        return jsonify({"error": "Invalid athlete ID or session"}), 400
-
-    final_activity_id = None
-    is_link = False
-
-    # Resolve link if necessary
-    deep_link_pattern = r'^(?:https?:\/\/)?strava\.app\.link\/[A-Za-z0-9_-]+$'
-    direct_link_pattern = r'^(?:https?:\/\/)?(?:www\.)?strava\.com\/activities\/\d+'
-    if re.match(deep_link_pattern, activity_input) or re.match(direct_link_pattern, activity_input):
-        is_link = True
-        resolved_id = resolve_strava_link(activity_input)
-        if not resolved_id:
-            logger.warning(f'Could not resolve Strava link: {activity_input}')
-            return jsonify({"error": "Could not resolve Strava link"}), 400
-        final_activity_id = resolved_id
-        logger.info(f'Resolved link {activity_input} to activity ID: {final_activity_id}')
-    else:
-        # Assume it's a direct ID
-        final_activity_id = activity_input
-
-    # Validate the final activity ID
-    is_valid, error = validate_activity_id(final_activity_id)
-    if not is_valid:
-        return jsonify({"error": error or "Invalid activity ID"}), 400
-
-    try:
-        # 1. Check Database Cache
-        # Convert final_activity_id to int for DB lookup
-        try:
-            db_activity_id = int(final_activity_id)
-        except (ValueError, TypeError):
-             # This should have been caught by validate_activity_id, but belts and braces
-            return jsonify({"error": "Invalid activity ID format for lookup"}), 400
-            
-        cached_activity = db.session.get(ActivityCache, db_activity_id)
-        if cached_activity:
-            # Verify athlete ID match
-            if cached_activity.athlete_id != session_athlete_id:
-                logger.warning(f'Unauthorized DB access attempt - Activity {final_activity_id} belongs to {cached_activity.athlete_id}, requested by {session_athlete_id}')
-                return jsonify({"error": "Unauthorized access"}), 403
-            
-            # Optional: Add cache expiry logic here if needed
-            # e.g., if datetime.now(timezone.utc) - cached_activity.fetched_at > timedelta(hours=1): fetch new
-            
-            logger.info(f"Serving activity {final_activity_id} for athlete {session_athlete_id} from DB cache.")
-            
-            # Check if the cached data indicates 'not found'
-            cached_data = cached_activity.data
-            if isinstance(cached_data, dict) and cached_data.get('error') == 'not_found':
-                logger.info(f"Activity {final_activity_id} previously determined as not found (cached).")
-                return jsonify({"error": "Activity not found (cached)"}), 404
-                
-            return jsonify(cached_data)
-
-        # 2. If not in cache or expired, fetch from Strava
-        logger.info(f"Activity {final_activity_id} for athlete {session_athlete_id} not in cache, fetching from Strava.")
-        return fetch_activity_from_strava(final_activity_id) # Call the renamed function
-
-    except Exception as e:
-        logger.error(f'Activity lookup/fetch error: {str(e)} - IP: {get_remote_address()} - Activity Input: {activity_input}, Resolved ID: {final_activity_id}')
-        return jsonify({"error": "Unable to process request. Please try again later."}), 500
-
-def validate_activity_id(activity_id):
-    """
-    Validate Strava activity ID.
-    Returns (is_valid: bool, error_message: str)
-    """
-    print('INSIDE THE validate_activity_id FUNCTION')
-    if not activity_id:
-        return False, "Activity ID is required"
-    
-    print(f'activity_id: {activity_id}')
-    try:
-        # Convert to integer
-        activity_id = int(activity_id)
-        
-        # Check if positive and within reasonable bounds
-        if activity_id <= 0:
-            return False, "Activity ID must be positive"
-        
-        # Add strict regex validation for activity ID format
-        if not re.match(r'^[1-9]\d{0,19}$', str(activity_id)):
-            return False, "Invalid activity ID format"
-            
-        return True, None
-        
-    except (ValueError, TypeError):
-        return False, "Activity ID must be a number"
-
-# Rename original fetch_activity to avoid conflict and clarify purpose
-def fetch_activity_from_strava(activity_id):
-    """Fetch Strava activity data from API and save to DB"""
-    if 'access_token' not in session or 'athlete_id' not in session:
-        # This check is technically redundant due to get_activity caller, but good for safety
-        logger.warning(f'Unauthenticated Strava fetch attempt - IP: {get_remote_address()} - Activity: {activity_id}')
-        return jsonify({"error": "Not authenticated"}), 401
-
-    # Session check should happen before this function is called, but double check anyway
-    session_athlete_id = session['athlete_id']
-
-    # Check token expiry before making request
-    if "expires_at" in session and time.time() > session["expires_at"]:
-        logger.info(f'Session expired before Strava fetch - Athlete ID: {session_athlete_id} - IP: {get_remote_address()}')
-        session.clear()
-        return jsonify({
-            "error": "Session expired. Please log in again.",
-            "require_login": True
-        }), 401
-
-    # Activity ID validation already done by caller (get_activity)
-
-    try:
-        response = requests.get(
-            f"https://www.strava.com/api/v3/activities/{activity_id}",
-            headers={"Authorization": f"Bearer {session['access_token']}"},
-            timeout=15 # Added timeout
-        )
-
-        # Handle error cases before attempting JSON decode
-        if not response.ok:
-            error_message = f"Failed to load activity {activity_id}. Status: {response.status_code}"
-            # Specific handling for 404 Not Found to cache it
-            if response.status_code == 404:
-                logger.warning(f"Activity {activity_id} not found on Strava for athlete {session_athlete_id}.")
-                not_found_data = {"error": "not_found", "status": 404}
-                # Save the 'not found' status to the DB
-                save_or_update_activity(session_athlete_id, int(activity_id), not_found_data)
-                return jsonify({"error": "Activity not found"}), 404
-                
-            # Handle other errors (don't cache these specific errors unless desired)
-            try:
-                # Try to get more specific error from Strava
-                strava_error = response.json().get('message', 'Unknown Strava API error')
-                error_message += f". Reason: {strava_error}"
-            except ValueError: # Handle cases where response is not JSON
-                error_message += f". Response: {response.text[:100]}" # Log part of the response
-            
-            logger.error(error_message)
-            # Don't save API errors to DB unless specifically needed. Return error directly.
-            status_code = response.status_code if response.status_code in [401, 403, 404] else 500
-            return jsonify({"error": f"Failed to load activity from Strava (Status: {response.status_code})."}), status_code
-
-        response_json = response.json()
-
-        # Verify activity belongs to authenticated user *before saving*
-        if response_json.get('athlete', {}).get('id') != session_athlete_id:
-            logger.warning(f'Unauthorized Strava activity access - IP: {get_remote_address()} - ' \
-                         f'Athlete: {session_athlete_id} - Activity: {activity_id}')
-            return jsonify({"error": "Unauthorized access to this Strava activity"}), 403
-
-        # Save successful response to DB
-        success, result, status = save_or_update_activity(session_athlete_id, int(activity_id), response_json)
-        if not success:
-             logger.error(f"Failed to save activity {activity_id} to DB after fetching from Strava.")
-             # Return the fetched data even if DB save failed, or return the DB error?
-             # Returning the fetched data might be better UX for this request.
-             return jsonify(response_json), 200 # Return fetched data, maybe log the DB error more prominently
-        
-        return result, status # Return from save_or_update_activity
-
-    except requests.exceptions.Timeout:
-        logger.error(f'Strava API request timed out for activity {activity_id}')
-        return jsonify({"error": "Strava API request timed out. Please try again."}), 504
-    except requests.exceptions.RequestException as e:
-        logger.error(f'Strava API network error: {str(e)} - IP: {get_remote_address()} - Activity: {activity_id}')
-        return jsonify({"error": "Unable to connect to Strava API. Please try again later."}), 503
-    except Exception as e: # Catch broader exceptions during fetch/save
-         logger.error(f'Unexpected error during Strava fetch/DB save for activity {activity_id}: {str(e)}')
-         return jsonify({"error": "An unexpected error occurred."}), 500
-
 @app.route("/status")
 def status():
-    """Check if user is authenticated, provide CSRF token and handle token refresh"""
-    logger.info(f"Status endpoint called - Session: {session}")
+    """Check if user is authenticated and handle token refresh"""
+    logger.info(f"Status endpoint called - IP: {get_remote_address()}")
+    
     try:
-        if "access_token" in session:
-            csrf_token = generate_csrf_token()
-            
-            # Check if token needs refresh
-            if "expires_at" in session:
-                current_time = time.time()
-                # Add 5 minute buffer to token expiry
-                if session["expires_at"] - current_time < 300:  # 5 minutes
-                    new_token = refresh_access_token(session.get("refresh_token"))
-                    if new_token:
-                        try:
-                            # Validate token response
-                            required_fields = ['access_token', 'refresh_token', 'expires_at']
-                            if not all(field in new_token for field in required_fields):
-                                raise ValueError('Invalid token response structure')
-                            
-                            session["access_token"] = new_token["access_token"]
-                            session["refresh_token"] = new_token["refresh_token"]
-                            session["expires_at"] = new_token["expires_at"]
-                            
-                            # Log successful token refresh
-                            logger.info(f'Token refreshed successfully for athlete: {session.get("athlete_id")}')
-                        except (KeyError, ValueError) as e:
-                            logger.error(f'Invalid token response format: {str(e)}')
-                            session.clear()
-                            return jsonify({
-                                "authenticated": False,
-                                "error": "Authentication error. Please log in again.",
-                                "require_login": True,
-                                "csrf_token": csrf_token
-                            })
-                    else:
-                        # Clear session if refresh fails
-                        logger.warning(f'Token refresh failed for athlete: {session.get("athlete_id")}')
-                        session.clear()
-                        return jsonify({
-                            "authenticated": False,
-                            "error": "Session expired. Please log in again.",
-                            "require_login": True,
-                            "csrf_token": csrf_token
-                        })
-                elif session["expires_at"] < current_time:  # Token already expired
-                    logger.warning(f'Token expired for athlete: {session.get("athlete_id")}')
-                    session.clear()
-                    return jsonify({
-                        "authenticated": False,
-                        "error": "Session expired. Please log in again.",
-                        "require_login": True,
-                        "csrf_token": csrf_token
-                    })
-            
-            # Return successful status with profile picture
+        csrf_token = generate_csrf_token()
+        current_time = time.time()
+        
+        # Not authenticated case
+        if "access_token" not in session:
+            logger.info("Status: No access token in session")
             return jsonify({
-                "authenticated": True,
-                "athlete_id": session.get("athlete_id"),
-                "athlete_username": session.get("athlete_username"),
-                "athlete_first_name": session.get("athlete_first_name"),
-                "athlete_last_name": session.get("athlete_last_name"),
-                "athlete_profile": session.get("athlete_profile"),  # Include profile picture URL
-                "expires_at": session.get("expires_at"),
+                "authenticated": False,
                 "csrf_token": csrf_token
             })
+
+        # Check token expiry
+        if "expires_at" not in session:
+            logger.warning("Status: Token exists but no expiry time found")
+            session.clear()
+            return jsonify({
+                "authenticated": False,
+                "error": "Invalid session state",
+                "require_login": True,
+                "csrf_token": csrf_token
+            })
+
+        token_expires_at = session["expires_at"]
+        time_until_expiry = token_expires_at - current_time
+        
+        logger.info(f"Status: Token expires in {time_until_expiry:.2f} seconds")
+
+        # Token expired
+        if time_until_expiry <= 0:
+            logger.info("Status: Token has expired, attempting refresh")
+            new_token = refresh_access_token(session.get("refresh_token"))
             
+            if not new_token:
+                logger.warning("Status: Token refresh failed")
+                session.clear()
+                return jsonify({
+                    "authenticated": False,
+                    "error": "Session expired. Please log in again.",
+                    "require_login": True,
+                    "csrf_token": csrf_token
+                })
+                
+            # Update session with new token info
+            session["access_token"] = new_token["access_token"]
+            session["refresh_token"] = new_token["refresh_token"]
+            session["expires_at"] = new_token["expires_at"]
+            logger.info("Status: Token successfully refreshed")
+            
+        # Token about to expire (within 5 minutes)
+        elif time_until_expiry < 300:
+            logger.info("Status: Token expiring soon, attempting proactive refresh")
+            new_token = refresh_access_token(session.get("refresh_token"))
+            
+            if new_token:
+                session["access_token"] = new_token["access_token"]
+                session["refresh_token"] = new_token["refresh_token"]
+                session["expires_at"] = new_token["expires_at"]
+                logger.info("Status: Token proactively refreshed")
+            else:
+                logger.warning("Status: Proactive token refresh failed, but current token still valid")
+                # Continue with current token since it's still valid
+
+        # Return successful authentication response
+        logger.info(f"Status: Returning successful auth for athlete {session.get('athlete_id')}")
         return jsonify({
-            "authenticated": False,
-            "csrf_token": generate_csrf_token()
+            "authenticated": True,
+            "athlete_id": session.get("athlete_id"),
+            "athlete_username": session.get("athlete_username"),
+            "athlete_first_name": session.get("athlete_first_name"),
+            "athlete_last_name": session.get("athlete_last_name"),
+            "athlete_profile": session.get("athlete_profile"),
+            "expires_at": session.get("expires_at"),
+            "csrf_token": csrf_token
         })
+
     except Exception as e:
-        logger.error(f'Status check error: {str(e)}')
-        session.clear()  # Clear session on unexpected errors
+        logger.error(f"Status: Unexpected error: {str(e)}")
+        session.clear()
         return jsonify({
             "authenticated": False,
             "error": "Authentication error. Please try again.",
             "require_login": True,
-            "csrf_token": generate_csrf_token()
+            "csrf_token": csrf_token
         }), 500
 
 @app.errorhandler(RateLimitExceeded)
 def handle_ratelimit_error(e):
     logger.warning(f'Rate limit exceeded - IP: {get_remote_address()} - Endpoint: {request.path}')
-    return jsonify({
-        "error": "Rate limit exceeded. Please wait before trying again.",
-        "status": 429
-    }), 429
+    # Return JSON response only for API endpoints
+    if request.path.startswith('/api/'):
+        return jsonify({
+            "error": "Rate limit exceeded. Please wait before trying again.",
+            "status": 429
+        }), 429
+    # For non-API endpoints, return empty response so user stays on current page
+    return "", 429
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -805,6 +676,22 @@ def refresh_access_token(refresh_token):
     """Refresh the access token with robust error handling"""
     if not refresh_token:
         logger.warning('Refresh token missing during token refresh attempt')
+        return None
+        
+    # Get athlete from database using session athlete_id
+    athlete_id = session.get('athlete_id')
+    if not athlete_id:
+        logger.error('No athlete_id in session during token refresh')
+        return None
+
+    athlete = db.session.get(Athletes, athlete_id)
+    if not athlete:
+        logger.error(f'Athlete {athlete_id} not found in database during token refresh')
+        return None
+
+    # Verify stored refresh token matches the one provided
+    if athlete.refresh_token != refresh_token:
+        logger.error('Refresh token mismatch between session and database')
         return None
 
     try:
@@ -851,7 +738,17 @@ def refresh_access_token(refresh_token):
             if not isinstance(token_data['expires_at'], (int, float)):
                 logger.error('Invalid expiry timestamp received')
                 return None
-                
+
+            # Update athlete record in database
+            try:
+                athlete.update_from_token(token_data)
+                db.session.commit()
+                logger.info(f'Token refreshed and updated in database for athlete {athlete_id}')
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f'Failed to update refreshed token in database: {str(e)}')
+                return None
+            
             return token_data
             
         except (ValueError, TypeError, KeyError) as e:
@@ -878,24 +775,132 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@app.route('/input_activity')
+@app.route('/customize')
 @login_required
-def input_activity():
-    """Serve the page for inputting Strava activity ID/URL"""
-    # Serve input_activity.html from static/html
-    return send_from_directory('static/html', 'input_activity.html')
-
-@app.route('/generate_overlays')
-@login_required
-def generate_overlays():
+def customize():
     """Serve the generate overlays page for authenticated users"""
     if not session.get('access_token'):
         return redirect(url_for('login'))
     
-    # Serve generate_overlays.html from static/html
-    return send_from_directory('static/html', 'generate_overlays.html')
+    # Serve customize.html from static/html
+    return send_from_directory('static/html', 'customize.html')
+
+@app.route('/activities')
+@login_required
+def activities():
+    """Serve the activities page for authenticated users"""
+    if not session.get('access_token'):
+        return redirect(url_for('login'))
+    
+    # Serve activities.html from static/html
+    return send_from_directory('static/html', 'activities.html')
+
+def create_sync_response(activities, page, per_page, sync_log, seconds_remaining, warning=None, using_cached=False):
+    """Helper function to create a consistent sync response"""
+    response = {
+        "activities": activities,
+        "pagination": {"page": page, "per_page": per_page},
+        "cooldown": {
+            "active": seconds_remaining > 0,
+            "seconds_remaining": seconds_remaining,
+            "total_cooldown": ActivityLists.SYNC_COOLDOWN.total_seconds()
+        },
+        "cached": using_cached
+    }
+    
+    if sync_log and sync_log.last_synced:
+        response["last_synced"] = sync_log.last_synced.isoformat()
+    elif not sync_log:
+        response["last_synced"] = datetime.now(timezone.utc).isoformat()
+    
+    if warning:
+        response["warning"] = warning
+
+    return response
+
+@app.route('/api/activities/sync', methods=['GET'])
+@login_required
+@limiter.limit("30 per minute")
+def sync_activities():
+    """Unified endpoint to fetch/sync activities from Strava with caching and cooldown"""
+    logger.info(f"Activities endpoint called - Method: {request.method} - Session: {session}")
+    athlete_id = session.get('athlete_id')
+    if not athlete_id:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    page = max(1, request.args.get('page', 1, type=int))
+    per_page = min(request.args.get('per_page', 30, type=int), ActivityLists.ITEMS_PER_PAGE)
+
+    sync_instance = ActivityLists(athlete_id=athlete_id)
+    sync_log = ActivityLists.query.filter_by(
+        athlete_id=athlete_id,
+        page=page,
+        per_page=per_page
+    ).first()
+
+    seconds_remaining = sync_instance.get_cooldown_remaining()
+
+    print(f"is_sync_allowed: {sync_instance.is_sync_allowed()}")
+    # Return cached data if available and appropriate
+    if not sync_instance.is_sync_allowed() and sync_log:
+        return jsonify(create_sync_response(sync_log.data if sync_log else [], page, per_page, sync_log, seconds_remaining, using_cached=True))
+
+    # Attempt to fetch fresh data from Strava
+    try:
+        response = requests.get(
+            "https://www.strava.com/api/v3/athlete/activities",
+            headers={"Authorization": f"Bearer {session['access_token']}"},
+            params={"page": page, "per_page": per_page},
+            timeout=15
+        )
+
+        if not response.ok:
+            return jsonify(create_sync_response(
+                sync_log.data if sync_log else [],
+                page,
+                per_page,
+                sync_log,
+                seconds_remaining,
+                warning="Failed to fetch fresh data, showing cached data" if sync_log else None,
+                using_cached=True
+            )), response.status_code if not sync_log else 200
+
+        activities = response.json()
+        current_time = datetime.now(timezone.utc)
+
+        # Update or create sync log
+        try:
+            if sync_log:
+                sync_log.data = activities
+                sync_log.last_synced = current_time
+            else:
+                sync_log = ActivityLists(
+                    athlete_id=athlete_id,
+                    data=activities,
+                    page=page,
+                    per_page=per_page,
+                    last_synced=current_time
+                )
+                db.session.add(sync_log)
+            db.session.commit()
+            return jsonify(create_sync_response(activities, page, per_page, sync_log, seconds_remaining, using_cached=False))
+        except Exception as db_error:
+            db.session.rollback()
+            logger.error(f'Database error: {str(db_error)}')
+            raise
+
+    except Exception as e:
+        logger.error(f'Error syncing activities: {str(e)}')
+        return jsonify(create_sync_response(
+            sync_log.data if sync_log else [],
+            page,
+            per_page,
+            sync_log,
+            seconds_remaining,
+            warning="Failed to sync data, showing cached data" if sync_log else None,
+            using_cached=True
+        )), 500 if not sync_log else 200
 
 if __name__ == '__main__':
-    logging.info("--- Preparing to run Flask app ---") # Add this log line
-    logging.info("Starting Flask application...") # Example log at startup
+    logging.info("Starting Flask application...")
     app.run(debug=DEBUG_MODE, port=5000)
