@@ -572,19 +572,20 @@ def login():
 def callback():
     """Handle the OAuth callback from Strava"""
     try:
+        # Check if user denied authorization
         if 'error' in request.args:
-            logger.info("User denied authorization")
+            logger.info(f"User denied Strava authorization - IP: {request.remote_addr}")
             return redirect('/')
 
+        # Generate the dynamic callback URL consistently
         callback_url = url_for('callback', _external=True)
-        logger.info(f"Handling callback using URL: {callback_url}")
+        logger.info(f"Using dynamic callback URL in callback handler: {callback_url}") 
 
         oauth = OAuth2Session(
             CLIENT_ID,
             state=session.get('oauth_state'),
             redirect_uri=callback_url
         )
-
         token = oauth.fetch_token(
             TOKEN_URL,
             client_secret=CLIENT_SECRET,
@@ -600,23 +601,40 @@ def callback():
         if not athlete_id:
             logger.error('No athlete ID in token response')
             return redirect('/')
-
-        # Store athlete info in session
-        session['athlete_id'] = athlete_id
-        session['athlete_username'] = athlete_data.get('username')
-        session['athlete_first_name'] = athlete_data.get('firstname')
-        session['athlete_last_name'] = athlete_data.get('lastname')
-        session['athlete_profile'] = athlete_data.get('profile_medium')
-        session['access_token'] = token['access_token']
-        session['refresh_token'] = token['refresh_token']
-        session['expires_at'] = token['expires_at']
-
-        logger.info(f"Successfully authenticated user {athlete_data.get('firstname')} {athlete_data.get('lastname')}")
-
+            
+        try:
+            # Find existing athlete or create new one
+            athlete = db.session.get(Athletes, athlete_id)
+            if not athlete:
+                athlete = Athletes(athlete_id=athlete_id)
+                db.session.add(athlete)
+                logger.info(f'Creating new athlete record for ID: {athlete_id}')
+            else:
+                logger.info(f'Updating existing athlete record for ID: {athlete_id}')
+            
+            # Update athlete data with new tokens and info
+            athlete.update_from_token(token, athlete_data)
+            db.session.commit()
+            logger.info(f'Successfully updated athlete data in database for ID: {athlete_id}')
+            
+            # Store athlete info in session
+            session['athlete_id'] = athlete_id
+            session['athlete_username'] = athlete_data.get('username')
+            session['athlete_first_name'] = athlete_data.get('firstname')
+            session['athlete_last_name'] = athlete_data.get('lastname')
+            session['athlete_profile'] = athlete_data.get('profile_medium')
+            session['access_token'] = token['access_token']
+            session['refresh_token'] = token['refresh_token']
+            session['expires_at'] = token['expires_at']
+            
+        except Exception as db_error:
+            db.session.rollback()
+            logger.error(f'Database error during callback: {str(db_error)}')
+            return redirect('/')
+        
         return redirect('/')
-
     except Exception as e:
-        logger.error(f"OAuth callback error: {e}")
+        logger.error(f'OAuth callback error details: {str(e)} - IP: {request.remote_addr}')
         return redirect('/')
 
 # Add login_required decorator
