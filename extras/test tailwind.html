@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Overlay</title>
+    <!-- Load Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Load html2canvas -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+</head>
+<body class="bg-gray-800 text-white">
+
+<!-- Main Container -->
+<div id="overlayContainer" class="p-6 max-w-lg mx-auto bg-gray-900 rounded-lg">
+    <!-- Number of Columns Selector -->
+    <div class="mb-4">
+        <label for="columnSelect" class="block text-sm font-medium">Choose Number of Columns:</label>
+        <select id="columnSelect" class="mt-1 p-2 bg-gray-700 border rounded">
+            <option value="1">1 Column</option>
+            <option value="2">2 Columns</option>
+            <option value="3">3 Columns</option>
+            <option value="4">4 Columns</option>
+        </select>
+    </div>
+
+    <!-- Metric Selector -->
+    <div class="mb-6">
+        <label class="block text-sm font-medium">Select Metrics to Display:</label>
+        <div class="flex space-x-4">
+            <button id="toggleDistance" class="bg-gray-700 p-2 rounded">Distance</button>
+            <button id="toggleTime" class="bg-gray-700 p-2 rounded">Time</button>
+            <button id="togglePace" class="bg-gray-700 p-2 rounded">Pace</button>
+        </div>
+    </div>
+
+    <!-- Metrics Section (Dynamic columns based on the selection) -->
+    <div id="metricsContainer" class="grid gap-6 grid-cols-1">
+        <!-- Metrics will be dynamically added here -->
+    </div>
+
+    <!-- Export Button -->
+    <div class="mt-6 text-center">
+        <button id="exportBtn" class="bg-blue-600 px-4 py-2 rounded-lg">Export Overlay</button>
+    </div>
+</div>
+
+<script>
+    // Metrics data
+    const metrics = {
+        distance: { label: "Distance", value: "43.84 km" },
+        time: { label: "Time", value: "4h 6m 13s" },
+        pace: { label: "Pace", value: "5:37 /km" }
+    };
+
+    // Selected metrics list
+    let selectedMetrics = [];
+
+    // DOM elements
+    const metricsContainer = document.getElementById('metricsContainer');
+    const columnSelect = document.getElementById('columnSelect');
+
+    // Update metrics container based on selected metrics
+    function updateMetricsContainer() {
+        metricsContainer.innerHTML = ''; // Clear container before re-rendering
+
+        selectedMetrics.forEach(metric => {
+            const metricDiv = document.createElement('div');
+            metricDiv.className = "text-center bg-gray-800 p-4 rounded shadow-md";
+            metricDiv.innerHTML = `
+                <div class="text-sm font-medium">${metric.label}</div>
+                <div class="text-2xl font-bold">${metric.value}</div>
+            `;
+            metricsContainer.appendChild(metricDiv);
+        });
+
+        // Reapply the grid layout based on the number of columns selected
+        const columnCount = parseInt(columnSelect.value);
+        metricsContainer.className = `grid gap-6 grid-cols-${columnCount}`;
+    }
+
+    // Add or remove metric from the selected list (toggle)
+    function toggleMetric(metric) {
+        const index = selectedMetrics.findIndex(m => m.label === metric.label);
+        if (index > -1) {
+            selectedMetrics.splice(index, 1); // Remove if already in the list
+        } else {
+            selectedMetrics.push(metric); // Add if not already in the list
+        }
+        updateMetricsContainer();
+    }
+
+    // Toggle metrics visibility on button click
+    document.getElementById('toggleDistance').addEventListener('click', () => toggleMetric(metrics.distance));
+    document.getElementById('toggleTime').addEventListener('click', () => toggleMetric(metrics.time));
+    document.getElementById('togglePace').addEventListener('click', () => toggleMetric(metrics.pace));
+
+    // Listen for column change and update grid
+    columnSelect.addEventListener('change', updateMetricsContainer);
+
+    document.getElementById('exportBtn').addEventListener('click', function () {
+    const metrics = document.getElementById('metricsContainer');
+
+    // Remove backgrounds temporarily
+    const metricBoxes = metrics.querySelectorAll('div');
+    metricBoxes.forEach(box => box.classList.remove('bg-gray-800'));
+
+    // Use html2canvas only on the metrics container
+    html2canvas(metrics, {
+        backgroundColor: null,
+        useCORS: true,
+        scale: 2, // increase image resolution
+    }).then(function (canvas) {
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = 'fitness_metrics.png';
+        link.click();
+
+        // Restore backgrounds
+        metricBoxes.forEach(box => box.classList.add('bg-gray-800'));
+    }).catch(function (error) {
+        console.error('Error capturing screenshot:', error);
+    });
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <main class="flex-grow container mx-auto max-w-[1000px]">
+
+        <section class="text-center relative z-10 fade-in">
+            <h1 class="text-4xl font-bold tracking-tight text-fitness-dark-gray py-6">
+                Your Strava. Beautifully Captured.
+            </h1>
+            <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+                Turn your activities into high-resolution, minimalist overlays. Designed to be shared. Made to inspire.
+            </p>
+            <div id="connect-strava" class="inline-block transform hover:scale-110 transition-transform duration-200 cursor-pointer py-10">
+                <img src="/static/images/btn_strava_connect_with_orange_x2.svg" alt="Connect with Strava" class="h-12 drop-shadow-lg rounded-lg">
+            </div>
+            <div id="see-activities-btn" class="hidden flex justify-center py-10">
+                <a href="/activities" 
+                    class="bg-fitness-green text-white font-bold py-4 px-6 rounded-lg
+                            transform hover:scale-110 transition-all duration-200 
+                            drop-shadow-lg
+                            flex items-center space-x-2">
+                    <span>See your Activities 📋</span>
+                </a>
+            </div>
+        </section>
+
+        <section class="relative z-10 fade-in">
+            <h3 class="text-2xl md:text-3xl font-bold text-center text-gray-900">See What You Can Create</h3>
+            <div class="max-w-[1000px] mx-auto">
+                <div class="flex space-x-4 overflow-x-auto pb-2 carousel snap-x snap-mandatory scroll-smooth backdrop-blur-sm p-4 rounded-lg">
+                    <div class="flex-shrink-0 w-60 md:w-64 snap-center transform transition-transform duration-200 drop-shadow-lg"> 
+                        <img src="/static/images/14118553438_overlay.png" alt="Example Overlay 1" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    </div>
+                    <div class="flex-shrink-0 w-60 md:w-64 snap-center transform transition-transform duration-200 drop-shadow-lg">
+                        <img src="/static/images/13521772127_overlay.png" alt="Example Overlay 2" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    </div>
+                    <div class="flex-shrink-0 w-60 md:w-64 snap-center transform transition-transform duration-200 drop-shadow-lg">
+                        <img src="/static/images/13960924927_overlay.png" alt="Example Overlay 3" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    </div>
+                    <div class="flex-shrink-0 w-60 md:w-64 snap-center transform transition-transform duration-200 drop-shadow-lg">
+                        <img src="/static/images/13398638296_overlay.png" alt="Example Overlay 4" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    </div>
+                    <div class="flex-shrink-0 w-60 md:w-64 snap-center transform transition-transform duration-200 drop-shadow-lg">
+                        <img src="/static/images/13984241619_overlay.png" alt="Example Overlay 5" class="w-full h-auto object-contain rounded-lg shadow-lg border border-gray-200/50">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+{% endblock %}
+
+
+{% block script %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const connectStravaBtn = document.getElementById('connect-strava');
+
+        connectStravaBtn?.addEventListener("click", function() {
+            window.location.href = "/login";
+        });
+
+        const carousel = document.querySelector('.carousel');
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let hasDragged = false;
+
+        carousel.style.cursor = 'grab';
+
+        // Mouse events for desktop
+        carousel.addEventListener('mousedown', (e) => {
+            // Only left click
+            if (e.button !== 0) return;
+
+            isDown = true;
+            hasDragged = false;
+            startX = e.pageX - carousel.offsetLeft;
+            scrollLeft = carousel.scrollLeft;
+            carousel.style.cursor = 'grabbing';
+            e.preventDefault(); // Prevent text/image selection
+        });
+
+        carousel.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            const x = e.pageX - carousel.offsetLeft;
+            const walk = x - startX;
+            if (Math.abs(walk) > 5) hasDragged = true;
+            carousel.scrollLeft = scrollLeft - walk;
+        });
+
+        carousel.addEventListener('mouseup', () => {
+            isDown = false;
+            carousel.style.cursor = 'grab';
+        });
+
+        carousel.addEventListener('mouseleave', () => {
+            isDown = false;
+            carousel.style.cursor = 'grab';
+        });
+
+        // Touch events for mobile
+        carousel.addEventListener('touchstart', (e) => {
+            isDown = true;
+            hasDragged = false;
+            startX = e.touches[0].pageX - carousel.offsetLeft;
+            scrollLeft = carousel.scrollLeft;
+        }, { passive: true });
+
+        carousel.addEventListener('touchmove', (e) => {
+            if (!isDown) return;
+            const x = e.touches[0].pageX - carousel.offsetLeft;
+            const walk = x - startX;
+            if (Math.abs(walk) > 5) hasDragged = true;
+            carousel.scrollLeft = scrollLeft - walk;
+        }, { passive: true });
+
+        carousel.addEventListener('touchend', () => {
+            isDown = false;
+        });
+
+        // Prevent image dragging and selection (optional but helpful)
+        carousel.querySelectorAll('img').forEach(img => {
+            img.draggable = false;
+        });
+
+        carousel.style.userSelect = 'none';
+
+    });
+</script>
+{% endblock %}
