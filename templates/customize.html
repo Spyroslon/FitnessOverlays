@@ -1,0 +1,1150 @@
+{% extends "base.html" %}
+
+{% block style %}
+<style> 
+        /* Keep custom aspect ratio */
+        .aspect-9-16 {
+            aspect-ratio: 9/16;
+            width: 100%;
+            max-height: 65vh; /* Reduced from 60vh */
+            max-width: calc(65vh * 9/16); /* Adjusted to match new max-height */
+            /* margin: 0 auto; */
+        }
+
+        /* Keep custom checkerboard */
+        .dark-checkerboard {
+            background-image:
+            linear-gradient(45deg, #333333 25%, transparent 25%),
+            linear-gradient(-45deg, #333333 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #333333 75%),
+            linear-gradient(-45deg, transparent 75%, #333333 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            background-color: #4a4a4a;
+        }
+
+        /* Keep color picker pseudo-elements */
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid #16a34a;
+            border-radius: 8px;
+            padding: 0;
+            /* Keep conic gradient background */
+            background: conic-gradient(
+                #FF3366, #FF6633, #FFCC33, 
+                #33CC66, #3399FF, #6633CC, 
+                #CC33FF, #FF3366
+            );
+        }
+
+        /* Firefox */
+        input[type="color"]::-moz-color-swatch {
+            border: 2px solid #16a34a;
+            border-radius: 8px;
+            padding: 0;
+            /* Keep conic gradient background */
+            background: conic-gradient(
+                #FF3366, #FF6633, #FFCC33, 
+                #33CC66, #3399FF, #6633CC, 
+                #CC33FF, #FF3366
+            );
+        }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+    <main class="flex-grow container mx-auto p-3">
+        <div class="max-w-[900px] w-full mx-auto">
+            <!-- Activity Info Card -->
+            <div id="activityInfoCard" class="bg-white rounded-xl shadow-lg p-3 mb-3">
+                <div class="flex justify-between items-center">
+                    <h2 id="activityName" class="text-lg text-gray-800"></h2>
+                    <a id="stravaLink" href="#" target="_blank" 
+                       class="bg-fitness-orange text-white p-3 rounded-lg text-sm font-medium transition-colors text-center">
+                        View on Strava
+                    </a>
+                </div>
+            </div>
+
+            <!-- Canvas Card -->
+            <div class="aspect-9-16 bg-white rounded-xl shadow-lg p-3 max-w-sm mx-auto mb-3 flex flex-col">
+                <div class="w-full h-full aspect-9-16 relative flex-grow">
+                    <canvas id="overlayCanvas" class="w-full h-full dark-checkerboard rounded-xl" style="display:block;"></canvas>
+                </div>
+            </div>
+
+            <!-- Options Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 space-y-4">
+                <!-- Section Contents -->
+                <div id="textSection" class="section-content space-y-4">
+                    <div id="overlayOptions" class="grid grid-cols-3 md:grid-cols-4 gap-2">
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="distance">Distance</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="movingTime">Time</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="pace">Pace</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="averageSpeed">Avg Speed</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="avgHeartRate">Avg HR</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="maxHeartRate">Max HR</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="calories">Calories</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="elevationGain">Elevation</button>
+                    </div>
+
+                    <!-- Unified Controls Container -->
+                    <div class="flex justify-center items-end flex-wrap gap-4 mt-4">
+                        <!-- Color Picker -->
+                        <div class="flex flex-col items-center gap-1">
+                            <!-- <div class="size-label">Color</div> -->
+                            <input type="color" id="colorWheel" value="#ffffff"
+                                class="appearance-none bg-transparent cursor-pointer p-0 w-12 h-12 rounded-lg transition-transform hover:scale-105 focus:scale-105"
+                                title="Choose text color">
+                                <!-- Size set via CSS -->
+                        </div>
+                        <!-- Alignment Cycle Button -->
+                         <div class="flex flex-col items-center gap-1">
+                            <!-- <div class="size-label">Align</div> -->
+                             <button id="alignCycleBtn" 
+                                     class="flex flex-col items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-gray-100"
+                                     title="Cycle Text Alignment">
+                                 <!-- SVG inserted by JS, size class will be added there -->
+                             </button>
+                         </div>
+                        <!-- Label Size Cycle Button -->
+                         <div class="flex flex-col items-center gap-2">
+                            <button id="labelSizeCycleBtn" 
+                                    class="flex items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 w-12 h-12 text-sm text-center hover:bg-gray-100" 
+                                    title="Cycle Label Size">
+                                <span id="labelSizeIndicator">M</span>
+                            </button>
+                        </div>
+                        <!-- Value Size Cycle Button -->
+                         <div class="flex flex-col items-center gap-2">
+                            <button id="valueSizeCycleBtn" 
+                                    class="flex items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 w-12 h-12 text-sm text-center hover:bg-gray-100" 
+                                    title="Cycle Value Size">
+                                <span id="valueSizeIndicator">M</span>
+                            </button>
+                        </div>
+                        <!-- Columns Cycle Button -->
+                         <div class="flex flex-col items-center gap-2">
+                            <button id="columnToggle" 
+                                    class="flex flex-col items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-gray-100" 
+                                    title="Toggle number of columns">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125Z" />
+                                </svg>
+                                <span id="columnCount" class="text-xs leading-none">1</span>
+                            </button>
+                        </div>
+                        <!-- Reset Button -->
+                        <div class="flex flex-col items-center gap-1">
+                            <button id="resetSettingsBtn"
+                                    class="flex flex-col items-center justify-center border-2 border-red-500 bg-red-100 text-red-500 rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none shadow-sm active:bg-red-200"
+                                    title="Reset all overlay settings">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                  </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Copy Buttons -->
+                <div id="copyButtonsContainer" class="flex flex-row gap-2 mt-6 justify-center">
+                    <div id="copyTextContainer" class="flex-1 flex flex-col items-center gap-1">
+                        <button id="copyTextBtn" 
+                                class="w-14 h-14 bg-black/70 hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5A3.375 3.375 0 0 0 6.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0 0 15 2.25h-1.5a2.251 2.251 0 0 0-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 0 0-9-9Z" />
+                            </svg>
+                        </button>
+                        <span class="text-xs text-center text-black/70">Copy Text</span>
+                    </div>
+                    <div id="copyImageContainer" class="flex-1 flex flex-col items-center gap-1">
+                        <button id="copyImageBtn" 
+                                class="w-14 h-14 bg-black/70 hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75" />
+                            </svg>
+                        </button>
+                        <span class="text-xs text-center text-text-black/70">Copy Image</span>
+                    </div>
+                    <div id="saveImageContainer" class="flex-1 flex flex-col items-center gap-1">
+                        <button id="saveImageBtn" 
+                                class="w-14 h-14 bg-black/70 hover:bg-opacity-90 text-white rounded-xl font-medium transition-colors flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                        </button>
+                        <span class="text-xs text-center text-black/70">Save Image</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-fitness-green text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 pointer-events-none z-50 opacity-0">
+        Copied to clipboard!
+    </div>
+
+    <!-- Image Save Modal -->
+    <div id="imageSaveModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-[60] hidden">
+        <div class="bg-white rounded-lg shadow-xl p-4 max-w-sm w-full text-center relative aspect-[9/16] max-h-[50vh] flex flex-col">
+            <button id="closeModalBtn" 
+                    class="absolute top-1 right-1 m-1 p-1.5 bg-gray-300 hover:bg-gray-400 rounded-full transition-colors z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414z" clip-rule="evenodd" />
+                </svg>
+            </button>
+            <p class="text-gray-700 mb-2 font-medium text-sm flex-shrink-0">Long-press image to save</p>
+            <div class="flex-grow flex items-center justify-center overflow-hidden">
+                <img id="modalImage" src="" alt="Generated Overlay" class="max-w-full max-h-full object-contain rounded border border-gray-300 dark-checkerboard">
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block script %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            if (isIOS) {
+                const copyImageContainer = document.getElementById('copyImageContainer');
+                if (copyImageContainer) {
+                    copyImageContainer.style.display = 'none';
+                }
+            }
+
+            const state = {
+                activityId: null,
+                activityData: null,
+                athleteId: null,
+                selectedMetrics: JSON.parse(sessionStorage.getItem('selectedMetrics')) || ['distance', 'movingTime', 'pace'],
+                isAuthenticated: false,
+                textColor: sessionStorage.getItem('textColor') || '#ffffff',
+                textAlign: sessionStorage.getItem('textAlign') || 'center',
+                labelSize: sessionStorage.getItem('labelSize') || 'medium',
+                valueSize: sessionStorage.getItem('valueSize') || 'large',
+                columns: parseInt(sessionStorage.getItem('columns'), 10) || 1
+            };
+
+            const SIZE_MULTIPLIERS = {
+                small: 0.7, // Adjusted to be slightly smaller than before
+                medium: 0.85, // Adjusted to be between small and large
+                large: 1.0 // Set to the current size used for Medium
+            };
+
+            const StravaData = {};
+
+            // Declare metricsAvailability in a scope accessible by both functions
+            let metricsAvailability = {};
+
+            const activityInfoCard = document.getElementById('activityInfoCard');
+            const activityName = document.getElementById('activityName');
+            const stravaLink = document.getElementById('stravaLink');
+
+
+            // Function to load and process activity data from sessionStorage
+            function loadActivityFromSession() {
+                const storedActivity = sessionStorage.getItem('currentActivity');
+                // console.log("Checking sessionStorage for 'currentActivity' on page load:", storedActivity);
+
+                if (!storedActivity) {
+                    console.warn('No activity data found in session storage. Canvas will be empty.');
+                    return;
+                }
+
+                try {
+                    const parsedData = JSON.parse(storedActivity);
+                    console.log("Successfully parsed activity data:", parsedData);
+                    state.activityData = parsedData; // Store parsed data in state
+                    state.activityId = parsedData.id;
+
+                    // Display Activity Info Card
+                    activityName.textContent = parsedData.name || 'Untitled Activity';
+                    // Add success indicator styling
+                    activityName.classList.add('font-bold', 'px-2', 'py-1', 'rounded-md', 'inline-block'); // Added classes
+                    stravaLink.href = `https://www.strava.com/activities/${parsedData.id}`;
+
+                    // Create metrics map with availability status (Assign to the higher-scoped variable)
+                    metricsAvailability = {
+                        distance: !!parsedData.distance,
+                        movingTime: !!parsedData.moving_time,
+                        pace: !!(parsedData.moving_time && parsedData.distance),
+                        elevationGain: !!parsedData.total_elevation_gain,
+                        avgHeartRate: !!parsedData.average_heartrate,
+                        maxHeartRate: !!parsedData.max_heartrate,
+                        calories: !!parsedData.calories,
+                        averageSpeed: !!parsedData.average_speed
+                    };
+
+                    console.log("metricsAvailability:", metricsAvailability);
+
+                    // Update buttons based on data availability
+                    document.querySelectorAll('.overlay-option').forEach(button => {
+                        const metric = button.dataset.metric;
+                        if (!metricsAvailability[metric]) {
+                            button.disabled = true;
+                            button.classList.remove('bg-fitness-gray', 'bg-fitness-green');
+                            button.classList.add('bg-gray-300', 'cursor-not-allowed');
+                        } else {
+                            button.disabled = false;
+                            button.classList.remove('bg-gray-300', 'cursor-not-allowed');
+                            button.classList.add('bg-fitness-gray');
+                        }
+                    });
+
+                    // Update StravaData only for available metrics
+                    StravaData.distance = metricsAvailability.distance ? (parsedData.distance / 1000).toFixed(2) + ' km' : null;
+                    StravaData.movingTime = metricsAvailability.movingTime ? formatDuration(parsedData.moving_time) : null;
+                    StravaData.pace = metricsAvailability.pace ? formatPace(parsedData.moving_time, parsedData.distance) + ' /km' : null;
+                    StravaData.elevationGain = metricsAvailability.elevationGain ? Math.round(parsedData.total_elevation_gain) + 'm' : null;
+                    StravaData.avgHeartRate = metricsAvailability.avgHeartRate ? Math.round(parsedData.average_heartrate) + ' bpm' : null;
+                    StravaData.maxHeartRate = metricsAvailability.maxHeartRate ? Math.round(parsedData.max_heartrate) + ' bpm' : null;
+                    StravaData.calories = metricsAvailability.calories ? Math.round(parsedData.calories) : null;
+                    StravaData.averageSpeed = metricsAvailability.averageSpeed ? (parsedData.average_speed * 3.6).toFixed(1) + ' km/h' : null;
+
+                    // --- Apply Button Styles Based on Availability and Default Selection ---
+                    document.querySelectorAll('.overlay-option').forEach(button => {
+                        const metric = button.dataset.metric;
+
+                        // Reset classes and disabled state
+                        button.classList.remove('bg-fitness-green', 'bg-fitness-gray', 'bg-gray-300', 'cursor-not-allowed');
+                        button.disabled = false;
+
+                        if (!metricsAvailability[metric]) {
+                            // State 1: Unavailable Metric -> Darker Grey, Disabled
+                            button.disabled = true;
+                            button.classList.add('bg-gray-300', 'cursor-not-allowed');
+                        } else {
+                            // Metric is Available
+                            if (state.selectedMetrics.includes(metric)) {
+                                // State 2: Available AND Selected (including defaults) -> Strava Orange, Enabled
+                                button.classList.add('bg-fitness-green');
+                            } else {
+                                // State 3: Available BUT Not Selected -> Strava Grey, Enabled
+                                button.classList.add('bg-fitness-gray');
+                            }
+                        }
+                    });
+
+                    generateOverlay();
+
+                    // console.log(`Activity "${parsedData.name || 'Untitled Activity'}" loaded from session storage.`);
+
+                } catch (error) {
+                    console.error('Error parsing activity data from sessionStorage:', error);
+                    console.log("Corrupted data found:", storedActivity); // Log the problematic data
+                    sessionStorage.removeItem('currentActivity');
+                    alert('Error loading activity data from storage. Please load the activity again.');
+                }
+            }
+
+            function formatDuration(seconds) {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const remainingSeconds = seconds % 60;
+                
+                if (hours > 0) {
+                    return `${hours}h ${minutes}m ${remainingSeconds}s`;
+                }
+                return `${minutes}m ${remainingSeconds}s`;
+            }
+
+            function formatPace(seconds, distance) {
+                if (!distance) return "0:00";
+                const paceInSeconds = seconds / (distance / 1000);
+                const minutes = Math.floor(paceInSeconds / 60);
+                const remainingSeconds = Math.ceil(paceInSeconds % 60);
+                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+
+            // --- Canvas Drawing Logic (Moved outside DOMContentLoaded for clarity) ---
+
+            const canvas = document.getElementById('overlayCanvas');
+            const ctx = canvas.getContext('2d');
+            const colorWheel = document.getElementById('colorWheel');
+            const copyTextBtn = document.getElementById('copyTextBtn');
+            const copyImageBtn = document.getElementById('copyImageBtn');
+            const toast = document.getElementById('toast');
+
+            // --- Variable to track toast timeout ---
+            let toastTimeoutId = null;
+
+            // Add helper function to detect mobile devices
+            function isLikelyMobileDevice() {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                    (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+            }
+
+            // --- Define Cycle Orders --- 
+            const ALIGN_ORDER = ['left', 'center', 'right'];
+            const SIZE_ORDER = ['small', 'medium', 'large'];
+            const SIZE_DISPLAY = { small: 'S', medium: 'M', large: 'L' };
+            const ALIGN_ICONS = {
+                left: `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h10M4 14h16M4 18h10" />
+                    </svg>`,
+                center: `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M7 10h10M4 14h16M7 18h10" />
+                    </svg>`,
+                right: `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M10 10h10M4 14h16M10 18h10" />
+                    </svg>`
+            };
+
+            // --- Get Cycle Button Elements ---
+            const alignCycleBtn = document.getElementById('alignCycleBtn');
+            const labelSizeCycleBtn = document.getElementById('labelSizeCycleBtn');
+            const valueSizeCycleBtn = document.getElementById('valueSizeCycleBtn');
+            const labelSizeIndicator = document.getElementById('labelSizeIndicator');
+            const valueSizeIndicator = document.getElementById('valueSizeIndicator');
+            const columnToggleBtn = document.getElementById('columnToggle'); // Existing column button
+            const columnCountSpan = document.getElementById('columnCount'); // Existing column count span
+
+            // --- Helper functions to update button appearance ---
+            function updateAlignButton() {
+                if (alignCycleBtn) {
+                    const iconSVG = ALIGN_ICONS[state.textAlign] || ALIGN_ICONS['center']; // Default to center icon if state is invalid
+                    // Inject SVG and add size class (w-6 h-6 corresponds to 24px)
+                    alignCycleBtn.innerHTML = iconSVG.replace('<svg ', '<svg class="w-6 h-6" ');
+                }
+            }
+
+            function updateLabelSizeButton() {
+                if (labelSizeIndicator) {
+                    labelSizeIndicator.textContent = SIZE_DISPLAY[state.labelSize] || 'S';
+                }
+            }
+
+            function updateValueSizeButton() {
+                if (valueSizeIndicator) {
+                    valueSizeIndicator.textContent = SIZE_DISPLAY[state.valueSize] || 'M';
+                }
+            }
+            
+            function updateColumnButton() {
+                 if (columnCountSpan) {
+                    columnCountSpan.textContent = state.columns;
+                }
+            }
+
+            // --- Constants for Drawing ---
+            const BASE_FONT_SIZE = 24;
+            const VALUE_FONT_SIZE_MULTIPLIER = 1.2;
+            const MIN_FONT_SIZE = 12;
+            const VERTICAL_PADDING_FACTOR = 0.05; // 5% of canvas height as vertical padding
+            const METRIC_GROUP_SPACING = 20; // px between metric groups
+            const LABEL_VALUE_SPACING = 6;
+            const HORIZONTAL_PADDING = 20;
+
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                const dpr = window.devicePixelRatio || 1;
+                
+                // Get the container's computed dimensions
+                const rect = container.getBoundingClientRect();
+                
+                // Set canvas size in pixels, accounting for DPR
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                
+                // Always reset transform before scaling to avoid cumulative scaling
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.scale(dpr, dpr);
+                
+                // Set display size (CSS pixels)
+                canvas.style.width = `${rect.width}px`;
+                canvas.style.height = `${rect.height}px`;
+                
+                generateOverlay();
+            }
+
+            function drawMetrics(data, context = ctx) {
+                const metrics = state.selectedMetrics
+                    .map(key => ({
+                        name: getMetricLabel(key),
+                        value: data[key]
+                    }))
+                    .filter(metric => metric.value !== null && metric.value !== undefined);
+
+                if (metrics.length === 0) return;
+
+                const numItems = metrics.length;
+                const requestedColumns = state.columns;
+                let actualColsForSizing = Math.min(requestedColumns, numItems);
+                if (numItems === 1) actualColsForSizing = 1;
+                actualColsForSizing = Math.max(1, actualColsForSizing);
+                const itemsPerColumnForSizing = Math.ceil(numItems / actualColsForSizing);
+
+                const dpr = window.devicePixelRatio || 1;
+                const logicalWidth = overlayCanvas.width / dpr;
+                const logicalHeight = overlayCanvas.height / dpr;
+                const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
+                const columnWidthForSizing = availableWidth / actualColsForSizing;
+                const verticalPadding = logicalHeight * VERTICAL_PADDING_FACTOR;
+                const availableHeight = logicalHeight - (verticalPadding * 2);
+
+                // Estimate max item height based on available vertical space and itemsPerColumnForSizing
+                const maxItemHeight = (availableHeight - (METRIC_GROUP_SPACING * (itemsPerColumnForSizing - 1))) / Math.max(1, itemsPerColumnForSizing);
+                const maxFontBase = Math.min(
+                    maxItemHeight * 0.45,
+                    columnWidthForSizing * 0.15,
+                    BASE_FONT_SIZE
+                );
+
+                let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
+                let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
+                let groupSpacing = METRIC_GROUP_SPACING;
+
+                // Recalculate needed height and scale if needed
+                let neededHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing +
+                                   (groupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
+                const scaleFactor = Math.min(1, availableHeight / Math.max(1, neededHeight));
+                titleFontSize *= scaleFactor;
+                valueFontSize *= scaleFactor;
+                groupSpacing *= scaleFactor;
+                titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
+                valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
+                groupSpacing = Math.max(groupSpacing, LABEL_VALUE_SPACING * 0.5);
+
+                const finalItemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
+                const drawableColumns = Math.min(requestedColumns, numItems);
+                const numRows = Math.ceil(numItems / requestedColumns);
+                const finalTotalContentHeight = (finalItemHeight * numRows) + (groupSpacing * Math.max(0, numRows - 1));
+                const startY = verticalPadding + (availableHeight - finalTotalContentHeight) / 2;
+
+                context.textBaseline = 'middle';
+                metrics.forEach((metric, index) => {
+                    const columnIndex = index % requestedColumns;
+                    const rowIndex = Math.floor(index / requestedColumns);
+                    const columnWidth = availableWidth / drawableColumns;
+                    let xPos;
+                    if (drawableColumns === 1) {
+                        context.textAlign = state.textAlign;
+                        switch (state.textAlign) {
+                            case 'left': xPos = HORIZONTAL_PADDING; break;
+                            case 'right': xPos = logicalWidth - HORIZONTAL_PADDING; break;
+                            default: xPos = logicalWidth / 2;
+                        }
+                    } else {
+                        context.textAlign = state.textAlign;
+                        const slotLeft = HORIZONTAL_PADDING + (columnWidth * columnIndex);
+                        const slotCenter = slotLeft + (columnWidth / 2);
+                        const slotRight = slotLeft + columnWidth;
+                        switch (state.textAlign) {
+                            case 'left': xPos = slotLeft; break;
+                            case 'right': xPos = slotRight; break;
+                            default: xPos = slotCenter;
+                        }
+                    }
+                    const itemSlotTopY = startY + (rowIndex * (finalItemHeight + groupSpacing));
+                    const itemSlotCenterY = itemSlotTopY + finalItemHeight / 2;
+                    context.fillStyle = state.textColor;
+                    const textPairHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
+                    const labelYOffset = -(textPairHeight / 2) + (titleFontSize / 2);
+                    const valueYOffset = (textPairHeight / 2) - (valueFontSize / 2);
+                    context.font = `${titleFontSize}px Roboto`;
+                    context.fillText(metric.name, xPos, itemSlotCenterY + labelYOffset);
+                    context.font = `bold ${valueFontSize}px Roboto`;
+                    context.fillText(metric.value, xPos, itemSlotCenterY + valueYOffset);
+                });
+                context.textBaseline = 'alphabetic';
+            }
+
+            // Existing code
+            document.querySelectorAll('.overlay-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const metric = option.dataset.metric;
+                    
+                    if (option.classList.contains('bg-fitness-green')) {
+                        option.classList.remove('bg-fitness-green');
+                        option.classList.add('bg-fitness-gray');
+                        state.selectedMetrics = state.selectedMetrics.filter(m => m !== metric);
+                    } else {
+                        option.classList.remove('bg-fitness-gray');
+                        option.classList.add('bg-fitness-green');
+                        state.selectedMetrics.push(metric);
+                    }
+
+                    // Save the updated selection to sessionStorage
+                    sessionStorage.setItem('selectedMetrics', JSON.stringify(state.selectedMetrics));
+
+                    generateOverlay(StravaData);
+                });
+            });
+
+            // Generate Overlay
+            function generateOverlay(data = StravaData) {
+                // Clear the entire canvas
+                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+                // Draw metrics
+                drawMetrics(data);
+            }
+
+            function getCroppedDimensions(data, context, canvasRef) {
+                if (!canvasRef) return { x: 0, y: 0, width: 0, height: 0 };
+                
+                const metrics = state.selectedMetrics
+                    .map(key => ({
+                        name: getMetricLabel(key),
+                        value: data[key]
+                    }))
+                    .filter(metric => metric.value !== null && metric.value !== undefined);
+
+                if (metrics.length === 0) {
+                    return { x: 0, y: 0, width: 0, height: 0 };
+                }
+
+                const numItems = metrics.length;
+                const requestedColumns = state.columns;
+                const dpr = window.devicePixelRatio || 1;
+                
+                // Calculate actual columns based on number of items
+                let actualColumns = Math.min(requestedColumns, numItems);
+                actualColumns = Math.max(1, actualColumns);
+
+                const logicalWidth = canvasRef.width / dpr;
+                const logicalHeight = canvasRef.height / dpr;
+                const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
+                const columnWidth = availableWidth / actualColumns;
+
+                // Calculate font sizes
+                const titleFontSize = BASE_FONT_SIZE * SIZE_MULTIPLIERS[state.labelSize];
+                const valueFontSize = BASE_FONT_SIZE * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
+                const itemSpacing = METRIC_GROUP_SPACING * 0.8; // Slightly reduced spacing
+
+                // Initialize bounds with maximum possible values
+                let minX = canvasRef.width, minY = canvasRef.height;
+                let maxX = 0, maxY = 0;
+
+                // Set up context for text measurements
+                context.textBaseline = 'middle';
+
+                // Pre-measure all text to get accurate bounds
+                const textMeasurements = metrics.map(metric => {
+                    context.font = `${titleFontSize}px Roboto`;
+                    const labelWidth = context.measureText(metric.name).width;
+                    context.font = `bold ${valueFontSize}px Roboto`;
+                    const valueWidth = context.measureText(metric.value).width;
+                    return {
+                        labelWidth,
+                        valueWidth,
+                        totalWidth: Math.max(labelWidth, valueWidth)
+                    };
+                });
+
+                // Calculate layout and bounds
+                const numRows = Math.ceil(numItems / actualColumns);
+                const itemHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
+                const totalContentHeight = (itemHeight * numRows) + (itemSpacing * (numRows - 1));
+
+                // Calculate vertical centering offset
+                const verticalPadding = Math.min(
+                    logicalHeight * 0.1, // Max 10% of height
+                    Math.max(20, itemHeight * 0.2) // At least 20px or 20% of item height
+                );
+                const startY = (logicalHeight - totalContentHeight) / 2;
+
+                metrics.forEach((metric, index) => {
+                    const columnIndex = index % actualColumns;
+                    const rowIndex = Math.floor(index / actualColumns);
+                    
+                    // Calculate item position
+                    const measurement = textMeasurements[index];
+                    const yPos = startY + (rowIndex * (itemHeight + itemSpacing));
+                    
+                    // Calculate x position based on alignment and column
+                    const slotLeft = HORIZONTAL_PADDING + (columnWidth * columnIndex);
+                    const slotCenter = slotLeft + (columnWidth / 2);
+                    const slotRight = slotLeft + columnWidth;
+                    
+                    let xPos, localMinX, localMaxX;
+                    switch (state.textAlign) {
+                        case 'left':
+                            xPos = slotLeft;
+                            localMinX = xPos * dpr;
+                            localMaxX = (xPos + measurement.totalWidth) * dpr;
+                            break;
+                        case 'right':
+                            xPos = slotRight;
+                            localMinX = (xPos - measurement.totalWidth) * dpr;
+                            localMaxX = xPos * dpr;
+                            break;
+                        default: // center
+                            xPos = slotCenter;
+                            localMinX = (xPos - measurement.totalWidth/2) * dpr;
+                            localMaxX = (xPos + measurement.totalWidth/2) * dpr;
+                    }
+
+                    // Update global bounds
+                    minX = Math.min(minX, localMinX);
+                    maxX = Math.max(maxX, localMaxX);
+                    minY = Math.min(minY, yPos * dpr);
+                    maxY = Math.max(maxY, (yPos + itemHeight) * dpr);
+                });
+
+                // Calculate padding based on content size
+                const contentWidth = maxX - minX;
+                const contentHeight = maxY - minY;
+                const horizontalPadding = Math.min(
+                    contentWidth * 0.1, // 10% of content width
+                    Math.max(15 * dpr, titleFontSize * 0.4 * dpr) // At least 15px or 40% of title font size
+                );
+                const verticalPaddingScaled = verticalPadding * dpr;
+
+                // Apply padding while ensuring bounds stay within canvas
+                minX = Math.max(0, minX - horizontalPadding);
+                minY = Math.max(0, minY - verticalPaddingScaled);
+                maxX = Math.min(canvasRef.width, maxX + horizontalPadding);
+                maxY = Math.min(canvasRef.height, maxY + verticalPaddingScaled);
+
+                // Ensure minimum dimensions and aspect ratio
+                const width = Math.max(contentWidth * 0.2, maxX - minX); // At least 20% of content width
+                const height = Math.max(contentHeight * 0.2, maxY - minY); // At least 20% of content height
+
+                return {
+                    x: minX,
+                    y: minY,
+                    width,
+                    height
+                };
+            }
+
+            function getMetricLabel(metricKey) {
+                const labels = {
+                    distance: 'Distance',
+                    movingTime: 'Time',
+                    pace: 'Pace',
+                    elevationGain: 'Elevation',
+                    avgHeartRate: 'Avg HR',
+                    maxHeartRate: 'Max HR',
+                    calories: 'Calories',
+                    averageSpeed: 'Avg Speed'
+                };
+                return labels[metricKey] || metricKey; // Fallback to key if no label found
+            }
+
+            function showToast(message) {
+                // Clear any existing timeout
+                if (toastTimeoutId) {
+                    clearTimeout(toastTimeoutId);
+                }
+
+                toast.textContent = message;
+                toast.classList.remove('opacity-0');
+                
+                // Set a new timeout to hide the toast
+                toastTimeoutId = setTimeout(() => {
+                    toast.classList.add('opacity-0');
+                    toastTimeoutId = null; // Clear the ID once the timeout runs
+                }, 2000);
+            }
+
+            // Update color wheel handler
+            colorWheel.addEventListener('input', (e) => {
+                if (!state.isAuthenticated) {
+                    showStatusMessage('Please login to customize colors', 'warning');
+                    return;
+                }
+                if (!state.activityId) {
+                    showStatusMessage('Please load an activity first to customize colors', 'warning');
+                    return;
+                }
+
+                state.textColor = e.target.value;
+                generateOverlay(StravaData);
+                // Save state
+                sessionStorage.setItem('textColor', state.textColor);
+            });
+
+            // Copy Text Button - Seems mostly correct, ensure toast
+            copyTextBtn?.addEventListener('click', () => {
+                if (!state.activityData || state.selectedMetrics.length === 0) return;
+
+                // Check if clipboard API is available (requires secure context)
+                if (!navigator.clipboard) {
+                    showToast('Copy failed (insecure context)');
+                    console.warn('Clipboard API not available in this context.');
+                    return; // Exit if clipboard is not available
+                }
+
+                const textToCopy = state.selectedMetrics
+                    .map(metric => {
+                        const value = StravaData[metric];
+                        return value !== null && value !== undefined 
+                            ? `${getMetricLabel(metric)}\n${value}`  // Put label and value on separate lines
+                            : null;
+                    })
+                    .filter(line => line !== null)
+                    .join('\n\n');  // Add double line break between metrics
+
+                if (textToCopy) {
+                    navigator.clipboard.writeText(textToCopy)
+                        .then(() => showToast('Text copied!'))
+                        .catch(err => {
+                            console.error('Failed to copy text: ', err);
+                            showToast('Failed to Copy Text');
+                        });
+                }
+            });
+
+            copyImageBtn?.addEventListener('click', async () => {
+                if (!state.activityData || state.selectedMetrics.length === 0) return;
+                if (!canvas) return;
+
+                const bbox = getCroppedDimensions(StravaData, ctx, canvas);
+                if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
+                    showToast('Nothing to copy');
+                    return;
+                }
+
+                // Create a temporary canvas sized to the bounding box
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = bbox.width * 2;
+                tempCanvas.height = bbox.height * 2;
+                tempCtx.drawImage(
+                    canvas,
+                    bbox.x, bbox.y, bbox.width, bbox.height,
+                    0, 0, tempCanvas.width, tempCanvas.height
+                );
+
+                try {
+                    const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/png'));
+                    if (!blob) throw new Error('Failed to create blob');
+
+                    // For iOS Chrome, we'll try multiple clipboard API approaches
+                    const imageItem = new ClipboardItem({ 'image/png': blob });
+                    
+                    try {
+                        // First try the modern clipboard.write API
+                        await navigator.clipboard.write([imageItem]);
+                        showToast('Image copied!');
+                        return;
+                    } catch (writeErr) {
+                        console.log('Modern clipboard.write failed, trying alternative methods...', writeErr);
+                        
+                        // Try the iOS-specific clipboard API next
+                        if ('clipboard' in navigator && 'read' in navigator.clipboard) {
+                            try {
+                                await navigator.clipboard.write([imageItem]);
+                                showToast('Image copied!');
+                                return;
+                            } catch (iosErr) {
+                                console.log('iOS clipboard API failed:', iosErr);
+                                throw iosErr; // Continue to fallback
+                            }
+                        }
+                        throw writeErr; // If all clipboard attempts fail, continue to fallback
+                    }
+                } catch (err) {
+                    console.error('All clipboard methods failed:', err);
+                    // Only now do we fall back to the save modal
+                    if (imageSaveModal && modalImage) {
+                        modalImage.src = tempCanvas.toDataURL('image/png');
+                        imageSaveModal.classList.remove('hidden');
+                        showToast('Long press to save image');
+                    }
+                }
+            });
+
+            // Modify the saveImageBtn to handle mobile and desktop differently
+            saveImageBtn?.addEventListener('click', async () => {
+                if (!state.activityData || state.selectedMetrics.length === 0) {
+                    console.warn('No activity data or selected metrics to save.');
+                    return;
+                }
+                if (!canvas) {
+                    console.error("Canvas element not found for saving image.");
+                    return;
+                }
+
+                if (isLikelyMobileDevice()) {
+                    // Show modal for mobile users
+                    if (imageSaveModal && modalImage) {
+                        const bbox = getCroppedDimensions(StravaData, ctx, canvas);
+
+                        if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
+                            console.warn("No content detected on canvas or invalid bounding box.", bbox);
+                            showToast('Nothing to save');
+                            return;
+                        }
+
+                        // Create a temporary canvas sized to the bounding box
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCanvas.width = bbox.width * 2; // Double resolution for high-quality export
+                        tempCanvas.height = bbox.height * 2;
+
+                        // Draw the relevant part of the original canvas onto the temporary canvas
+                        tempCtx.drawImage(
+                            canvas,
+                            bbox.x, bbox.y, bbox.width, bbox.height, // Source rectangle (from original canvas)
+                            0, 0, tempCanvas.width, tempCanvas.height // Destination rectangle (scaled for high resolution)
+                        );
+
+                        modalImage.src = tempCanvas.toDataURL('image/png');
+                        imageSaveModal.classList.remove('hidden');
+                    }
+                } else {
+                    // Handle desktop download
+                    try {
+                        const bbox = getCroppedDimensions(StravaData, ctx, canvas);
+
+                        if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
+                            console.warn("No content detected on canvas or invalid bounding box.", bbox);
+                            showToast('Nothing to save');
+                            return;
+                        }
+
+                        // Create a temporary canvas sized to the bounding box
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCanvas.width = bbox.width * 2; // Double resolution for high-quality export
+                        tempCanvas.height = bbox.height * 2;
+
+                        // Draw the relevant part of the original canvas onto the temporary canvas
+                        tempCtx.drawImage(
+                            canvas,
+                            bbox.x, bbox.y, bbox.width, bbox.height, // Source rectangle (from original canvas)
+                            0, 0, tempCanvas.width, tempCanvas.height // Destination rectangle (scaled for high resolution)
+                        );
+
+                        // Trigger download
+                        const link = document.createElement('a');
+                        link.download = `fitnessoverlays_${state.activityId || 'image'}.png`;
+                        link.href = tempCanvas.toDataURL('image/png');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        showToast("Image saved successfully");
+                    } catch (err) {
+                        console.error('Error saving image: ', err);
+                        showToast('Error saving image');
+                    }
+                }
+            });
+
+            // Adjust canvas dimensions to maintain original size but export cropped image
+            const exportWidth = 1080 * 2; // Double resolution for high-quality export
+            const exportHeight = 1920 * 2;
+
+            function exportHighResCroppedImage() {
+                const dpr = window.devicePixelRatio || 1;
+                const cropWidth = exportWidth * dpr;
+                const cropHeight = exportHeight * dpr;
+
+                // Create a temporary canvas for high-resolution cropping
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = cropWidth;
+                tempCanvas.height = cropHeight;
+
+                // Draw the cropped area from the original canvas
+                tempCtx.drawImage(
+                    canvas,
+                    0, 0, cropWidth, cropHeight, // Source rectangle
+                    0, 0, cropWidth, cropHeight  // Destination rectangle
+                );
+
+                // Export the high-resolution cropped image
+                const highResImage = tempCanvas.toDataURL('image/png');
+                return highResImage;
+            }
+
+            // Remove the previously added high-resolution export button
+            const exportHighResContainer = document.getElementById('exportHighResContainer');
+            if (exportHighResContainer) {
+                exportHighResContainer.remove();
+            }
+
+            // Initial canvas setup and resize listener
+            if (canvas) {
+                resizeCanvas(); // Initial size
+                window.addEventListener('resize', resizeCanvas);
+            }
+
+            // Move this inside DOMContentLoaded, after state is defined
+            document.querySelectorAll('.text-align-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const alignment = btn.dataset.align;
+                    
+                    // Update buttons
+                    document.querySelectorAll('.text-align-btn').forEach(b => {
+                        b.classList.toggle('active', b === btn);
+                    });
+                    
+                    // Update state and redraw
+                    state.textAlign = alignment;
+                    generateOverlay(StravaData);
+                    // Save state
+                    sessionStorage.setItem('textAlign', state.textAlign);
+                });
+            });
+
+            // Add event listeners for size buttons
+            document.querySelectorAll('[data-label-size]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const size = btn.dataset.labelSize;
+                    document.querySelectorAll('[data-label-size]').forEach(b => {
+                        b.classList.toggle('active', b === btn);
+                    });
+                    state.labelSize = size;
+                    generateOverlay(StravaData);
+                    // Save state
+                    sessionStorage.setItem('labelSize', state.labelSize);
+                });
+            });
+
+            document.querySelectorAll('[data-value-size]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const size = btn.dataset.valueSize;
+                    document.querySelectorAll('[data-value-size]').forEach(b => {
+                        b.classList.toggle('active', b === btn);
+                    });
+                    state.valueSize = size;
+                    generateOverlay(StravaData);
+                    // Save state
+                    sessionStorage.setItem('valueSize', state.valueSize);
+                });
+            });
+
+            // --- Cycle Button Event Listeners ---
+            alignCycleBtn?.addEventListener('click', () => {
+                const currentIndex = ALIGN_ORDER.indexOf(state.textAlign);
+                state.textAlign = ALIGN_ORDER[(currentIndex + 1) % ALIGN_ORDER.length];
+                updateAlignButton();
+                generateOverlay(StravaData);
+                // Save state
+                sessionStorage.setItem('textAlign', state.textAlign);
+            });
+
+            labelSizeCycleBtn?.addEventListener('click', () => {
+                const currentIndex = SIZE_ORDER.indexOf(state.labelSize);
+                state.labelSize = SIZE_ORDER[(currentIndex + 1) % SIZE_ORDER.length];
+                updateLabelSizeButton();
+                generateOverlay(StravaData);
+                // Save state
+                sessionStorage.setItem('labelSize', state.labelSize);
+            });
+
+            valueSizeCycleBtn?.addEventListener('click', () => {
+                const currentIndex = SIZE_ORDER.indexOf(state.valueSize);
+                state.valueSize = SIZE_ORDER[(currentIndex + 1) % SIZE_ORDER.length];
+                updateValueSizeButton();
+                generateOverlay(StravaData);
+                // Save state
+                sessionStorage.setItem('valueSize', state.valueSize);
+            });
+
+            columnToggleBtn?.addEventListener('click', () => {
+                // Cycle through 1, 2, 3, 4 columns
+                state.columns = (state.columns % 4) + 1;
+                updateColumnButton();
+                generateOverlay(StravaData);
+                // Save state
+                sessionStorage.setItem('columns', state.columns.toString());
+            });
+            
+            // --- Initial Button States ---
+            updateAlignButton();
+            updateLabelSizeButton();
+            updateValueSizeButton();
+            updateColumnButton(); 
+
+            // --- Reset Button Logic ---
+            const resetSettingsBtn = document.getElementById('resetSettingsBtn');
+            resetSettingsBtn?.addEventListener('click', () => {
+                // Define default values
+                const defaultMetrics = ['distance', 'movingTime', 'pace'];
+                const defaultTextColor = '#ffffff';
+                const defaultTextAlign = 'center';
+                const defaultLabelSize = 'medium';
+                const defaultValueSize = 'large';
+                const defaultColumns = 1;
+
+                // 1. Clear saved state from sessionStorage
+                sessionStorage.removeItem('selectedMetrics');
+                sessionStorage.removeItem('textColor');
+                sessionStorage.removeItem('textAlign');
+                sessionStorage.removeItem('labelSize');
+                sessionStorage.removeItem('valueSize');
+                sessionStorage.removeItem('columns');
+
+                // 2. Reset the state object
+                state.selectedMetrics = [...defaultMetrics]; // Use spread for new array
+                state.textColor = defaultTextColor;
+                state.textAlign = defaultTextAlign;
+                state.labelSize = defaultLabelSize;
+                state.valueSize = defaultValueSize;
+                state.columns = defaultColumns;
+
+                // 3. Update Controls UI
+                if (colorWheel) colorWheel.value = defaultTextColor;
+                updateAlignButton();
+                updateLabelSizeButton();
+                updateValueSizeButton();
+                updateColumnButton();
+
+                // 4. Update Metric Buttons UI
+                document.querySelectorAll('.overlay-option').forEach(button => {
+                    const metric = button.dataset.metric;
+                    // Check availability from the existing metricsAvailability map (created during loadActivityFromSession)
+                    const isAvailable = state.activityData ? !!metricsAvailability[metric] : false; // Now accesses the higher-scoped variable
+
+                    button.classList.remove('bg-fitness-green', 'bg-fitness-gray', 'bg-gray-300', 'cursor-not-allowed');
+                    button.disabled = false;
+
+                    if (!isAvailable) {
+                        button.disabled = true;
+                        button.classList.add('bg-gray-300', 'cursor-not-allowed');
+                    } else {
+                        if (defaultMetrics.includes(metric)) {
+                            button.classList.add('bg-fitness-green');
+                        } else {
+                            button.classList.add('bg-fitness-gray');
+                        }
+                    }
+                });
+
+                // 5. Redraw Canvas
+                generateOverlay(StravaData);
+            });
+
+            // --- Image Save Modal Logic ---
+            const imageSaveModal = document.getElementById('imageSaveModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const modalImage = document.getElementById('modalImage');
+
+            const hideModal = () => {
+                if (imageSaveModal) {
+                    imageSaveModal.classList.add('hidden');
+                    // Optional: Clear image src when hiding
+                    if (modalImage) modalImage.src = ''; 
+                }
+            };
+
+            closeModalBtn?.addEventListener('click', hideModal);
+            imageSaveModal?.addEventListener('click', (event) => {
+                // Hide if clicked on the background overlay itself, not the content
+                if (event.target === imageSaveModal) {
+                    hideModal();
+                }
+            });
+            // --- End Image Save Modal Logic ---
+
+            loadActivityFromSession();
+        });
+    </script>
+
+{% endblock %}

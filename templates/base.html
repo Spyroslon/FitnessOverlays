@@ -6,14 +6,70 @@
     <link rel="icon" type="image/x-icon" href="/static/images/FitnessOverlaysUpdatedLogo.ico">
     <meta name="copyright" content="FitnessOverlays - Copyright (c) 2025 Spyros Lontos">
     <meta name="license" content="AGPL-3.0">
+    <meta name="csrf-token" content="{{ session['csrf_token'] }}">
     <title>FitnessOverlays</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="/static/css/tailwind.css" rel="stylesheet">
     <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <script src="/static/js/common.js" defer></script>
+    {% block style %}{% endblock %}
 </head>
 <body class="font-sans antialiased text-gray-800 bg-white bg-fitness-radial min-h-screen flex flex-col flex-grow" style="touch-action: manipulation;">
 
     <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
+        {% if authenticated %}
+        <nav class="container mx-auto px-2 sm:px-4 py-3 grid grid-cols-[60px_1fr_60px] sm:grid-cols-3 items-center max-w-[800px]">
+            <!-- Profile Dropdown Left -->
+            <div class="flex justify-start min-w-[40px]">
+                <div id="profile-dropdown-container" class="relative">
+                    <!-- Trigger -->
+                    <div id="profile-picture-trigger" class="cursor-pointer relative">
+                        <img id="profile-picture"
+                            src="{{ athlete_profile }}"
+                            alt="Profile"
+                            class="w-10 h-10 rounded-full object-cover border border-gray-200/50">
+                        <span class="absolute bottom-0 left-7 w-3.5 h-3.5 bg-fitness-green border border-white rounded-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 14a1 1 0 01-.7-.3l-4-4a1 1 0 111.4-1.4L10 11.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-.7.3z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                    </div>
+                    <!-- Dropdown -->
+                    <div id="profile-dropdown-menu"
+                        class="hidden absolute left-0 w-auto max-w-xs bg-white rounded-lg shadow-lg z-50 ring-1 ring-gray-200/50 border border-white/50 transform transition-all duration-200">
+                        <div class="px-4 py-2 text-sm text-gray-800 font-bold truncate">
+                            {{ athlete_first_name }} {{ athlete_last_name }}
+                        </div>
+                        <div class="border-t border-gray-300"></div>
+                        <button id="logout-button"
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-800 rounded-md hover:bg-fitness-green hover:text-white transition-colors duration-200">
+                            Log out
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logo Center -->
+            <div class="text-center flex justify-center items-center">
+                <a href="/" class="text-2xl sm:text-3xl font-bold hover:opacity-80 transition-opacity">
+                    <span class="text-fitness-green">Fitness</span><span class="text-gray-900">Overlays</span>
+                </a>
+            </div>
+
+            <!-- Activities Right -->
+            <div class="flex justify-end min-w-[40px]">
+                <a href="/activities" id="activities-header-btn"
+                class="bg-fitness-green text-white rounded-lg 
+                        px-2 sm:px-4 py-2 sm:py-2
+                        text-sm sm:text-base whitespace-nowrap
+                        flex items-center justify-center font-medium
+                        transform hover:scale-105 transition-all duration-200 
+                        drop-shadow-lg">
+                    Activities
+                </a>
+            </div>
+        </nav>
+        {% else %}
         <nav class="container mx-auto px-2 sm:px-4 py-3 sm:grid-cols-3 items-center max-w-[800px]">
             <div class="text-center flex justify-center items-center">
                 <a href="/" class="text-2xl sm:text-3xl font-bold hover:opacity-80 transition-opacity">
@@ -21,7 +77,9 @@
                 </a>
             </div>
         </nav>
+        {% endif %}
     </header>
+
 
     {% block content %}{% endblock %}
 

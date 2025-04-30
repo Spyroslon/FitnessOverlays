@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for, jsonify
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify, send_from_directory, Response
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
@@ -10,6 +10,8 @@ import secrets
 import time
 from datetime import datetime, timezone, timedelta
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.utils import safe_join
+from functools import wraps
 
 # --- Environment Variable Validation ---
 def check_env_vars():
@@ -162,7 +164,6 @@ def get_database_uri(filename, persistent_dir):
 constructed_db_uri = get_database_uri(DATABASE_FILENAME, PERSISTENT_DATA_DIR)
 app.config['SQLALCHEMY_DATABASE_URI'] = constructed_db_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Recommended setting
-# app.config['RATELIMIT_STORAGE_URI'] = RATELIMIT_STORAGE_URI
 app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
@@ -292,11 +293,115 @@ class ActivityLists(db.Model):
 with app.app_context():
     db.create_all()
 
+@app.after_request
+def after_request(response: Response) -> Response:
+    """Add security headers and handle caching."""
+    # --- Content Security Policy ---
+    csp = {
+        'default-src': ["'self'"],
+        'script-src': ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
+        'style-src': ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
+        'font-src': ["'self'", "fonts.gstatic.com"],
+        'img-src': ["'self'", "*.strava.com", "dgalywyr863hv.cloudfront.net", "data:"],
+        'connect-src': ["'self'", "www.strava.com", "strava.com"],
+        'frame-ancestors': ["'none'"],
+        'form-action': ["'self'"],
+        'base-uri': ["'self'"],
+        'manifest-src': ["'self'"],
+        'media-src': ["'self'"],
+        'object-src': ["'none'"],
+        'worker-src': ["'self'"]
+    }
+
+    if ENVIRONMENT == "prod":
+        csp['script-src'] = [s for s in csp['script-src'] if s != "cdn.tailwindcss.com"]
+
+    csp_string = '; '.join(f"{k} {' '.join(v)}" for k, v in csp.items())
+    response.headers['Content-Security-Policy'] = csp_string
+
+    # --- Security Headers ---
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Permissions-Policy'] = (
+        'accelerometer=(), autoplay=(), camera=(), cross-origin-isolated=(), display-capture=(), '
+        'encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), keyboard-map=(), '
+        'magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), '
+        'screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()'
+    )
+    response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+    response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+
+    # --- Cache Control ---
+    if request.path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+    else:
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+
+    # --- Cleanup ---
+    response.headers.pop('X-Powered-By', None)
+    response.headers.pop('Server', None)
+
+    return response
+
+ALLOWED_EXTENSIONS = {'.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico'}
+STATIC_DIR = 'static'
+
+@app.route('/static/<path:path>')
+def serve_static(path):
+    """Securely serve static files"""
+    client_ip = request.remote_addr
+    ext = os.path.splitext(path.lower())[1]
+
+    if ext not in ALLOWED_EXTENSIONS:
+        logger.warning(f'Blocked disallowed file type: {path} - IP: {client_ip}')
+        return jsonify({"error": "File type not allowed"}), 403
+
+    safe_path = safe_join(STATIC_DIR, path)
+    if not safe_path:
+        logger.warning(f'Directory traversal attempt: {path} - IP: {client_ip}')
+        return jsonify({"error": "Invalid file path"}), 403
+
+    abs_safe_path = os.path.abspath(safe_path)
+    abs_static_root = os.path.abspath(STATIC_DIR)
+
+    if not abs_safe_path.startswith(abs_static_root):
+        logger.warning(f'Path traversal detected: {path} - IP: {client_ip}')
+        return jsonify({"error": "Invalid file path"}), 403
+
+    if not os.path.exists(abs_safe_path):
+        return jsonify({"error": "File not found"}), 404
+
+    try:
+        return send_from_directory(STATIC_DIR, path)
+    except Exception as e:
+        logger.error(f'Failed to serve file: {path} - IP: {client_ip} - Error: {e}')
+        return jsonify({"error": "Error accessing file"}), 500
+
 def generate_csrf_token():
     """Generate a new CSRF token"""
     if 'csrf_token' not in session:
         session['csrf_token'] = secrets.token_hex(32)
     return session['csrf_token']
+
+def validate_csrf_token(request):
+    """Validate CSRF token."""
+    token = request.headers.get('X-CSRF-Token')
+    return token and token == session.get('csrf_token')
+
+@app.before_request
+def csrf_protect():
+    """Protect state-changing requests with CSRF validation."""
+    if request.path == '/api/activities/sync':
+        return
+        
+    if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
+        if not validate_csrf_token(request):
+            logger.warning(f'CSRF validation failed - IP: {request.remote_addr}')
+            return jsonify({"error": "Invalid CSRF token"}), 403
 
 def refresh_access_token(refresh_token):
     """Refresh the access token with robust error handling"""
@@ -374,6 +479,12 @@ def refresh_access_token(refresh_token):
         logger.error(f'Unexpected error: {str(e)}')
 
     return None
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    """Clear the session data"""
+    session.clear()
+    return redirect('/')
 
 @app.route('/')
 def index():
@@ -489,41 +600,163 @@ def callback():
         if not athlete_id:
             logger.error('No athlete ID in token response')
             return redirect('/')
-            
-        # try:
-        #     # Find existing athlete or create new one
-        #     athlete = db.session.get(Athletes, athlete_id)
-        #     if not athlete:
-        #         athlete = Athletes(athlete_id=athlete_id)
-        #         db.session.add(athlete)
-        #         logger.info(f'Creating new athlete record for ID: {athlete_id}')
-        #     else:
-        #         logger.info(f'Updating existing athlete record for ID: {athlete_id}')
-            
-        #     # Update athlete data with new tokens and info
-        #     athlete.update_from_token(token, athlete_data)
-        #     db.session.commit()
-        #     logger.info(f'Successfully updated athlete data in database for ID: {athlete_id}')
-            
-        #     # Store athlete info in session
-        #     session['athlete_id'] = athlete_id
-        #     session['athlete_username'] = athlete_data.get('username')
-        #     session['athlete_first_name'] = athlete_data.get('firstname')
-        #     session['athlete_last_name'] = athlete_data.get('lastname')
-        #     session['athlete_profile'] = athlete_data.get('profile_medium')
-        #     session['access_token'] = token['access_token']
-        #     session['refresh_token'] = token['refresh_token']
-        #     session['expires_at'] = token['expires_at']
-            
-        # except Exception as db_error:
-        #     db.session.rollback()
-        #     logger.error(f'Database error during callback: {str(db_error)}')
-        #     return redirect('/')
-        
+
+        # Store athlete info in session
+        session['athlete_id'] = athlete_id
+        session['athlete_username'] = athlete_data.get('username')
+        session['athlete_first_name'] = athlete_data.get('firstname')
+        session['athlete_last_name'] = athlete_data.get('lastname')
+        session['athlete_profile'] = athlete_data.get('profile_medium')
+        session['access_token'] = token['access_token']
+        session['refresh_token'] = token['refresh_token']
+        session['expires_at'] = token['expires_at']
+
+        logger.info(f"Successfully authenticated user {athlete_data.get('firstname')} {athlete_data.get('lastname')}")
+
         return redirect('/')
+
     except Exception as e:
         logger.error(f"OAuth callback error: {e}")
         return redirect('/')
+
+# Add login_required decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'athlete_id' not in session:
+            # Redirect to login page if not authenticated
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/customize')
+@login_required
+def customize():
+    """Serve the generate overlays page for authenticated users"""
+    return render_template("customize.html",
+                        authenticated=True,
+                        athlete_id=session.get("athlete_id"),
+                        athlete_first_name=session.get("athlete_first_name"),
+                        athlete_last_name=session.get("athlete_last_name"),
+                        athlete_profile=session.get("athlete_profile"),
+                        csrf_token=session['csrf_token'])
+
+@app.route('/activities')
+@login_required
+def activities():
+    """Serve the activities page for authenticated users"""
+    return render_template("activities.html",
+                        authenticated=True,
+                        athlete_id=session.get("athlete_id"),
+                        athlete_first_name=session.get("athlete_first_name"),
+                        athlete_last_name=session.get("athlete_last_name"),
+                        athlete_profile=session.get("athlete_profile"),
+                        csrf_token=session['csrf_token'])
+
+def create_sync_response(activities, page, per_page, sync_log, seconds_remaining, warning=None, using_cached=False):
+    """Helper function to create a consistent sync response"""
+    response = {
+        "activities": activities,
+        "pagination": {"page": page, "per_page": per_page},
+        "cooldown": {
+            "active": seconds_remaining > 0,
+            "seconds_remaining": seconds_remaining,
+            "total_cooldown": ActivityLists.SYNC_COOLDOWN.total_seconds()
+        },
+        "cached": using_cached
+    }
+    
+    if sync_log and sync_log.last_synced:
+        response["last_synced"] = sync_log.last_synced.isoformat()
+    elif not sync_log:
+        response["last_synced"] = datetime.now(timezone.utc).isoformat()
+    
+    if warning:
+        response["warning"] = warning
+
+    return response
+
+@app.route('/api/activities/sync', methods=['GET'])
+@login_required
+def sync_activities():
+    """Unified endpoint to fetch/sync activities from Strava with caching and cooldown"""
+    logger.info(f"Activities endpoint called - Method: {request.method} - Session: {session}")
+    athlete_id = session.get('athlete_id')
+    if not athlete_id:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    page = max(1, request.args.get('page', 1, type=int))
+    per_page = min(request.args.get('per_page', 30, type=int), ActivityLists.ITEMS_PER_PAGE)
+
+    sync_instance = ActivityLists(athlete_id=athlete_id)
+    sync_log = ActivityLists.query.filter_by(
+        athlete_id=athlete_id,
+        page=page,
+        per_page=per_page
+    ).first()
+
+    seconds_remaining = sync_instance.get_cooldown_remaining()
+
+    print(f"is_sync_allowed: {sync_instance.is_sync_allowed()}")
+    # Return cached data if available and appropriate
+    if not sync_instance.is_sync_allowed() and sync_log:
+        return jsonify(create_sync_response(sync_log.data if sync_log else [], page, per_page, sync_log, seconds_remaining, using_cached=True))
+
+    # Attempt to fetch fresh data from Strava
+    try:
+        response = requests.get(
+            "https://www.strava.com/api/v3/athlete/activities",
+            headers={"Authorization": f"Bearer {session['access_token']}"},
+            params={"page": page, "per_page": per_page},
+            timeout=15
+        )
+
+        if not response.ok:
+            return jsonify(create_sync_response(
+                sync_log.data if sync_log else [],
+                page,
+                per_page,
+                sync_log,
+                seconds_remaining,
+                warning="Failed to fetch fresh data, showing cached data" if sync_log else None,
+                using_cached=True
+            )), response.status_code if not sync_log else 200
+
+        activities = response.json()
+        current_time = datetime.now(timezone.utc)
+
+        # Update or create sync log
+        try:
+            if sync_log:
+                sync_log.data = activities
+                sync_log.last_synced = current_time
+            else:
+                sync_log = ActivityLists(
+                    athlete_id=athlete_id,
+                    data=activities,
+                    page=page,
+                    per_page=per_page,
+                    last_synced=current_time
+                )
+                db.session.add(sync_log)
+            db.session.commit()
+            return jsonify(create_sync_response(activities, page, per_page, sync_log, seconds_remaining, using_cached=False))
+        except Exception as db_error:
+            db.session.rollback()
+            logger.error(f'Database error: {str(db_error)}')
+            raise
+
+    except Exception as e:
+        logger.error(f'Error syncing activities: {str(e)}')
+        return jsonify(create_sync_response(
+            sync_log.data if sync_log else [],
+            page,
+            per_page,
+            sync_log,
+            seconds_remaining,
+            warning="Failed to sync data, showing cached data" if sync_log else None,
+            using_cached=True
+        )), 500 if not sync_log else 200
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -531,8 +764,16 @@ def page_not_found(e):
 
 @app.before_request
 def require_authentication():
-    if request.path.startswith('/auth'):
+    """Handle authentication requirements for different types of requests."""
+    
+    # Allow requests to static files, login, callback, root path
+    if request.path.startswith('/static/') or request.path in ['/login', '/callback', '/']:
+        return
+    
+    # If the user is not authenticated, render the 'auth_required.html' page
+    if 'athlete_id' not in session:
         return render_template('auth_required.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    logging.info("Starting Flask application...")
+    app.run(debug=DEBUG_MODE, port=5000)

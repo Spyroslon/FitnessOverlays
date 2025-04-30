@@ -1,5 +1,21 @@
 {% extends "base.html" %}
 
+{% block style %}
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .fade-in {
+            animation: fadeIn 1s ease-out forwards;
+        }
+        .carousel img {
+            pointer-events: none;
+            -webkit-user-drag: none;
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
     <main class="flex-grow container mx-auto max-w-[1000px]">
 
@@ -10,18 +26,22 @@
             <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
                 Turn your activities into high-resolution, minimalist overlays. Designed to be shared. Made to inspire.
             </p>
-            <div id="connect-strava" class="inline-block transform hover:scale-110 transition-transform duration-200 cursor-pointer py-10">
-                <img src="/static/images/btn_strava_connect_with_orange_x2.svg" alt="Connect with Strava" class="h-12 drop-shadow-lg rounded-lg">
-            </div>
-            <div id="see-activities-btn" class="hidden flex justify-center py-10">
-                <a href="/activities" 
-                    class="bg-fitness-green text-white font-bold py-4 px-6 rounded-lg
-                            transform hover:scale-110 transition-all duration-200 
-                            drop-shadow-lg
-                            flex items-center space-x-2">
-                    <span>See your Activities 📋</span>
-                </a>
-            </div>
+
+            {% if authenticated %}
+                <div id="see-activities-btn" class="flex justify-center py-10">
+                    <a href="/activities" 
+                        class="bg-fitness-green text-white font-bold py-4 px-6 rounded-lg
+                                transform hover:scale-110 transition-all duration-200 
+                                drop-shadow-lg
+                                flex items-center space-x-2">
+                        <span>See your Activities 📋</span>
+                    </a>
+                </div>
+            {% else %}
+                <div id="connect-strava" class="inline-block transform hover:scale-110 transition-transform duration-200 cursor-pointer py-10">
+                    <img src="/static/images/btn_strava_connect_with_orange_x2.svg" alt="Connect with Strava" class="h-12 drop-shadow-lg rounded-lg">
+                </div>
+            {% endif %}
         </section>
 
         <section class="relative z-10 fade-in">
