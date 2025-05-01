@@ -80,12 +80,14 @@
             let cooldownIntervalId;
     
             function createActivityTile(activity) {
-                const tile = document.createElement('div');
-                const gradient = activity.type === 'Run'
+                const isRun = activity.type === 'Run';
+                const gradient = isRun
                     ? 'from-green-400/90 to-green-600/90'
                     : 'from-blue-400/90 to-blue-600/90';
-    
+
+                const tile = document.createElement('div');
                 tile.className = 'bg-gray-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group';
+
                 tile.innerHTML = `
                     <div class="relative">
                         <div class="bg-gradient-to-r ${gradient} p-4 text-gray-900">
@@ -94,7 +96,7 @@
                                     <div class="flex items-center gap-2 mb-1">
                                         <span class="font-medium text-fitness-gray">${activity.type}</span>
                                     </div>
-                                    <h3 class="font-bold text-lg leading-tight">${activity.name}</h3>
+                                    <h3 class="font-bold text-lg leading-tight truncate max-w-xs">${activity.name}</h3>
                                 </div>
                                 <div class="text-sm text-end w-32 shrink-0 h-full">${formatDate(activity.start_date)}</div>
                             </div>
@@ -110,11 +112,16 @@
                                     <div class="font-bold text-gray-900">${formatDuration(activity.moving_time)}</div>
                                 </div>
                                 <div class="text-center border-r border-gray-100">
-                                    <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Avg Pace</div>
-                                    <div class="font-bold text-gray-900">${formatPace(activity.moving_time, activity.distance)}</div>
+                                    <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">
+                                        ${isRun ? 'Avg Pace' : 'Avg Speed'}
+                                    </div>
+                                    <div class="font-bold text-gray-900">
+                                        ${isRun ? formatPace(activity.moving_time, activity.distance) : formatSpeed(activity.distance, activity.moving_time)}
+                                    </div>
                                 </div>
                                 <div class="flex items-center justify-center">
-                                    <button onclick="saveActivityAndRedirect(${JSON.stringify(activity).replace(/"/g, '&quot;')})"
+                                    <button aria-label="Save and open activity details"
+                                            onclick="saveActivityAndRedirect(${JSON.stringify(activity).replace(/"/g, '&quot;')})"
                                             class="w-8 h-8 bg-fitness-light-green hover:bg-black/20 rounded-lg flex items-center justify-center backdrop-blur-sm transition-all duration-300 group-hover:scale-105">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -125,8 +132,10 @@
                         </div>
                     </div>
                 `;
+
                 return tile;
             }
+
         
             function formatDate(dateStr) {
                 const date = new Date(dateStr);
@@ -165,7 +174,13 @@
                 const remainingSeconds = Math.ceil(paceInSeconds % 60);
                 return `${minutes}:${remainingSeconds.toString().padStart(2, '0')} /km`;
             }
-    
+
+            function formatSpeed(distance, timeInSeconds) {
+                if (!distance || !timeInSeconds) return "0.0 km/h";
+                const speedInKmh = (distance / 1000) / (timeInSeconds / 3600);
+                return `${speedInKmh.toFixed(1)} km/h`;
+            }
+
             function formatSyncTime(timestamp) {
                 const diffSec = Math.floor((Date.now() - timestamp) / 1000);
                 if (diffSec < 60) return 'Just now';
