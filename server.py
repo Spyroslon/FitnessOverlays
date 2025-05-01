@@ -586,6 +586,7 @@ def callback():
             state=session.get('oauth_state'),
             redirect_uri=callback_url
         )
+
         token = oauth.fetch_token(
             TOKEN_URL,
             client_secret=CLIENT_SECRET,
