@@ -468,96 +468,106 @@
                 generateOverlay();
             }
 
+            async function ensureFontsLoaded() {
+                await document.fonts.load('bold 16px Roboto'); // Load specific styles used in canvas
+                await document.fonts.ready;
+            }
+
             function drawMetrics(data, context = ctx) {
-                const metrics = state.selectedMetrics
-                    .map(key => ({
-                        name: getMetricLabel(key),
-                        value: data[key]
-                    }))
-                    .filter(metric => metric.value !== null && metric.value !== undefined);
+                // Ensure Roboto is loaded before drawing
+                document.fonts.load("12px Roboto").then(() => {
+                    document.fonts.ready.then(() => {
+                        const metrics = state.selectedMetrics
+                            .map(key => ({
+                                name: getMetricLabel(key),
+                                value: data[key]
+                            }))
+                            .filter(metric => metric.value !== null && metric.value !== undefined);
 
-                if (metrics.length === 0) return;
+                        if (metrics.length === 0) return;
 
-                const numItems = metrics.length;
-                const requestedColumns = state.columns;
-                let actualColsForSizing = Math.min(requestedColumns, numItems);
-                if (numItems === 1) actualColsForSizing = 1;
-                actualColsForSizing = Math.max(1, actualColsForSizing);
-                const itemsPerColumnForSizing = Math.ceil(numItems / actualColsForSizing);
+                        const numItems = metrics.length;
+                        const requestedColumns = state.columns;
+                        let actualColsForSizing = Math.min(requestedColumns, numItems);
+                        if (numItems === 1) actualColsForSizing = 1;
+                        actualColsForSizing = Math.max(1, actualColsForSizing);
+                        const itemsPerColumnForSizing = Math.ceil(numItems / actualColsForSizing);
 
-                const dpr = window.devicePixelRatio || 1;
-                const logicalWidth = overlayCanvas.width / dpr;
-                const logicalHeight = overlayCanvas.height / dpr;
-                const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
-                const columnWidthForSizing = availableWidth / actualColsForSizing;
-                const verticalPadding = logicalHeight * VERTICAL_PADDING_FACTOR;
-                const availableHeight = logicalHeight - (verticalPadding * 2);
+                        const dpr = window.devicePixelRatio || 1;
+                        const logicalWidth = overlayCanvas.width / dpr;
+                        const logicalHeight = overlayCanvas.height / dpr;
+                        const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
+                        const columnWidthForSizing = availableWidth / actualColsForSizing;
+                        const verticalPadding = logicalHeight * VERTICAL_PADDING_FACTOR;
+                        const availableHeight = logicalHeight - (verticalPadding * 2);
 
-                // Estimate max item height based on available vertical space and itemsPerColumnForSizing
-                const maxItemHeight = (availableHeight - (METRIC_GROUP_SPACING * (itemsPerColumnForSizing - 1))) / Math.max(1, itemsPerColumnForSizing);
-                const maxFontBase = Math.min(
-                    maxItemHeight * 0.45,
-                    columnWidthForSizing * 0.15,
-                    BASE_FONT_SIZE
-                );
+                        const maxItemHeight = (availableHeight - (METRIC_GROUP_SPACING * (itemsPerColumnForSizing - 1))) / Math.max(1, itemsPerColumnForSizing);
+                        const maxFontBase = Math.min(
+                            maxItemHeight * 0.45,
+                            columnWidthForSizing * 0.15,
+                            BASE_FONT_SIZE
+                        );
 
-                let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
-                let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
-                let groupSpacing = METRIC_GROUP_SPACING;
+                        let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
+                        let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
+                        let groupSpacing = METRIC_GROUP_SPACING;
 
-                // Recalculate needed height and scale if needed
-                let neededHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing +
-                                   (groupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
-                const scaleFactor = Math.min(1, availableHeight / Math.max(1, neededHeight));
-                titleFontSize *= scaleFactor;
-                valueFontSize *= scaleFactor;
-                groupSpacing *= scaleFactor;
-                titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
-                valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
-                groupSpacing = Math.max(groupSpacing, LABEL_VALUE_SPACING * 0.5);
+                        let neededHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing +
+                                        (groupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
+                        const scaleFactor = Math.min(1, availableHeight / Math.max(1, neededHeight));
+                        titleFontSize *= scaleFactor;
+                        valueFontSize *= scaleFactor;
+                        groupSpacing *= scaleFactor;
+                        titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
+                        valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
+                        groupSpacing = Math.max(groupSpacing, LABEL_VALUE_SPACING * 0.5);
 
-                const finalItemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
-                const drawableColumns = Math.min(requestedColumns, numItems);
-                const numRows = Math.ceil(numItems / requestedColumns);
-                const finalTotalContentHeight = (finalItemHeight * numRows) + (groupSpacing * Math.max(0, numRows - 1));
-                const startY = verticalPadding + (availableHeight - finalTotalContentHeight) / 2;
+                        const finalItemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
+                        const drawableColumns = Math.min(requestedColumns, numItems);
+                        const numRows = Math.ceil(numItems / requestedColumns);
+                        const finalTotalContentHeight = (finalItemHeight * numRows) + (groupSpacing * Math.max(0, numRows - 1));
+                        const startY = verticalPadding + (availableHeight - finalTotalContentHeight) / 2;
 
-                context.textBaseline = 'middle';
-                metrics.forEach((metric, index) => {
-                    const columnIndex = index % requestedColumns;
-                    const rowIndex = Math.floor(index / requestedColumns);
-                    const columnWidth = availableWidth / drawableColumns;
-                    let xPos;
-                    if (drawableColumns === 1) {
-                        context.textAlign = state.textAlign;
-                        switch (state.textAlign) {
-                            case 'left': xPos = HORIZONTAL_PADDING; break;
-                            case 'right': xPos = logicalWidth - HORIZONTAL_PADDING; break;
-                            default: xPos = logicalWidth / 2;
-                        }
-                    } else {
-                        context.textAlign = state.textAlign;
-                        const slotLeft = HORIZONTAL_PADDING + (columnWidth * columnIndex);
-                        const slotCenter = slotLeft + (columnWidth / 2);
-                        const slotRight = slotLeft + columnWidth;
-                        switch (state.textAlign) {
-                            case 'left': xPos = slotLeft; break;
-                            case 'right': xPos = slotRight; break;
-                            default: xPos = slotCenter;
-                        }
-                    }
-                    const itemSlotTopY = startY + (rowIndex * (finalItemHeight + groupSpacing));
-                    const itemSlotCenterY = itemSlotTopY + finalItemHeight / 2;
-                    context.fillStyle = state.textColor;
-                    const textPairHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
-                    const labelYOffset = -(textPairHeight / 2) + (titleFontSize / 2);
-                    const valueYOffset = (textPairHeight / 2) - (valueFontSize / 2);
-                    context.font = `${titleFontSize}px Roboto`;
-                    context.fillText(metric.name, xPos, itemSlotCenterY + labelYOffset);
-                    context.font = `bold ${valueFontSize}px Roboto`;
-                    context.fillText(metric.value, xPos, itemSlotCenterY + valueYOffset);
+                        context.textBaseline = 'middle';
+
+                        metrics.forEach((metric, index) => {
+                            const columnIndex = index % requestedColumns;
+                            const rowIndex = Math.floor(index / requestedColumns);
+                            const columnWidth = availableWidth / drawableColumns;
+                            let xPos;
+                            if (drawableColumns === 1) {
+                                context.textAlign = state.textAlign;
+                                switch (state.textAlign) {
+                                    case 'left': xPos = HORIZONTAL_PADDING; break;
+                                    case 'right': xPos = logicalWidth - HORIZONTAL_PADDING; break;
+                                    default: xPos = logicalWidth / 2;
+                                }
+                            } else {
+                                context.textAlign = state.textAlign;
+                                const slotLeft = HORIZONTAL_PADDING + (columnWidth * columnIndex);
+                                const slotCenter = slotLeft + (columnWidth / 2);
+                                const slotRight = slotLeft + columnWidth;
+                                switch (state.textAlign) {
+                                    case 'left': xPos = slotLeft; break;
+                                    case 'right': xPos = slotRight; break;
+                                    default: xPos = slotCenter;
+                                }
+                            }
+                            const itemSlotTopY = startY + (rowIndex * (finalItemHeight + groupSpacing));
+                            const itemSlotCenterY = itemSlotTopY + finalItemHeight / 2;
+                            context.fillStyle = state.textColor;
+                            const textPairHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
+                            const labelYOffset = -(textPairHeight / 2) + (titleFontSize / 2);
+                            const valueYOffset = (textPairHeight / 2) - (valueFontSize / 2);
+                            context.font = `${titleFontSize}px Roboto`;
+                            context.fillText(metric.name, xPos, itemSlotCenterY + labelYOffset);
+                            context.font = `bold ${valueFontSize}px Roboto`;
+                            context.fillText(metric.value, xPos, itemSlotCenterY + valueYOffset);
+                        });
+
+                        context.textBaseline = 'alphabetic';
+                    });
                 });
-                context.textBaseline = 'alphabetic';
             }
 
             // Existing code
@@ -587,8 +597,9 @@
                 // Clear the entire canvas
                 ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
-                // Draw metrics
-                drawMetrics(data);
+                ensureFontsLoaded().then(() => {
+                    drawMetrics(data);
+                });
             }
 
             function getCroppedDimensions(data, context, canvasRef) {
