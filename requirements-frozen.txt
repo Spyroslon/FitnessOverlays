@@ -21,6 +21,7 @@ mdurl==0.1.2
 oauthlib==3.2.2
 ordered-set==4.1.0
 packaging==24.2
+psycopg2-binary==2.9.10
 Pygments==2.19.1
 python-dotenv==1.1.0
 redis==5.2.1

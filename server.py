@@ -20,9 +20,8 @@ def check_env_vars():
         "CLIENT_SECRET",
         "AUTH_BASE_URL",
         "TOKEN_URL",
-        "DATABASE_FILENAME",
+        "SQLALCHEMY_DATABASE_URI",
         "SECRET_KEY",
-        "RATELIMIT_STORAGE_URI",
         "ENVIRONMENT"
     ]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
@@ -37,8 +36,7 @@ CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 AUTH_BASE_URL = os.getenv("AUTH_BASE_URL")
 TOKEN_URL = os.getenv("TOKEN_URL")
-DATABASE_FILENAME = os.getenv("DATABASE_FILENAME")
-PERSISTENT_DATA_DIR = os.getenv("PERSISTENT_DATA_DIR", None) # Optional for local dev
+SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
 
 # Environment-based configuration
 ENVIRONMENT = os.getenv("ENVIRONMENT", "prod").lower()
@@ -119,51 +117,10 @@ root_logger.setLevel(logging.INFO) # Set root logger level
 # Use the configured logger throughout the app
 logger = logging.getLogger(__name__)
 
-# --- Database Path Construction ---
-def get_database_uri(filename, persistent_dir):
-    db_path = None
-    # Production environment with a specified absolute persistent directory
-    if ENVIRONMENT == "prod" and persistent_dir and os.path.isabs(persistent_dir):
-        try:
-            # Ensure the directory exists, create if necessary
-            os.makedirs(persistent_dir, exist_ok=True)
-            db_path = os.path.join(persistent_dir, filename)
-            logger.info(f"Using persistent database path in PROD: {db_path}")
-        except OSError as e:
-            # Handle potential errors during directory creation (e.g., permissions)
-            logger.error(f"Error creating persistent directory {persistent_dir} in PROD: {e}")
-            # Fallback or raise error? Raising prevents startup if persistent disk is mandatory/expected.
-            raise ValueError(f"Could not create persistent directory: {persistent_dir}") from e
-    
-    # Fallback for Development environment OR Production without a valid persistent_dir
-    if db_path is None:
-        instance_path = os.path.join(app.instance_path)
-        try:
-            # Ensure the instance folder exists
-            os.makedirs(instance_path, exist_ok=True)
-            db_path = os.path.join(instance_path, filename)
-            if ENVIRONMENT == "prod":
-                logger.info(f"Using instance folder database path in PROD (PERSISTENT_DATA_DIR not set/absolute): {db_path}")
-            else:
-                logger.info(f"Using instance folder database path in DEV: {db_path}")
-        except OSError as e:
-            logger.error(f"Error creating instance directory {instance_path}: {e}")
-            raise ValueError(f"Could not create instance directory: {instance_path}") from e
-            
-    if db_path is None:
-        # This should theoretically not be reached if makedirs works or raises
-        critical_error = "Failed to determine a valid database path."
-        logger.critical(critical_error)
-        raise RuntimeError(critical_error)
-        
-    return f"sqlite:///{db_path}"
-# --- End Database Path Construction ---
-
 # Configure SQLAlchemy
-# Construct the database URI dynamically
-constructed_db_uri = get_database_uri(DATABASE_FILENAME, PERSISTENT_DATA_DIR)
-app.config['SQLALCHEMY_DATABASE_URI'] = constructed_db_uri
+app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Recommended setting
+
 app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,

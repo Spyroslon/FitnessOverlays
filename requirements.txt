@@ -5,7 +5,7 @@ flask-cors # Secure cross-origin handling
 Flask-WTF # Form handling and CSRF protection
 Flask-SQLAlchemy>=3.0
 Werkzeug>=2.0 # Ensure compatible Werkzeug version
-redis
+psycopg2-binary
 
 # API and OAuth dependencies
 requests

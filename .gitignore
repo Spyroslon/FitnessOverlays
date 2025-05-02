@@ -16,6 +16,7 @@ npm-debug.log*
 # Editor/IDE specific
 /.cursor/
 /vscode/
+.vscode/
 /.idea/
 
 # Databases
