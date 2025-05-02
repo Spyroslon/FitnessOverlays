@@ -468,11 +468,6 @@
                 generateOverlay();
             }
 
-            async function ensureFontsLoaded() {
-                await document.fonts.load('bold 16px Roboto'); // Load specific styles used in canvas
-                await document.fonts.ready;
-            }
-
             function drawMetrics(data, context = ctx) {
                 // Ensure Roboto is loaded before drawing
                 document.fonts.load("12px Roboto").then(() => {
@@ -593,13 +588,9 @@
             });
 
             // Generate Overlay
-            function generateOverlay(data = StravaData) {
-                // Clear the entire canvas
+            async function generateOverlay(data = StravaData) {
                 ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-
-                ensureFontsLoaded().then(() => {
-                    drawMetrics(data);
-                });
+                drawMetrics(data);
             }
 
             function getCroppedDimensions(data, context, canvasRef) {
