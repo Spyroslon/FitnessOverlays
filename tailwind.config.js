@@ -3,6 +3,7 @@
 module.exports = {
   content: [
     './static/html/**/*.html',   // ✅ HTML templates
+    './templates/**/*.html',     // ✅ HTML templates
     './static/js/**/*.js',       // ✅ JS files
     './extras/**/*.html',        // 🆕 HTML in extras
     './*.html',                  // 🆕 fallback for root-level HTML if needed

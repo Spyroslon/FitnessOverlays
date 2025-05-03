@@ -1,17 +1,27 @@
-from flask import Flask, render_template, request, redirect, session, url_for, jsonify, send_from_directory, Response
-from flask_cors import CORS
-from dotenv import load_dotenv
+# FitnessOverlays - Copyright (c) 2025 Spyros Lontos
+# Licensed under AGPL-3.0
+
+from flask import Flask, jsonify, send_from_directory, session, redirect, url_for, request, Response
 import os
+import time
 import requests
 import logging
-from logging.handlers import TimedRotatingFileHandler
-from requests_oauthlib import OAuth2Session
 import secrets
-import time
-from datetime import datetime, timezone, timedelta
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import safe_join
+from logging.handlers import TimedRotatingFileHandler
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_cors import CORS
+from requests_oauthlib import OAuth2Session
+from dotenv import load_dotenv
+from flask_limiter.errors import RateLimitExceeded
+from werkzeug.utils import secure_filename, safe_join
 from functools import wraps
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime, timezone, timedelta
+
+# Add this log line right at the top
+logging.basicConfig(level=logging.INFO) # Basic config if logger not set up yet
+logging.info("--- server.py script started execution ---")
 
 # --- Environment Variable Validation ---
 def check_env_vars():
@@ -20,8 +30,9 @@ def check_env_vars():
         "CLIENT_SECRET",
         "AUTH_BASE_URL",
         "TOKEN_URL",
-        "SQLALCHEMY_DATABASE_URI",
+        "DATABASE_FILENAME",
         "SECRET_KEY",
+        "RATELIMIT_STORAGE_URI",
         "ENVIRONMENT"
     ]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
@@ -36,15 +47,18 @@ CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 AUTH_BASE_URL = os.getenv("AUTH_BASE_URL")
 TOKEN_URL = os.getenv("TOKEN_URL")
-SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
+DATABASE_FILENAME = os.getenv("DATABASE_FILENAME")
+PERSISTENT_DATA_DIR = os.getenv("PERSISTENT_DATA_DIR", None) # Optional for local dev
+RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://") # Default to memory if not set
 
 # Environment-based configuration
-ENVIRONMENT = os.getenv("ENVIRONMENT", "prod").lower()
+ENVIRONMENT = os.getenv("ENVIRONMENT", "prod").lower()  # Default to prod if not set
 if ENVIRONMENT == "dev":
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Allow OAuth without HTTPS in development
     DEBUG_MODE = True
 else:
-    # In production, we don't set OAUTHLIB_INSECURE_TRANSPORT at all. This ensures HTTPS is required
+    # In production, we don't set OAUTHLIB_INSECURE_TRANSPORT at all
+    # This ensures HTTPS is required
     if 'OAUTHLIB_INSECURE_TRANSPORT' in os.environ:
         del os.environ['OAUTHLIB_INSECURE_TRANSPORT']
     DEBUG_MODE = False
@@ -117,10 +131,52 @@ root_logger.setLevel(logging.INFO) # Set root logger level
 # Use the configured logger throughout the app
 logger = logging.getLogger(__name__)
 
-# Configure SQLAlchemy
-app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Recommended setting
+# --- Database Path Construction ---
+def get_database_uri(filename, persistent_dir):
+    db_path = None
+    # Production environment with a specified absolute persistent directory
+    if ENVIRONMENT == "prod" and persistent_dir and os.path.isabs(persistent_dir):
+        try:
+            # Ensure the directory exists, create if necessary
+            os.makedirs(persistent_dir, exist_ok=True)
+            db_path = os.path.join(persistent_dir, filename)
+            logger.info(f"Using persistent database path in PROD: {db_path}")
+        except OSError as e:
+            # Handle potential errors during directory creation (e.g., permissions)
+            logger.error(f"Error creating persistent directory {persistent_dir} in PROD: {e}")
+            # Fallback or raise error? Raising prevents startup if persistent disk is mandatory/expected.
+            raise ValueError(f"Could not create persistent directory: {persistent_dir}") from e
+    
+    # Fallback for Development environment OR Production without a valid persistent_dir
+    if db_path is None:
+        instance_path = os.path.join(app.instance_path)
+        try:
+            # Ensure the instance folder exists
+            os.makedirs(instance_path, exist_ok=True)
+            db_path = os.path.join(instance_path, filename)
+            if ENVIRONMENT == "prod":
+                logger.info(f"Using instance folder database path in PROD (PERSISTENT_DATA_DIR not set/absolute): {db_path}")
+            else:
+                logger.info(f"Using instance folder database path in DEV: {db_path}")
+        except OSError as e:
+            logger.error(f"Error creating instance directory {instance_path}: {e}")
+            raise ValueError(f"Could not create instance directory: {instance_path}") from e
+            
+    if db_path is None:
+        # This should theoretically not be reached if makedirs works or raises
+        critical_error = "Failed to determine a valid database path."
+        logger.critical(critical_error)
+        raise RuntimeError(critical_error)
+        
+    return f"sqlite:///{db_path}"
+# --- End Database Path Construction ---
 
+# Configure SQLAlchemy
+# Construct the database URI dynamically
+constructed_db_uri = get_database_uri(DATABASE_FILENAME, PERSISTENT_DATA_DIR)
+app.config['SQLALCHEMY_DATABASE_URI'] = constructed_db_uri
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Recommended setting
+app.config['RATELIMIT_STORAGE_URI'] = RATELIMIT_STORAGE_URI
 app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
@@ -212,7 +268,7 @@ class ActivityLists(db.Model):
     last_synced = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     page = db.Column(db.Integer, nullable=False, default=1)
     per_page = db.Column(db.Integer, nullable=False, default=30)
-    SYNC_COOLDOWN = timedelta(minutes=2)
+    SYNC_COOLDOWN = timedelta(minutes=1)
     ITEMS_PER_PAGE = 30
 
     @classmethod
@@ -250,10 +306,9 @@ class ActivityLists(db.Model):
 with app.app_context():
     db.create_all()
 
-@app.after_request
-def after_request(response: Response) -> Response:
-    """Add security headers and handle caching."""
-    # --- Content Security Policy ---
+# Add CSP configuration function
+def add_security_headers(response: Response) -> Response:
+    """Add security headers including Content Security Policy"""
     csp = {
         'default-src': ["'self'"],
         'script-src': ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
@@ -269,14 +324,21 @@ def after_request(response: Response) -> Response:
         'object-src': ["'none'"],
         'worker-src': ["'self'"]
     }
-
+    
+    # In production, remove the Tailwind CDN script source
     if ENVIRONMENT == "prod":
-        csp['script-src'] = [s for s in csp['script-src'] if s != "cdn.tailwindcss.com"]
-
-    csp_string = '; '.join(f"{k} {' '.join(v)}" for k, v in csp.items())
+        # Ensure the CDN source is removed if present
+        if "cdn.tailwindcss.com" in csp['script-src']:
+             csp['script-src'].remove("cdn.tailwindcss.com")
+        # No need to append '/static/css/tailwind.css' to style-src, 'self' covers it.
+    
+    csp_string = '; '.join([
+        f"{key} {' '.join(value)}" 
+        for key, value in csp.items()
+    ])
+    
+    # Add security headers
     response.headers['Content-Security-Policy'] = csp_string
-
-    # --- Security Headers ---
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
@@ -290,53 +352,35 @@ def after_request(response: Response) -> Response:
     response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-
-    # --- Cache Control ---
-    if request.path.startswith('/static/'):
-        response.headers['Cache-Control'] = 'public, max-age=3600'
-    else:
-        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-
-    # --- Cleanup ---
+    response.headers['Cache-Control'] = 'no-store, max-age=0'
+    # Remove X-Powered-By header if present
     response.headers.pop('X-Powered-By', None)
     response.headers.pop('Server', None)
-
     return response
 
-ALLOWED_EXTENSIONS = {'.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico'}
-STATIC_DIR = 'static'
+@app.after_request
+def after_request(response):
+    """Apply security and cache control headers to all responses"""
+    # Apply security headers to all responses
+    response = add_security_headers(response)
+    
+    # Simple and clear caching rules
+    if request.path.startswith('/static/'):
+        # Cache static assets for 1 hour
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+    else:
+        # No caching for all other routes (API endpoints, dynamic pages)
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+    
+    return response
 
-@app.route('/static/<path:path>')
-def serve_static(path):
-    """Securely serve static files"""
-    client_ip = request.remote_addr
-    ext = os.path.splitext(path.lower())[1]
-
-    if ext not in ALLOWED_EXTENSIONS:
-        logger.warning(f'Blocked disallowed file type: {path} - IP: {client_ip}')
-        return jsonify({"error": "File type not allowed"}), 403
-
-    safe_path = safe_join(STATIC_DIR, path)
-    if not safe_path:
-        logger.warning(f'Directory traversal attempt: {path} - IP: {client_ip}')
-        return jsonify({"error": "Invalid file path"}), 403
-
-    abs_safe_path = os.path.abspath(safe_path)
-    abs_static_root = os.path.abspath(STATIC_DIR)
-
-    if not abs_safe_path.startswith(abs_static_root):
-        logger.warning(f'Path traversal detected: {path} - IP: {client_ip}')
-        return jsonify({"error": "Invalid file path"}), 403
-
-    if not os.path.exists(abs_safe_path):
-        return jsonify({"error": "File not found"}), 404
-
-    try:
-        return send_from_directory(STATIC_DIR, path)
-    except Exception as e:
-        logger.error(f'Failed to serve file: {path} - IP: {client_ip} - Error: {e}')
-        return jsonify({"error": "Error accessing file"}), 500
+# Setup rate limiter (NOW uses the storage URI from config)
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["10000 per day", "1000 per hour"]
+)
 
 def generate_csrf_token():
     """Generate a new CSRF token"""
@@ -344,173 +388,35 @@ def generate_csrf_token():
         session['csrf_token'] = secrets.token_hex(32)
     return session['csrf_token']
 
-def validate_csrf_token(request):
-    """Validate CSRF token."""
-    token = request.headers.get('X-CSRF-Token')
-    return token and token == session.get('csrf_token')
+def validate_csrf_token():
+    """Validate CSRF token from request header against session token"""
+    if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
+        token = request.headers.get('X-CSRF-Token')
+        if not token or token != session.get('csrf_token'):
+            logger.warning(f'CSRF validation failed - IP: {get_remote_address()}')
+            return False
+    return True
 
 @app.before_request
 def csrf_protect():
-    """Protect state-changing requests with CSRF validation."""
+    """Protect state-changing requests with CSRF validation"""
+    # Skip CSRF check for certain API endpoints that handle their own authentication
     if request.path == '/api/activities/sync':
         return
         
     if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
-        if not validate_csrf_token(request):
-            logger.warning(f'CSRF validation failed - IP: {request.remote_addr}')
+        token = request.headers.get('X-CSRF-Token')
+        if not token or token != session.get('csrf_token'):
+            logger.warning(f'CSRF validation failed - IP: {get_remote_address()}')
             return jsonify({"error": "Invalid CSRF token"}), 403
-
-def refresh_access_token(refresh_token):
-    """Refresh the access token with robust error handling"""
-    if not refresh_token:
-        logger.warning('Missing refresh token')
-        return None
-
-    athlete_id = session.get('athlete_id')
-    if not athlete_id:
-        logger.error('Missing athlete_id in session')
-        return None
-
-    athlete = db.session.get(Athletes, athlete_id)
-    if not athlete:
-        logger.error(f'Athlete {athlete_id} not found')
-        return None
-
-    if athlete.refresh_token != refresh_token:
-        logger.error('Refresh token mismatch')
-        return None
-
-    try:
-        response = requests.post(
-            "https://www.strava.com/oauth/token",
-            data={
-                "client_id": CLIENT_ID,
-                "client_secret": CLIENT_SECRET,
-                "grant_type": "refresh_token",
-                "refresh_token": refresh_token
-            },
-            timeout=10
-        )
-
-        if response.status_code in {400, 401, 429}:
-            logger.error(f'Token refresh failed with status {response.status_code}')
-            return None
-        if not response.ok:
-            logger.error(f'Unexpected error: {response.status_code}')
-            return None
-
-        try:
-            token_data = response.json()
-        except (ValueError, TypeError) as e:
-            logger.error(f'Invalid JSON response: {str(e)}')
-            return None
-
-        # Validate required fields
-        if not all(k in token_data for k in ('access_token', 'refresh_token', 'expires_at')):
-            logger.error('Missing fields in token response')
-            return None
-        if not isinstance(token_data['access_token'], str) or not isinstance(token_data['refresh_token'], str):
-            logger.error('Invalid token format')
-            return None
-        if not isinstance(token_data['expires_at'], (int, float)):
-            logger.error('Invalid expires_at format')
-            return None
-
-        # Update DB
-        try:
-            athlete.update_from_token(token_data)
-            db.session.commit()
-            logger.info(f'Token refreshed for athlete {athlete_id}')
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f'DB update failed: {str(e)}')
-            return None
-
-        return token_data
-
-    except requests.exceptions.Timeout:
-        logger.error('Request timed out')
-    except requests.exceptions.RequestException as e:
-        logger.error(f'Network error: {str(e)}')
-    except Exception as e:
-        logger.error(f'Unexpected error: {str(e)}')
-
-    return None
-
-@app.route('/logout', methods=['POST'])
-def logout():
-    """Clear the session data"""
-    logger.info(f"Athlete logged out - ID: {session['athlete_id']} - Name: {session['athlete_first_name']} {session['athlete_last_name']} - IP: {request.remote_addr}")
-    session.clear()
-    return redirect('/')
-
-@app.route('/')
-def index():
-    logger.info(f"Landing page accessed - IP: {request.remote_addr}")
-    try:
-        csrf_token = generate_csrf_token()
-        current_time = time.time()
-
-        if "access_token" not in session:
-            logger.info("Index: No access token in session")
-            return render_template("index.html", 
-                                   authenticated=False, 
-                                   csrf_token=csrf_token)
-
-        if "expires_at" not in session:
-            logger.warning("Index: Token exists but no expiry time")
-            session.clear()
-            return render_template("index.html", 
-                                   authenticated=False, 
-                                   csrf_token=csrf_token)
-
-        token_expires_at = session["expires_at"]
-        time_until_expiry = token_expires_at - current_time
-
-        if time_until_expiry <= 0:
-            logger.info("Index: Token expired, trying refresh")
-            new_token = refresh_access_token(session.get("refresh_token"))
-            if not new_token:
-                logger.warning("Index: Token refresh failed")
-                session.clear()
-                return render_template("index.html", 
-                                       authenticated=False, 
-                                       csrf_token=csrf_token)
-            session["access_token"] = new_token["access_token"]
-            session["refresh_token"] = new_token["refresh_token"]
-            session["expires_at"] = new_token["expires_at"]
-
-        elif time_until_expiry < 300:
-            logger.info("Index: Proactively refreshing token")
-            new_token = refresh_access_token(session.get("refresh_token"))
-            if new_token:
-                session["access_token"] = new_token["access_token"]
-                session["refresh_token"] = new_token["refresh_token"]
-                session["expires_at"] = new_token["expires_at"]
-
-        # Authenticated, token is valid
-        logger.info(f"Index: Authenticated user: {session.get('athlete_id')}")
-        return render_template("index.html",
-                               authenticated=True,
-                               athlete_id=session.get("athlete_id"),
-                               athlete_first_name=session.get("athlete_first_name"),
-                               athlete_last_name=session.get("athlete_last_name"),
-                               athlete_profile=session.get("athlete_profile"),
-                               csrf_token=csrf_token)
-
-    except Exception as e:
-        logger.error(f"Index: Unexpected error: {str(e)}")
-        session.clear()
-        return render_template("index.html", 
-                               authenticated=False, 
-                               csrf_token=generate_csrf_token())
 
 @app.route('/login')
 def login():
-    """Start OAuth login with Strava."""
+    """Handle the login process using Strava OAuth"""
     try:
+        # Generate the dynamic callback URL
         callback_url = url_for('callback', _external=True)
-        logger.info(f"Generated callback URL: {callback_url}")
+        logger.info(f"Generated dynamic callback URL: {callback_url}")
 
         oauth = OAuth2Session(
             CLIENT_ID,
@@ -519,11 +425,9 @@ def login():
         )
         authorization_url, state = oauth.authorization_url(AUTH_BASE_URL)
         session['oauth_state'] = state
-
         return redirect(authorization_url)
-
     except Exception as e:
-        logger.error(f"Login error: {e}")
+        logger.warning(f'Failed login attempt: {str(e)} - IP: {get_remote_address()}')
         return jsonify({"error": "Authentication failed"}), 401
 
 @app.route('/callback')
@@ -532,7 +436,7 @@ def callback():
     try:
         # Check if user denied authorization
         if 'error' in request.args:
-            logger.info(f"User denied Strava authorization - IP: {request.remote_addr}")
+            logger.info(f"User denied Strava authorization - IP: {get_remote_address()}")
             return redirect('/')
 
         # Generate the dynamic callback URL consistently
@@ -544,14 +448,13 @@ def callback():
             state=session.get('oauth_state'),
             redirect_uri=callback_url
         )
-
         token = oauth.fetch_token(
             TOKEN_URL,
             client_secret=CLIENT_SECRET,
             authorization_response=request.url,
             include_client_id=True
         )
-
+        
         # Get athlete info from token response
         athlete_data = token.get('athlete', {})
         athlete_id = athlete_data.get('id')
@@ -559,9 +462,7 @@ def callback():
         if not athlete_id:
             logger.error('No athlete ID in token response')
             return redirect('/')
-
-        logger.info(f"Athlete Logged In - ID: {athlete_id} - Name: {athlete_data.get('firstname')} {athlete_data.get('lastname')} - IP: {request.remote_addr}")
-
+            
         try:
             # Find existing athlete or create new one
             athlete = db.session.get(Athletes, athlete_id)
@@ -594,8 +495,275 @@ def callback():
         
         return redirect('/')
     except Exception as e:
-        logger.error(f'OAuth callback error details: {str(e)} - IP: {request.remote_addr}')
+        logger.error(f'OAuth callback error details: {str(e)} - IP: {get_remote_address()}')
         return redirect('/')
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    """Clear the session data"""
+    session.clear()
+    return redirect('/')
+
+@app.route('/')
+def home():
+    # Serve index.html from static/html
+    return send_from_directory('static/html', 'index.html')
+
+@app.before_request
+def require_authentication():
+    """Handle authentication requirements for different types of requests."""
+    # Allow requests to static files, login, callback, and root path
+    if request.path.startswith('/static/') or request.path in ['/login', '/callback', '/']:
+        return
+
+    # For API endpoints, return JSON response when not authenticated
+    if request.path.startswith('/api/') or request.path == '/status':
+        if 'athlete_id' not in session:
+            return jsonify({
+                "authenticated": False,
+                "require_login": True,
+                "error": "Authentication required"
+            })
+    elif 'athlete_id' not in session:
+        return send_from_directory('static/html', 'auth_required.html')
+
+ALLOWED_EXTENSIONS = {'.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico'}
+
+@app.route('/static/<path:path>')
+def serve_static(path):
+    """Serve static files with strict validation"""
+    try:
+        # Validate file extension
+        _, ext = os.path.splitext(path.lower())
+        if ext not in ALLOWED_EXTENSIONS:
+            logger.warning(f'Attempted to access unauthorized file type: {path} - IP: {get_remote_address()}')
+            return jsonify({"error": "File type not allowed"}), 403
+
+        # Use safe_join to prevent directory traversal
+        safe_path = safe_join('static', path)
+        if not safe_path:
+            logger.warning(f'Directory traversal attempt detected - IP: {get_remote_address()} - Path: {path}')
+            return jsonify({"error": "Invalid file path"}), 403
+
+        # Get absolute paths for comparison
+        static_abs_path = os.path.abspath('static')
+        file_abs_path = os.path.abspath(safe_path)
+        
+        # Ensure file path starts with static directory
+        if not file_abs_path.startswith(static_abs_path):
+            logger.warning(f'Path traversal attempt detected - IP: {get_remote_address()} - Path: {path}')
+            return jsonify({"error": "Invalid file path"}), 403
+
+        # Check if file exists after all validations
+        if not os.path.exists(file_abs_path):
+            return jsonify({"error": "File not found"}), 404
+
+        return send_from_directory('static', path)
+    except Exception as e:
+        logger.error(f'Error serving static file: {str(e)} - IP: {get_remote_address()} - Path: {path}')
+        return jsonify({"error": "Error accessing file"}), 500
+
+@app.route("/status")
+def status():
+    """Check if user is authenticated and handle token refresh"""
+    logger.info(f"Status endpoint called - IP: {get_remote_address()}")
+    
+    try:
+        csrf_token = generate_csrf_token()
+        current_time = time.time()
+        
+        # Not authenticated case
+        if "access_token" not in session:
+            logger.info("Status: No access token in session")
+            return jsonify({
+                "authenticated": False,
+                "csrf_token": csrf_token
+            })
+
+        # Check token expiry
+        if "expires_at" not in session:
+            logger.warning("Status: Token exists but no expiry time found")
+            session.clear()
+            return jsonify({
+                "authenticated": False,
+                "error": "Invalid session state",
+                "require_login": True,
+                "csrf_token": csrf_token
+            })
+
+        token_expires_at = session["expires_at"]
+        time_until_expiry = token_expires_at - current_time
+        
+        logger.info(f"Status: Token expires in {time_until_expiry:.2f} seconds")
+
+        # Token expired
+        if time_until_expiry <= 0:
+            logger.info("Status: Token has expired, attempting refresh")
+            new_token = refresh_access_token(session.get("refresh_token"))
+            
+            if not new_token:
+                logger.warning("Status: Token refresh failed")
+                session.clear()
+                return jsonify({
+                    "authenticated": False,
+                    "error": "Session expired. Please log in again.",
+                    "require_login": True,
+                    "csrf_token": csrf_token
+                })
+                
+            # Update session with new token info
+            session["access_token"] = new_token["access_token"]
+            session["refresh_token"] = new_token["refresh_token"]
+            session["expires_at"] = new_token["expires_at"]
+            logger.info("Status: Token successfully refreshed")
+            
+        # Token about to expire (within 5 minutes)
+        elif time_until_expiry < 300:
+            logger.info("Status: Token expiring soon, attempting proactive refresh")
+            new_token = refresh_access_token(session.get("refresh_token"))
+            
+            if new_token:
+                session["access_token"] = new_token["access_token"]
+                session["refresh_token"] = new_token["refresh_token"]
+                session["expires_at"] = new_token["expires_at"]
+                logger.info("Status: Token proactively refreshed")
+            else:
+                logger.warning("Status: Proactive token refresh failed, but current token still valid")
+                # Continue with current token since it's still valid
+
+        # Return successful authentication response
+        logger.info(f"Status: Returning successful auth for athlete {session.get('athlete_id')}")
+        return jsonify({
+            "authenticated": True,
+            "athlete_id": session.get("athlete_id"),
+            "athlete_username": session.get("athlete_username"),
+            "athlete_first_name": session.get("athlete_first_name"),
+            "athlete_last_name": session.get("athlete_last_name"),
+            "athlete_profile": session.get("athlete_profile"),
+            "expires_at": session.get("expires_at"),
+            "csrf_token": csrf_token
+        })
+
+    except Exception as e:
+        logger.error(f"Status: Unexpected error: {str(e)}")
+        session.clear()
+        return jsonify({
+            "authenticated": False,
+            "error": "Authentication error. Please try again.",
+            "require_login": True,
+            "csrf_token": csrf_token
+        }), 500
+
+@app.errorhandler(RateLimitExceeded)
+def handle_ratelimit_error(e):
+    logger.warning(f'Rate limit exceeded - IP: {get_remote_address()} - Endpoint: {request.path}')
+    # Return JSON response only for API endpoints
+    if request.path.startswith('/api/'):
+        return jsonify({
+            "error": "Rate limit exceeded. Please wait before trying again.",
+            "status": 429
+        }), 429
+    # For non-API endpoints, return empty response so user stays on current page
+    return "", 429
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """Handle 404 errors by serving our custom 404 page"""
+    # Serve 404.html from static/html
+    return send_from_directory('static/html', '404.html'), 404
+
+def refresh_access_token(refresh_token):
+    """Refresh the access token with robust error handling"""
+    if not refresh_token:
+        logger.warning('Refresh token missing during token refresh attempt')
+        return None
+        
+    # Get athlete from database using session athlete_id
+    athlete_id = session.get('athlete_id')
+    if not athlete_id:
+        logger.error('No athlete_id in session during token refresh')
+        return None
+
+    athlete = db.session.get(Athletes, athlete_id)
+    if not athlete:
+        logger.error(f'Athlete {athlete_id} not found in database during token refresh')
+        return None
+
+    # Verify stored refresh token matches the one provided
+    if athlete.refresh_token != refresh_token:
+        logger.error('Refresh token mismatch between session and database')
+        return None
+
+    try:
+        # Add timeout to prevent hanging
+        response = requests.post(
+            "https://www.strava.com/oauth/token",
+            data={
+                "client_id": CLIENT_ID,
+                "client_secret": CLIENT_SECRET,
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token
+            },
+            timeout=10
+        )
+        
+        # Handle specific error cases
+        if response.status_code == 400:
+            logger.error('Invalid refresh token detected')
+            return None
+        elif response.status_code == 401:
+            logger.error('Refresh token expired or revoked')
+            return None
+        elif response.status_code == 429:
+            logger.error('Rate limit exceeded during token refresh')
+            return None
+        elif not response.ok:
+            logger.error(f'Token refresh failed with status code: {response.status_code}')
+            return None
+
+        try:
+            token_data = response.json()
+            
+            # Validate token response structure
+            required_fields = ['access_token', 'refresh_token', 'expires_at']
+            if not all(field in token_data for field in required_fields):
+                logger.error('Invalid token response structure')
+                return None
+                
+            # Validate token values
+            if not all(isinstance(token_data[field], str) for field in ['access_token', 'refresh_token']):
+                logger.error('Invalid token format received')
+                return None
+                
+            if not isinstance(token_data['expires_at'], (int, float)):
+                logger.error('Invalid expiry timestamp received')
+                return None
+
+            # Update athlete record in database
+            try:
+                athlete.update_from_token(token_data)
+                db.session.commit()
+                logger.info(f'Token refreshed and updated in database for athlete {athlete_id}')
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f'Failed to update refreshed token in database: {str(e)}')
+                return None
+            
+            return token_data
+            
+        except (ValueError, TypeError, KeyError) as e:
+            logger.error(f'Invalid token response format: {str(e)}')
+            return None
+            
+    except requests.exceptions.Timeout:
+        logger.error('Token refresh request timed out')
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f'Token refresh network error: {str(e)}')
+        return None
+    except Exception as e:
+        logger.error(f'Unexpected error during token refresh: {str(e)}')
+        return None
 
 # Add login_required decorator
 def login_required(f):
@@ -610,27 +778,22 @@ def login_required(f):
 @app.route('/customize')
 @login_required
 def customize():
-    logger.info(f"Customize overlays endpoint called - Athlete ID: {session['athlete_id']} - Athlete Name: {session['athlete_first_name']} {session['athlete_last_name']}")
     """Serve the generate overlays page for authenticated users"""
-    return render_template("customize.html",
-                        authenticated=True,
-                        athlete_id=session.get("athlete_id"),
-                        athlete_first_name=session.get("athlete_first_name"),
-                        athlete_last_name=session.get("athlete_last_name"),
-                        athlete_profile=session.get("athlete_profile"),
-                        csrf_token=session['csrf_token'])
+    if not session.get('access_token'):
+        return redirect(url_for('login'))
+    
+    # Serve customize.html from static/html
+    return send_from_directory('static/html', 'customize.html')
 
 @app.route('/activities')
 @login_required
 def activities():
     """Serve the activities page for authenticated users"""
-    return render_template("activities.html",
-                        authenticated=True,
-                        athlete_id=session.get("athlete_id"),
-                        athlete_first_name=session.get("athlete_first_name"),
-                        athlete_last_name=session.get("athlete_last_name"),
-                        athlete_profile=session.get("athlete_profile"),
-                        csrf_token=session['csrf_token'])
+    if not session.get('access_token'):
+        return redirect(url_for('login'))
+    
+    # Serve activities.html from static/html
+    return send_from_directory('static/html', 'activities.html')
 
 def create_sync_response(activities, page, per_page, sync_log, seconds_remaining, warning=None, using_cached=False):
     """Helper function to create a consistent sync response"""
@@ -657,9 +820,10 @@ def create_sync_response(activities, page, per_page, sync_log, seconds_remaining
 
 @app.route('/api/activities/sync', methods=['GET'])
 @login_required
+@limiter.limit("30 per minute")
 def sync_activities():
     """Unified endpoint to fetch/sync activities from Strava with caching and cooldown"""
-    logger.info(f"Syncing Activities called - Athlete ID: {session['athlete_id']} - Athlete Name: {session['athlete_first_name']} {session['athlete_last_name']}")
+    logger.info(f"Activities endpoint called - Method: {request.method} - Session: {session}")
     athlete_id = session.get('athlete_id')
     if not athlete_id:
         return jsonify({"error": "Not authenticated"}), 401
@@ -676,6 +840,7 @@ def sync_activities():
 
     seconds_remaining = sync_instance.get_cooldown_remaining()
 
+    print(f"is_sync_allowed: {sync_instance.is_sync_allowed()}")
     # Return cached data if available and appropriate
     if not sync_instance.is_sync_allowed() and sync_log:
         return jsonify(create_sync_response(sync_log.data if sync_log else [], page, per_page, sync_log, seconds_remaining, using_cached=True))
@@ -735,22 +900,6 @@ def sync_activities():
             warning="Failed to sync data, showing cached data" if sync_log else None,
             using_cached=True
         )), 500 if not sync_log else 200
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
-
-@app.before_request
-def require_authentication():
-    """Handle authentication requirements for different types of requests."""
-    
-    # Allow requests to static files, login, callback, root path
-    if request.path.startswith('/static/') or request.path in ['/login', '/callback', '/']:
-        return
-    
-    # If the user is not authenticated, render the 'auth_required.html' page
-    if 'athlete_id' not in session:
-        return render_template('auth_required.html')
 
 if __name__ == '__main__':
     logging.info("Starting Flask application...")

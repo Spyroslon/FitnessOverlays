@@ -1,17 +1,7 @@
-<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/static/images/FitnessOverlaysUpdatedLogo.ico">
-    <meta name="copyright" content="FitnessOverlays - Copyright (c) 2025 Spyros Lontos">
-    <meta name="license" content="AGPL-3.0">
-    <title>FitnessOverlays</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link href="/static/css/tailwind.css" rel="stylesheet">
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
-    <script src="/static/js/common.js" defer></script>
-    <style> 
+{% extends "base.html" %}
+
+{% block style %}
+<style> 
         /* Keep custom aspect ratio */
         .aspect-9-16 {
             aspect-ratio: 9/16;
@@ -64,63 +54,9 @@
         }
 
     </style>
-</head>
+{% endblock %}
 
-<body class="font-sans antialiased text-gray-800 bg-white bg-fitness-radial min-h-screen flex flex-col flex-grow" style="touch-action: manipulation;">
-
-    <header class="bg-white/80 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-gray-200/50">
-        <nav class="container mx-auto px-2 sm:px-4 py-3 grid grid-cols-[60px_1fr_60px] sm:grid-cols-3 items-center max-w-[800px]">
-            <div class="flex justify-start min-w-[40px]">
-                <!-- Profile Dropdown Container -->
-                <div id="profile-dropdown-container" class="relative hidden">
-                    <!-- Profile Picture Trigger -->
-                    <div id="profile-picture-trigger" class="cursor-pointer relative">
-                        <img id="profile-picture" 
-                             src="" 
-                             alt="Profile" 
-                             class="w-10 h-10 rounded-full object-cover border border-gray-200/50">
-                        
-                        <span class="absolute bottom-0 left-7 w-3.5 h-3.5 bg-fitness-green border border-white dark:border-gray-800 rounded-full flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 14a1 1 0 01-.7-.3l-4-4a1 1 0 111.4-1.4L10 11.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-.7.3z" clip-rule="evenodd" />
-                            </svg>
-                        </span>
-                    </div>
-                    <!-- Dropdown Menu -->
-                    <div id="profile-dropdown-menu" 
-                        class="hidden absolute left-0 w-auto max-w-xs bg-white rounded-lg shadow-lg z-50 ring-1 ring-gray-200/50 border border-white/50 transform transition-all duration-200">
-                        <div id="first-last-Name" class="px-4 py-2 text-sm text-gray-800 font-bold truncate">
-                            FirstName LastName
-                        </div>
-                        <div class="border-t border-gray-300"></div>
-                        <button id="logout-button" 
-                                class="block w-full text-left px-4 py-2 text-sm text-gray-800 rounded-md hover:bg-fitness-green hover:text-white transition-colors duration-200">
-                            Log out
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-center flex justify-center items-center">
-                <a href="/" class="text-2xl sm:text-3xl font-bold hover:opacity-80 transition-opacity">
-                    <span class="text-fitness-green">Fitness</span><span class="text-gray-900">Overlays</span>
-                </a>
-            </div>
-
-            <div class="flex justify-end min-w-[40px]">
-                <a href="/activities" id="create-overlay-header-btn" 
-                   class="hidden bg-fitness-green text-white rounded-lg 
-                          px-2 sm:px-4 py-2 sm:py-2
-                          text-xs sm:text-base whitespace-nowrap
-                          flex items-center justify-center font-medium
-                          transform hover:scale-105 transition-all duration-200 
-                          drop-shadow-lg">
-                    Activities
-                </a>
-            </div>
-        </nav>
-    </header>
-
+{% block content %}
     <main class="flex-grow container mx-auto p-3">
         <div class="max-w-[900px] w-full mx-auto">
             <!-- Activity Info Card -->
@@ -249,44 +185,6 @@
         </div>
     </main>
 
-    <footer class="text-fitness-dark-gray">
-        <div class="mx-auto w-full max-w-screen-lg p-4 space-y-4">
-            <hr class="border-fitness-dark-gray sm:mx-auto" />
-            <div class="flex justify-center mb-4"> 
-                <span class="text-sm sm:text-center">&copy; 2025 FitnessOverlays - Licensed under 
-                    <a href="https://www.gnu.org/licenses/agpl-3.0.html" 
-                        target="_blank" 
-                        class="transition-colors hover:underline">
-                        AGPL-3.0
-                    </a> 
-                </span>
-            </div>
-            <div class="flex items-center justify-center space-x-5">
-                <img src="/static/images/api_logo_pwrdBy_strava_horiz_black.svg" 
-                     alt="Powered by Strava" 
-                     class="h-5 width-auto">
-                <div class="flex space-x-5 justify-center">
-                    <a href="https://x.com/spyroslon"
-                        target="_blank"
-                        class="hover:text-fitness-dark-gray">
-                            <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
-                                <path fill-rule="evenodd" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" clip-rule="evenodd"/>
-                            </svg>
-                            <span class="sr-only">X page</span>
-                    </a>
-                    <a href="https://github.com/spyroslon"
-                        target="_blank" 
-                        class="hover:text-fitness-dark-gray">
-                        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 .333A9.911 9.911 0 0 0 6.866 19.65c.5.092.678-.215.678-.477 0-.237-.01-1.017-.014-1.845-2.757.6-3.338-1.169-3.338-1.169a2.627 2.627 0 0 0-1.1-1.451c-.9-.615.07-.6.07-.6a2.084 2.084 0 0 1 1.518 1.021 2.11 2.11 0 0 0 2.884.823c.044-.503.268-.973.63-1.325-2.2-.25-4.516-1.1-4.516-4.9A3.832 3.832 0 0 1 4.7 7.068a3.56 3.56 0 0 1 .095-2.623s.832-.266 2.726 1.016a9.409 9.409 0 0 1 4.962 0c1.89-1.282 2.717-1.016 2.717-1.016.366.83.402 1.768.1 2.623a3.827 3.827 0 0 1 1.02 2.659c0 3.807-2.319 4.644-4.525 4.889a2.366 2.366 0 0 1 .673 1.834c0 1.326-.012 2.394-.012 2.72 0 .263.18.572.681.475A9.911 9.911 0 0 0 10 .333Z" clip-rule="evenodd"/>
-                        </svg>
-                        <span class="sr-only">GitHub account</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
     <!-- Toast -->
     <div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-fitness-green text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 pointer-events-none z-50 opacity-0">
         Copied to clipboard!
@@ -307,7 +205,10 @@
             </div>
         </div>
     </div>
+{% endblock %}
 
+
+{% block script %}
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -347,63 +248,6 @@
             const activityName = document.getElementById('activityName');
             const stravaLink = document.getElementById('stravaLink');
 
-            // Check auth status using common function and handle results
-            checkAuth().then(authStatus => {
-                if (!authStatus) return; // Early exit if checkAuth failed critically
-
-                // Find elements after auth check, as they might be needed
-                const profileDropdownContainer = document.getElementById('profile-dropdown-container');
-                const profilePicture = document.getElementById('profile-picture');
-                const firstlastname = document.getElementById('first-last-Name');
-                const createOverlayHeaderBtn = document.getElementById('create-overlay-header-btn');
-
-                if (authStatus.authenticated) {
-                    console.log('User is authenticated on customize page:', authStatus); 
-                    // Update local state based on authStatus
-                    state.isAuthenticated = true;
-                    state.athleteId = authStatus.athleteId; // athleteId is also set globally by common.js, but update local state too
-
-                    // Show profile picture if available
-                    if (authStatus.athlete_profile && profileDropdownContainer && profilePicture && firstlastname) {
-                        profilePicture.src = authStatus.athlete_profile;
-                        profileDropdownContainer.classList.remove('hidden');
-                        firstlastname.textContent = `${authStatus.athlete_first_name} ${authStatus.athlete_last_name}`;
-                    } else if (profileDropdownContainer) {
-                        profileDropdownContainer.classList.add('hidden'); // Hide if no profile pic
-                    }
-                    if (createOverlayHeaderBtn) createOverlayHeaderBtn.classList.remove('hidden');
-
-                    // Now that auth is confirmed and state is updated, load activity data
-                    loadActivityFromSession(); 
-
-                } else {
-                    console.log('User is not authenticated on customize page:', authStatus);
-                    state.isAuthenticated = false; // Update state
-                    state.athleteId = null;
-                    // Hide profile picture and create buttons when not authenticated
-                    if (profileDropdownContainer) profileDropdownContainer.classList.add('hidden');
-                    if (createOverlayHeaderBtn) createOverlayHeaderBtn.classList.add('hidden');
-
-                    // If authStatus requires login (e.g., token expired, direct access), redirect
-                    // common.js checkAuth already handles redirection for protected pages, 
-                    // but this adds an extra layer if needed for customize specific logic.
-                    if (authStatus.require_login) {
-                         // Redirect if not already on a public page (though common.js should handle this)
-                         // For customize, we definitely require login.
-                         window.location.href = "/auth_required";
-                         console.log("Redirecting due to require_login flag.");
-                    }
-                }
-            }).catch(error => {
-                 console.error("Error processing auth status on customize page:", error);
-                 // Handle potential errors - e.g., hide elements, show message
-                 const profileDropdownContainer = document.getElementById('profile-dropdown-container');
-                 const createOverlayHeaderBtn = document.getElementById('create-overlay-header-btn');
-                 if (profileDropdownContainer) profileDropdownContainer.classList.add('hidden');
-                 if (createOverlayHeaderBtn) createOverlayHeaderBtn.classList.add('hidden');
-                 // Optionally show an error message to the user on the page
-                 alert("Authentication check failed. Please try reloading the page.");
-            });
 
             // Function to load and process activity data from sessionStorage
             function loadActivityFromSession() {
@@ -625,95 +469,100 @@
             }
 
             function drawMetrics(data, context = ctx) {
-                const metrics = state.selectedMetrics
-                    .map(key => ({
-                        name: getMetricLabel(key),
-                        value: data[key]
-                    }))
-                    .filter(metric => metric.value !== null && metric.value !== undefined);
+                // Ensure Roboto is loaded before drawing
+                document.fonts.load("12px Roboto").then(() => {
+                    document.fonts.ready.then(() => {
+                        const metrics = state.selectedMetrics
+                            .map(key => ({
+                                name: getMetricLabel(key),
+                                value: data[key]
+                            }))
+                            .filter(metric => metric.value !== null && metric.value !== undefined);
 
-                if (metrics.length === 0) return;
+                        if (metrics.length === 0) return;
 
-                const numItems = metrics.length;
-                const requestedColumns = state.columns;
-                let actualColsForSizing = Math.min(requestedColumns, numItems);
-                if (numItems === 1) actualColsForSizing = 1;
-                actualColsForSizing = Math.max(1, actualColsForSizing);
-                const itemsPerColumnForSizing = Math.ceil(numItems / actualColsForSizing);
+                        const numItems = metrics.length;
+                        const requestedColumns = state.columns;
+                        let actualColsForSizing = Math.min(requestedColumns, numItems);
+                        if (numItems === 1) actualColsForSizing = 1;
+                        actualColsForSizing = Math.max(1, actualColsForSizing);
+                        const itemsPerColumnForSizing = Math.ceil(numItems / actualColsForSizing);
 
-                const dpr = window.devicePixelRatio || 1;
-                const logicalWidth = overlayCanvas.width / dpr;
-                const logicalHeight = overlayCanvas.height / dpr;
-                const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
-                const columnWidthForSizing = availableWidth / actualColsForSizing;
-                const verticalPadding = logicalHeight * VERTICAL_PADDING_FACTOR;
-                const availableHeight = logicalHeight - (verticalPadding * 2);
+                        const dpr = window.devicePixelRatio || 1;
+                        const logicalWidth = overlayCanvas.width / dpr;
+                        const logicalHeight = overlayCanvas.height / dpr;
+                        const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
+                        const columnWidthForSizing = availableWidth / actualColsForSizing;
+                        const verticalPadding = logicalHeight * VERTICAL_PADDING_FACTOR;
+                        const availableHeight = logicalHeight - (verticalPadding * 2);
 
-                // Estimate max item height based on available vertical space and itemsPerColumnForSizing
-                const maxItemHeight = (availableHeight - (METRIC_GROUP_SPACING * (itemsPerColumnForSizing - 1))) / Math.max(1, itemsPerColumnForSizing);
-                const maxFontBase = Math.min(
-                    maxItemHeight * 0.45,
-                    columnWidthForSizing * 0.15,
-                    BASE_FONT_SIZE
-                );
+                        const maxItemHeight = (availableHeight - (METRIC_GROUP_SPACING * (itemsPerColumnForSizing - 1))) / Math.max(1, itemsPerColumnForSizing);
+                        const maxFontBase = Math.min(
+                            maxItemHeight * 0.45,
+                            columnWidthForSizing * 0.15,
+                            BASE_FONT_SIZE
+                        );
 
-                let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
-                let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
-                let groupSpacing = METRIC_GROUP_SPACING;
+                        let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
+                        let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
+                        let groupSpacing = METRIC_GROUP_SPACING;
 
-                // Recalculate needed height and scale if needed
-                let neededHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing +
-                                   (groupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
-                const scaleFactor = Math.min(1, availableHeight / Math.max(1, neededHeight));
-                titleFontSize *= scaleFactor;
-                valueFontSize *= scaleFactor;
-                groupSpacing *= scaleFactor;
-                titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
-                valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
-                groupSpacing = Math.max(groupSpacing, LABEL_VALUE_SPACING * 0.5);
+                        let neededHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing +
+                                        (groupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
+                        const scaleFactor = Math.min(1, availableHeight / Math.max(1, neededHeight));
+                        titleFontSize *= scaleFactor;
+                        valueFontSize *= scaleFactor;
+                        groupSpacing *= scaleFactor;
+                        titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
+                        valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
+                        groupSpacing = Math.max(groupSpacing, LABEL_VALUE_SPACING * 0.5);
 
-                const finalItemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
-                const drawableColumns = Math.min(requestedColumns, numItems);
-                const numRows = Math.ceil(numItems / requestedColumns);
-                const finalTotalContentHeight = (finalItemHeight * numRows) + (groupSpacing * Math.max(0, numRows - 1));
-                const startY = verticalPadding + (availableHeight - finalTotalContentHeight) / 2;
+                        const finalItemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
+                        const drawableColumns = Math.min(requestedColumns, numItems);
+                        const numRows = Math.ceil(numItems / requestedColumns);
+                        const finalTotalContentHeight = (finalItemHeight * numRows) + (groupSpacing * Math.max(0, numRows - 1));
+                        const startY = verticalPadding + (availableHeight - finalTotalContentHeight) / 2;
 
-                context.textBaseline = 'middle';
-                metrics.forEach((metric, index) => {
-                    const columnIndex = index % requestedColumns;
-                    const rowIndex = Math.floor(index / requestedColumns);
-                    const columnWidth = availableWidth / drawableColumns;
-                    let xPos;
-                    if (drawableColumns === 1) {
-                        context.textAlign = state.textAlign;
-                        switch (state.textAlign) {
-                            case 'left': xPos = HORIZONTAL_PADDING; break;
-                            case 'right': xPos = logicalWidth - HORIZONTAL_PADDING; break;
-                            default: xPos = logicalWidth / 2;
-                        }
-                    } else {
-                        context.textAlign = state.textAlign;
-                        const slotLeft = HORIZONTAL_PADDING + (columnWidth * columnIndex);
-                        const slotCenter = slotLeft + (columnWidth / 2);
-                        const slotRight = slotLeft + columnWidth;
-                        switch (state.textAlign) {
-                            case 'left': xPos = slotLeft; break;
-                            case 'right': xPos = slotRight; break;
-                            default: xPos = slotCenter;
-                        }
-                    }
-                    const itemSlotTopY = startY + (rowIndex * (finalItemHeight + groupSpacing));
-                    const itemSlotCenterY = itemSlotTopY + finalItemHeight / 2;
-                    context.fillStyle = state.textColor;
-                    const textPairHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
-                    const labelYOffset = -(textPairHeight / 2) + (titleFontSize / 2);
-                    const valueYOffset = (textPairHeight / 2) - (valueFontSize / 2);
-                    context.font = `${titleFontSize}px Roboto`;
-                    context.fillText(metric.name, xPos, itemSlotCenterY + labelYOffset);
-                    context.font = `bold ${valueFontSize}px Roboto`;
-                    context.fillText(metric.value, xPos, itemSlotCenterY + valueYOffset);
+                        context.textBaseline = 'middle';
+
+                        metrics.forEach((metric, index) => {
+                            const columnIndex = index % requestedColumns;
+                            const rowIndex = Math.floor(index / requestedColumns);
+                            const columnWidth = availableWidth / drawableColumns;
+                            let xPos;
+                            if (drawableColumns === 1) {
+                                context.textAlign = state.textAlign;
+                                switch (state.textAlign) {
+                                    case 'left': xPos = HORIZONTAL_PADDING; break;
+                                    case 'right': xPos = logicalWidth - HORIZONTAL_PADDING; break;
+                                    default: xPos = logicalWidth / 2;
+                                }
+                            } else {
+                                context.textAlign = state.textAlign;
+                                const slotLeft = HORIZONTAL_PADDING + (columnWidth * columnIndex);
+                                const slotCenter = slotLeft + (columnWidth / 2);
+                                const slotRight = slotLeft + columnWidth;
+                                switch (state.textAlign) {
+                                    case 'left': xPos = slotLeft; break;
+                                    case 'right': xPos = slotRight; break;
+                                    default: xPos = slotCenter;
+                                }
+                            }
+                            const itemSlotTopY = startY + (rowIndex * (finalItemHeight + groupSpacing));
+                            const itemSlotCenterY = itemSlotTopY + finalItemHeight / 2;
+                            context.fillStyle = state.textColor;
+                            const textPairHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
+                            const labelYOffset = -(textPairHeight / 2) + (titleFontSize / 2);
+                            const valueYOffset = (textPairHeight / 2) - (valueFontSize / 2);
+                            context.font = `${titleFontSize}px Roboto`;
+                            context.fillText(metric.name, xPos, itemSlotCenterY + labelYOffset);
+                            context.font = `bold ${valueFontSize}px Roboto`;
+                            context.fillText(metric.value, xPos, itemSlotCenterY + valueYOffset);
+                        });
+
+                        context.textBaseline = 'alphabetic';
+                    });
                 });
-                context.textBaseline = 'alphabetic';
             }
 
             // Existing code
@@ -739,11 +588,8 @@
             });
 
             // Generate Overlay
-            function generateOverlay(data = StravaData) {
-                // Clear the entire canvas
+            async function generateOverlay(data = StravaData) {
                 ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-
-                // Draw metrics
                 drawMetrics(data);
             }
 
@@ -1298,8 +1144,9 @@
                 }
             });
             // --- End Image Save Modal Logic ---
+
+            loadActivityFromSession();
         });
     </script>
 
-</body>
-</html>
+{% endblock %}
