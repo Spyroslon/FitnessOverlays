@@ -212,7 +212,7 @@ class ActivityLists(db.Model):
     last_synced = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     page = db.Column(db.Integer, nullable=False, default=1)
     per_page = db.Column(db.Integer, nullable=False, default=30)
-    SYNC_COOLDOWN = timedelta(minutes=1)
+    SYNC_COOLDOWN = timedelta(minutes=2)
     ITEMS_PER_PAGE = 30
 
     @classmethod
@@ -440,12 +440,13 @@ def refresh_access_token(refresh_token):
 @app.route('/logout', methods=['POST'])
 def logout():
     """Clear the session data"""
+    logger.info(f"Athlete logged out - ID: {session['athlete_id']} - Name: {session['athlete_first_name']} {session['athlete_last_name']} - IP: {request.remote_addr}")
     session.clear()
     return redirect('/')
 
 @app.route('/')
 def index():
-    logger.info(f"Landing page hit")
+    logger.info(f"Landing page accessed - IP: {request.remote_addr}")
     try:
         csrf_token = generate_csrf_token()
         current_time = time.time()
@@ -554,12 +555,13 @@ def callback():
         # Get athlete info from token response
         athlete_data = token.get('athlete', {})
         athlete_id = athlete_data.get('id')
-        logger.info(f"Token response: {athlete_data}")
         
         if not athlete_id:
             logger.error('No athlete ID in token response')
             return redirect('/')
-            
+
+        logger.info(f"Athlete Logged In - ID: {athlete_id} - Name: {athlete_data.get('firstname')} {athlete_data.get('lastname')} - IP: {request.remote_addr}")
+
         try:
             # Find existing athlete or create new one
             athlete = db.session.get(Athletes, athlete_id)
@@ -608,6 +610,7 @@ def login_required(f):
 @app.route('/customize')
 @login_required
 def customize():
+    logger.info(f"Customize overlays endpoint called - Athlete ID: {session['athlete_id']} - Athlete Name: {session['athlete_first_name']} {session['athlete_last_name']}")
     """Serve the generate overlays page for authenticated users"""
     return render_template("customize.html",
                         authenticated=True,
@@ -656,7 +659,7 @@ def create_sync_response(activities, page, per_page, sync_log, seconds_remaining
 @login_required
 def sync_activities():
     """Unified endpoint to fetch/sync activities from Strava with caching and cooldown"""
-    logger.info(f"Activities endpoint called - Method: {request.method} - Session: {session}")
+    logger.info(f"Syncing Activities called - Athlete ID: {session['athlete_id']} - Athlete Name: {session['athlete_first_name']} {session['athlete_last_name']}")
     athlete_id = session.get('athlete_id')
     if not athlete_id:
         return jsonify({"error": "Not authenticated"}), 401
@@ -673,7 +676,6 @@ def sync_activities():
 
     seconds_remaining = sync_instance.get_cooldown_remaining()
 
-    print(f"is_sync_allowed: {sync_instance.is_sync_allowed()}")
     # Return cached data if available and appropriate
     if not sync_instance.is_sync_allowed() and sync_log:
         return jsonify(create_sync_response(sync_log.data if sync_log else [], page, per_page, sync_log, seconds_remaining, using_cached=True))
