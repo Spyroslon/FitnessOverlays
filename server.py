@@ -489,7 +489,7 @@ def index():
                 session["expires_at"] = new_token["expires_at"]
 
         # Authenticated, token is valid
-        logger.info(f"Index: Authenticated user: {session.get('athlete_id')}")
+        logger.info(f"Index: Authenticated user - Athlete ID: {session.get('athlete_id')} - Athlete Name: {session['athlete_first_name']} {session['athlete_last_name']}")
         return render_template("index.html",
                                authenticated=True,
                                athlete_id=session.get("athlete_id"),
