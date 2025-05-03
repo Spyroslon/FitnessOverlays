@@ -244,7 +244,7 @@
                     .then(res => res.json())
                     .then(data => {
                         if (data.last_synced) {
-                            lastSyncedTimestamp = new Date(data.last_synced + 'Z').getTime();
+                            lastSyncedTimestamp = new Date(data.last_synced).getTime();
                             updateDisplay();
                         } else {
                             document.getElementById('last-sync').textContent = 'Never synced';
