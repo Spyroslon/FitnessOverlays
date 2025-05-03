@@ -205,20 +205,32 @@
                 loadMoreButton.classList.toggle('hidden', displayedCount >= allActivities.length);
             }
 
+            let lastSyncedTimestamp = null;
+
             function syncActivities(method = 'GET') {
                 const icon = document.getElementById('sync-icon');
                 icon.classList.add('spinner');
+
                 fetch('/api/activities/sync', { method, credentials: 'include' })
                     .then(res => res.json())
                     .then(data => {
                         console.log('Sync response:', data);
+
                         if (data.activities) {
                             allActivities = data.activities;
                             activitiesGrid.innerHTML = '';
                             displayedCount = 0;
                             renderMoreActivities();
+                            loadMoreButton.classList.toggle('hidden', displayedCount >= allActivities.length);
                         }
-                        loadMoreButton.classList.toggle('hidden', displayedCount >= allActivities.length);
+
+                        if (data.last_synced) {
+                            lastSyncedTimestamp = new Date(data.last_synced).getTime();
+                            updateDisplay();
+                        } else {
+                            document.getElementById('last-sync').textContent = 'Never synced';
+                        }
+
                         if (data.cooldown) {
                             if (data.cooldown.active) {
                                 startCooldownBar(data.cooldown.seconds_remaining, data.cooldown.total_cooldown);
@@ -227,32 +239,18 @@
                             }
                         }
                     })
-                .finally(() => {
-                    icon.classList.remove('spinner');
-                });
+                    .catch(() => {
+                        document.getElementById('last-sync').textContent = 'Error fetching sync time';
+                    })
+                    .finally(() => {
+                        icon.classList.remove('spinner');
+                    });
             }
-    
-            let lastSyncedTimestamp = null;
+
             function updateDisplay() {
                 if (lastSyncedTimestamp) {
                     document.getElementById('last-sync').textContent = formatSyncTime(lastSyncedTimestamp);
                 }
-            }
-
-            function updateLastSynced() {
-                fetch('/api/activities/sync', { method: 'GET', credentials: 'include' })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.last_synced) {
-                            lastSyncedTimestamp = new Date(data.last_synced).getTime();
-                            updateDisplay();
-                        } else {
-                            document.getElementById('last-sync').textContent = 'Never synced';
-                        }
-                    })
-                    .catch(() => {
-                        document.getElementById('last-sync').textContent = 'Error fetching sync time';
-                    });
             }
 
             function startCooldownBar(seconds_remaining, total_cooldown) {
@@ -261,6 +259,7 @@
                 const bar = document.getElementById('sync-bar');
                 let sec = seconds_remaining;
                 if (!container || !bar) return;
+
                 container.classList.remove('hidden');
                 const updateBar = () => {
                     const progress = Math.round(((total_cooldown - sec) / total_cooldown) * 100);
@@ -281,12 +280,13 @@
                 if (container) container.classList.add('hidden');
             }
 
-            syncButton.addEventListener('click', () => { syncActivities('GET'); updateLastSynced(); });
+            // Event Listeners
+            syncButton.addEventListener('click', () => syncActivities('GET'));
             loadMoreButton.addEventListener('click', renderMoreActivities);
 
+            // Initial Load
             syncActivities('GET');
-            updateLastSynced();
-            setInterval(updateDisplay, 60000); // Update UI every minute
+            setInterval(updateDisplay, 60000); // Update sync text every minute
         });
     </script>
 {% endblock %}
