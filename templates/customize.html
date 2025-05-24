@@ -1,17 +1,7 @@
 {% extends "base.html" %}
 
 {% block style %}
-<style> 
-        /* Keep custom aspect ratio */
-        .aspect-9-16 {
-            aspect-ratio: 9/16;
-            width: 100%;
-            max-height: 65vh; /* Reduced from 60vh */
-            max-width: calc(65vh * 9/16); /* Adjusted to match new max-height */
-            /* margin: 0 auto; */
-        }
-
-        /* Keep custom checkerboard */
+    <style> 
         .dark-checkerboard {
             background-image:
             linear-gradient(45deg, #333333 25%, transparent 25%),
@@ -52,15 +42,14 @@
                 #CC33FF, #FF3366
             );
         }
-
     </style>
 {% endblock %}
 
 {% block content %}
-    <main class="flex-grow container mx-auto p-3">
+    <main class="flex-grow container mx-auto pt-3 px-3">
         <div class="max-w-[900px] w-full mx-auto">
             <!-- Activity Info Card -->
-            <div id="activityInfoCard" class="bg-white rounded-xl shadow-lg p-3 mb-3">
+            <div id="activityInfoCard" class="bg-white rounded-xl shadow-lg p-3">
                 <div class="flex justify-between items-center">
                     <h2 id="activityName" class="text-lg text-gray-800"></h2>
                     <a id="stravaLink" href="#" target="_blank" 
@@ -70,30 +59,21 @@
                 </div>
             </div>
 
-            <!-- Canvas Card -->
-            <div class="aspect-9-16 bg-white rounded-xl shadow-lg p-3 max-w-sm mx-auto mb-3 flex flex-col">
-                <div class="w-full h-full aspect-9-16 relative flex-grow">
-                    <canvas id="overlayCanvas" class="w-full h-full dark-checkerboard rounded-xl" style="display:block;"></canvas>
+            <div class="w-full mx-auto p-3">
+                <div class="bg-white rounded-xl shadow-lg p-3 max-w-sm mx-auto">
+                    <div class="relative w-full aspect-[9/16] max-h-[65vh]">
+                        <canvas id="overlayCanvas" class="absolute inset-0 w-full h-full dark-checkerboard rounded-md"></canvas>
+                    </div>
                 </div>
             </div>
 
             <!-- Options Card -->
-            <div class="bg-white rounded-xl shadow-lg p-6 space-y-4">
+            <div class="bg-gradient-to-br from-white to-gray-100 rounded-xl shadow-xl p-6 space-y-6 ring-1 ring-fitness-dark-gray">
                 <!-- Section Contents -->
                 <div id="textSection" class="section-content space-y-4">
-                    <div id="overlayOptions" class="grid grid-cols-3 md:grid-cols-4 gap-2">
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="distance">Distance</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="movingTime">Time</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="pace">Pace</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="averageSpeed">Avg Speed</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="avgHeartRate">Avg HR</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="maxHeartRate">Max HR</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="calories">Calories</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="elevationGain">Elevation</button>
-                    </div>
 
                     <!-- Unified Controls Container -->
-                    <div class="flex justify-center items-end flex-wrap gap-4 mt-4">
+                    <div class="flex justify-center items-end flex-wrap gap-4">
                         <!-- Color Picker -->
                         <div class="flex flex-col items-center gap-1">
                             <!-- <div class="size-label">Color</div> -->
@@ -149,6 +129,18 @@
                             </button>
                         </div>
                     </div>
+                                    
+                    <div id="overlayOptions" class="grid grid-cols-3 md:grid-cols-4 gap-2">
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="distance">Distance</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="movingTime">Time</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="pace">Pace</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="averageSpeed">Avg Speed</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="avgHeartRate">Avg HR</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="maxHeartRate">Max HR</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="calories">Calories</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="elevationGain">Elevation</button>
+                    </div>
+                
                 </div>
 
                 <!-- Copy Buttons -->
@@ -754,15 +746,6 @@
 
             // Update color wheel handler
             colorWheel.addEventListener('input', (e) => {
-                if (!state.isAuthenticated) {
-                    showStatusMessage('Please login to customize colors', 'warning');
-                    return;
-                }
-                if (!state.activityId) {
-                    showStatusMessage('Please load an activity first to customize colors', 'warning');
-                    return;
-                }
-
                 state.textColor = e.target.value;
                 generateOverlay(StravaData);
                 // Save state
