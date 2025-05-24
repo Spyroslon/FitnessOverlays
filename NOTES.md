@@ -4,8 +4,8 @@ Core information for getting started and common tasks.
 
 ## Project Basics
 
-- **Goal:** Authenticate with Strava, input activity, generate overlays.
-- **Backend:** Python (Flask), SQLite (`activities.db`), Strava API.
+- **Goal:** Authenticate with Strava, choose activity, customize overlay
+- **Backend:** Python (Flask), Postgres, Strava API.
 - **Frontend:** HTML, Vanilla JS, Tailwind CSS
 
 ## Quick Reference Commands
@@ -22,7 +22,6 @@ source .fitnessoverlays-venv/Scripts/activate
 # Install/Update dependencies
 pip install -r requirements.txt
 
-# Set up .env (if first time)
 # Copy the example file
 cp .env.example .env
 # --> EDIT .env with your Strava Client ID/Secret <--
