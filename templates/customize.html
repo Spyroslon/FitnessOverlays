@@ -1,17 +1,7 @@
 {% extends "base.html" %}
 
 {% block style %}
-<style> 
-        /* Keep custom aspect ratio */
-        .aspect-9-16 {
-            aspect-ratio: 9/16;
-            width: 100%;
-            max-height: 65vh; /* Reduced from 60vh */
-            max-width: calc(65vh * 9/16); /* Adjusted to match new max-height */
-            /* margin: 0 auto; */
-        }
-
-        /* Keep custom checkerboard */
+    <style> 
         .dark-checkerboard {
             background-image:
             linear-gradient(45deg, #333333 25%, transparent 25%),
@@ -52,7 +42,6 @@
                 #CC33FF, #FF3366
             );
         }
-
     </style>
 {% endblock %}
 
@@ -60,9 +49,9 @@
     <main class="flex-grow container mx-auto p-3">
         <div class="max-w-[900px] w-full mx-auto">
             <!-- Activity Info Card -->
-            <div id="activityInfoCard" class="bg-white rounded-xl shadow-lg p-3 mb-3">
+            <div id="activityInfoCard" class="bg-white rounded-xl shadow-lg p-3">
                 <div class="flex justify-between items-center">
-                    <h2 id="activityName" class="text-lg text-gray-800"></h2>
+                    <h2 id="activityName" class="text-lg text-fitness-dark-gray"></h2>
                     <a id="stravaLink" href="#" target="_blank" 
                        class="bg-fitness-orange text-white p-3 rounded-lg text-sm font-medium transition-colors text-center">
                         View on Strava
@@ -70,30 +59,21 @@
                 </div>
             </div>
 
-            <!-- Canvas Card -->
-            <div class="aspect-9-16 bg-white rounded-xl shadow-lg p-3 max-w-sm mx-auto mb-3 flex flex-col">
-                <div class="w-full h-full aspect-9-16 relative flex-grow">
-                    <canvas id="overlayCanvas" class="w-full h-full dark-checkerboard rounded-xl" style="display:block;"></canvas>
+            <div class="w-full mx-auto p-3">
+                <div class="bg-white rounded-xl shadow-lg p-3 max-w-sm mx-auto">
+                    <div class="relative w-full aspect-[9/16] max-h-[65vh]">
+                        <canvas id="overlayCanvas" class="absolute inset-0 w-full h-full dark-checkerboard rounded-md"></canvas>
+                    </div>
                 </div>
             </div>
 
             <!-- Options Card -->
-            <div class="bg-white rounded-xl shadow-lg p-6 space-y-4">
+            <div class="bg-gradient-to-br from-white to-gray-100 rounded-xl shadow-xl p-6 space-y-6 ring-1 ring-fitness-dark-gray">
                 <!-- Section Contents -->
                 <div id="textSection" class="section-content space-y-4">
-                    <div id="overlayOptions" class="grid grid-cols-3 md:grid-cols-4 gap-2">
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="distance">Distance</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="movingTime">Time</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="pace">Pace</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="averageSpeed">Avg Speed</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="avgHeartRate">Avg HR</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="maxHeartRate">Max HR</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="calories">Calories</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="elevationGain">Elevation</button>
-                    </div>
 
                     <!-- Unified Controls Container -->
-                    <div class="flex justify-center items-end flex-wrap gap-4 mt-4">
+                    <div class="flex justify-center items-end flex-wrap gap-4">
                         <!-- Color Picker -->
                         <div class="flex flex-col items-center gap-1">
                             <!-- <div class="size-label">Color</div> -->
@@ -149,6 +129,18 @@
                             </button>
                         </div>
                     </div>
+                                    
+                    <div id="overlayOptions" class="grid grid-cols-3 md:grid-cols-4 gap-2">
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="distance">Distance</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="movingTime">Time</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="pace">Pace</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="averageSpeed">Avg Speed</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="avgHeartRate">Avg HR</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="maxHeartRate">Max HR</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="calories">Calories</button>
+                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="elevationGain">Elevation</button>
+                    </div>
+                
                 </div>
 
                 <!-- Copy Buttons -->
@@ -194,14 +186,14 @@
     <div id="imageSaveModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-[60] hidden">
         <div class="bg-white rounded-lg shadow-xl p-4 max-w-sm w-full text-center relative aspect-[9/16] max-h-[50vh] flex flex-col">
             <button id="closeModalBtn" 
-                    class="absolute top-1 right-1 m-1 p-1.5 bg-gray-300 hover:bg-gray-400 rounded-full transition-colors z-10">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                    class="absolute top-1 right-1 m-1 p-1.5 bg-fitness-light-gray hover:bg-fitness-light-gray rounded-full transition-colors z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-fitness-gray" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414z" clip-rule="evenodd" />
                 </svg>
             </button>
-            <p class="text-gray-700 mb-2 font-medium text-sm flex-shrink-0">Long-press image to save</p>
+            <p class="text-fitness-gray mb-2 font-medium text-sm flex-shrink-0">Long-press image to save</p>
             <div class="flex-grow flex items-center justify-center overflow-hidden">
-                <img id="modalImage" src="" alt="Generated Overlay" class="max-w-full max-h-full object-contain rounded border border-gray-300 dark-checkerboard">
+                <img id="modalImage" src="" alt="Generated Overlay" class="max-w-full max-h-full object-contain rounded border border-fitness-light-gray dark-checkerboard">
             </div>
         </div>
     </div>
@@ -291,10 +283,10 @@
                         if (!metricsAvailability[metric]) {
                             button.disabled = true;
                             button.classList.remove('bg-fitness-gray', 'bg-fitness-green');
-                            button.classList.add('bg-gray-300', 'cursor-not-allowed');
+                            button.classList.add('bg-fitness-light-gray', 'cursor-not-allowed');
                         } else {
                             button.disabled = false;
-                            button.classList.remove('bg-gray-300', 'cursor-not-allowed');
+                            button.classList.remove('bg-fitness-light-gray', 'cursor-not-allowed');
                             button.classList.add('bg-fitness-gray');
                         }
                     });
@@ -314,13 +306,13 @@
                         const metric = button.dataset.metric;
 
                         // Reset classes and disabled state
-                        button.classList.remove('bg-fitness-green', 'bg-fitness-gray', 'bg-gray-300', 'cursor-not-allowed');
+                        button.classList.remove('bg-fitness-green', 'bg-fitness-gray', 'bg-fitness-light-gray', 'cursor-not-allowed');
                         button.disabled = false;
 
                         if (!metricsAvailability[metric]) {
                             // State 1: Unavailable Metric -> Darker Grey, Disabled
                             button.disabled = true;
-                            button.classList.add('bg-gray-300', 'cursor-not-allowed');
+                            button.classList.add('bg-fitness-light-gray', 'cursor-not-allowed');
                         } else {
                             // Metric is Available
                             if (state.selectedMetrics.includes(metric)) {
@@ -754,15 +746,6 @@
 
             // Update color wheel handler
             colorWheel.addEventListener('input', (e) => {
-                if (!state.isAuthenticated) {
-                    showStatusMessage('Please login to customize colors', 'warning');
-                    return;
-                }
-                if (!state.activityId) {
-                    showStatusMessage('Please load an activity first to customize colors', 'warning');
-                    return;
-                }
-
                 state.textColor = e.target.value;
                 generateOverlay(StravaData);
                 // Save state
@@ -1104,12 +1087,12 @@
                     // Check availability from the existing metricsAvailability map (created during loadActivityFromSession)
                     const isAvailable = state.activityData ? !!metricsAvailability[metric] : false; // Now accesses the higher-scoped variable
 
-                    button.classList.remove('bg-fitness-green', 'bg-fitness-gray', 'bg-gray-300', 'cursor-not-allowed');
+                    button.classList.remove('bg-fitness-green', 'bg-fitness-gray', 'bg-fitness-light-gray', 'cursor-not-allowed');
                     button.disabled = false;
 
                     if (!isAvailable) {
                         button.disabled = true;
-                        button.classList.add('bg-gray-300', 'cursor-not-allowed');
+                        button.classList.add('bg-fitness-light-gray', 'cursor-not-allowed');
                     } else {
                         if (defaultMetrics.includes(metric)) {
                             button.classList.add('bg-fitness-green');

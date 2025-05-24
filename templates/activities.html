@@ -33,7 +33,7 @@
                 <div class="sync-button-wrapper inline-block" id="sync-wrapper">
                     <div class="sync-progress" id="sync-progress"></div>
                     <button id="sync-button" 
-                            class="px-4 py-2 bg-orange-600 text-white rounded-lg 
+                            class="px-4 py-2 bg-fitness-orange text-white rounded-lg 
                                     flex items-center gap-2 transition-colors
                                     disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg id="sync-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -58,7 +58,7 @@
     </main>
 
         <!-- Load More Button -->
-        <div id="load-more-container" class="flex justify-center">
+        <div id="load-more-container" class="flex justify-center pb-4">
             <button id="load-more-button"
             class="px-4 py-2 bg-fitness-green text-white rounded-lg flex items-center gap-2 hover:bg-fitness-dark-green transition-colors hidden">
                 Load More
@@ -86,7 +86,7 @@
                     : 'from-blue-400/90 to-blue-600/90';
 
                 const tile = document.createElement('div');
-                tile.className = 'bg-gray-50 rounded-2xl shadow hover:shadow-lg transition-all duration-300 overflow-hidden group border border-gray-300';
+                tile.className = 'bg-gray-100 rounded-2xl shadow hover:shadow-lg transition-all duration-300 overflow-hidden group border border-fitness-light-gray';
 
                 tile.innerHTML = `
                     <div class="relative">
@@ -94,7 +94,7 @@
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
                                     <div class="flex items-center gap-2 mb-1">
-                                        <span class="text-sm font-semibold uppercase tracking-wide text-gray-600">${activity.type}</span>
+                                        <span class="text-sm font-semibold uppercase tracking-wide text-fitness-gray">${activity.type}</span>
                                     </div>
                                     <h3 class="font-bold text-xl leading-tight max-w-xl">${activity.name}</h3>
                                 </div>
@@ -102,7 +102,7 @@
                             </div>
                         </div>
                         <div class="p-4 bg-white">
-                            <div class="grid grid-cols-[1fr_1fr_1fr_0.2fr] gap-4 text-gray-800">
+                            <div class="grid grid-cols-[1fr_1fr_1fr_0.2fr] gap-4 text-fitness-dark-gray">
                                 <div class="text-center">
                                     <div class="text-xs uppercase font-medium text-zinc-400 mb-1">Distance</div>
                                     <div class="text-base font-semibold">${formatDistance(activity.distance)}</div>

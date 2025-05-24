@@ -57,9 +57,6 @@ See the [live site](https://fitnessoverlays.onrender.com/) for real examples and
 
 See `NOTES.md` for full setup instructions, including local development, Docker, and Tailwind CSS build steps.
 
-* **Backend:** Python (Flask), SQLite (`activities.db`), Strava API
-* **Frontend:** HTML, Vanilla JS, Tailwind CSS
-
 ---
 
 ## License
