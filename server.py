@@ -256,7 +256,7 @@ def after_request(response: Response) -> Response:
     # --- Content Security Policy ---
     csp = {
         'default-src': ["'self'"],
-        'script-src': ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com", "cdnjs.cloudflare.com"],
+        'script-src': ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
         'style-src': ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdnjs.cloudflare.com"],
         'font-src': ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com"],
         'img-src': ["'self'", "*.strava.com", "dgalywyr863hv.cloudfront.net", "data:"],

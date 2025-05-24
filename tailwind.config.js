@@ -7,6 +7,7 @@ module.exports = {
     './static/js/**/*.js',       // ✅ JS files
     './extras/**/*.html',        // 🆕 HTML in extras
     './*.html',                  // 🆕 fallback for root-level HTML if needed
+    './node_modules/flowbite/**/*.js'
   ],
   theme: {
     extend: {
@@ -48,5 +49,7 @@ module.exports = {
       backgroundColor: ['aria-current'], // optional if you're using JIT
     },
   },
-  plugins: [],
+  plugins: [
+    require('flowbite/plugin')
+  ],
 }

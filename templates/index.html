@@ -9,10 +9,6 @@
         .fade-in {
             animation: fadeIn 1s ease-out forwards;
         }
-        .carousel img {
-            pointer-events: none;
-            -webkit-user-drag: none;
-        }
     </style>
 {% endblock %}
 
@@ -48,43 +44,32 @@
             <div class="w-full flex flex-col items-center">
                 <div class="w-full max-w-2xl">
                     <h3 class="text-2xl md:text-3xl font-bold text-center text-fitness-dark-gray mb-6">Overlay Showcase</h3>
+            
                     <div id="default-carousel" class="relative mx-auto w-full max-w-[400px] px-4 sm:px-0" data-carousel="slide">
-                        <!-- Carousel wrapper -->
-                        <div class="relative overflow-hidden rounded-lg aspect-[9/16] drop-shadow-lg">
-                        <!-- Item 1 -->
-                        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-                            <img src="/static/images/14118553438_overlay.png" alt="Example Overlay 1"
-                                class="absolute h-full w-full object-contain top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <div class="relative overflow-hidden rounded-lg drop-shadow-lg aspect-[9/16]">
+                            <div class="hidden duration-700 ease-in-out" data-carousel-item="active">
+                                <img src="/static/images/14118553438_overlay.png" class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-lg" alt="Example Overlay 1">
+                            </div>
+                            <div class="hidden duration-700 ease-in-out" data-carousel-item>
+                                <img src="/static/images/13521772127_overlay.png" class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-lg" alt="Example Overlay 2">
+                            </div>
+                            <div class="hidden duration-700 ease-in-out" data-carousel-item>
+                                <img src="/static/images/13960924927_overlay.png" class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-lg" alt="Example Overlay 3">
+                            </div>
+                            <div class="hidden duration-700 ease-in-out" data-carousel-item>
+                                <img src="/static/images/13398638296_overlay.png" class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-lg" alt="Example Overlay 4">
+                            </div>
+                            <div class="hidden duration-700 ease-in-out" data-carousel-item>
+                                <img src="/static/images/13984241619_overlay.png" class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-lg" alt="Example Overlay 5">
+                            </div>
                         </div>
-                        <!-- Item 2 -->
-                        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-                            <img src="/static/images/13521772127_overlay.png" alt="Example Overlay 2"
-                                class="absolute h-full w-full object-contain top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                        </div>
-                        <!-- Item 3 -->
-                        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-                            <img src="/static/images/13960924927_overlay.png" alt="Example Overlay 3"
-                                class="absolute h-full w-full object-contain top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                        </div>
-                        <!-- Item 4 -->
-                        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-                            <img src="/static/images/13398638296_overlay.png" alt="Example Overlay 4"
-                                class="absolute h-full w-full object-contain top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                        </div>
-                        <!-- Item 5 -->
-                        <div class="hidden duration-700 ease-in-out" data-carousel-item>
-                            <img src="/static/images/13984241619_overlay.png" alt="Example Overlay 5"
-                                class="absolute h-full w-full object-contain top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                        </div>
-                        </div>
-
-                        <!-- Indicators BELOW the image -->
-                        <div class="mt-4 flex justify-center space-x-3">
-                        <button type="button" class="w-3 h-3 rounded-full bg-fitness-light-gray aria-[current=true]:bg-fitness-dark-gray" aria-current="true" aria-label="Slide 1" data-carousel-slide-to="0"></button>
-                        <button type="button" class="w-3 h-3 rounded-full bg-fitness-light-gray aria-[current=true]:bg-fitness-dark-gray" aria-label="Slide 2" data-carousel-slide-to="1"></button>
-                        <button type="button" class="w-3 h-3 rounded-full bg-fitness-light-gray aria-[current=true]:bg-fitness-dark-gray" aria-label="Slide 3" data-carousel-slide-to="2"></button>
-                        <button type="button" class="w-3 h-3 rounded-full bg-fitness-light-gray aria-[current=true]:bg-fitness-dark-gray" aria-label="Slide 4" data-carousel-slide-to="3"></button>
-                        <button type="button" class="w-3 h-3 rounded-full bg-fitness-light-gray aria-[current=true]:bg-fitness-dark-gray" aria-label="Slide 5" data-carousel-slide-to="4"></button>
+            
+                        <div class="mt-4 flex justify-center space-x-3 rtl:space-x-reverse">
+                            <button type="button" class="w-3 h-3 rounded-full bg-fitness-light-gray aria-[current=true]:bg-fitness-dark-gray" aria-current="true" aria-label="Slide 1" data-carousel-slide-to="0"></button>
+                            <button type="button" class="w-3 h-3 rounded-full bg-fitness-light-gray aria-[current=true]:bg-fitness-dark-gray" aria-current="false" aria-label="Slide 2" data-carousel-slide-to="1"></button>
+                            <button type="button" class="w-3 h-3 rounded-full bg-fitness-light-gray aria-[current=true]:bg-fitness-dark-gray" aria-current="false" aria-label="Slide 3" data-carousel-slide-to="2"></button>
+                            <button type="button" class="w-3 h-3 rounded-full bg-fitness-light-gray aria-[current=true]:bg-fitness-dark-gray" aria-current="false" aria-label="Slide 4" data-carousel-slide-to="3"></button>
+                            <button type="button" class="w-3 h-3 rounded-full bg-fitness-light-gray aria-[current=true]:bg-fitness-dark-gray" aria-current="false" aria-label="Slide 5" data-carousel-slide-to="4"></button>
                         </div>
                     </div>
                 </div>
