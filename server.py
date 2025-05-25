@@ -11,6 +11,7 @@ import time
 from datetime import datetime, timezone, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import safe_join
+from werkzeug.middleware.proxy_fix import ProxyFix
 from functools import wraps
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -62,6 +63,8 @@ CORS(app, supports_credentials=True)
 app.secret_key = os.getenv("SECRET_KEY")
 if not app.secret_key:
     raise ValueError("SECRET_KEY environment variable not set. Cannot run application securely.")
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 
 # Validation of environment variables
 check_env_vars()
@@ -455,6 +458,11 @@ def logout():
 @app.route('/')
 def index():
     logger.info(f"Landing page accessed - IP: {request.remote_addr}")
+
+    real_ip = request.remote_addr
+    xff_header = request.headers.get("X-Forwarded-For")
+    logger.info(f"REMOTE_ADDR: {real_ip} | X-Forwarded-For: {xff_header}")
+
     try:
         csrf_token = generate_csrf_token()
         current_time = time.time()
