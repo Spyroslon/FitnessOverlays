@@ -42,6 +42,7 @@ AUTH_BASE_URL = os.getenv("AUTH_BASE_URL")
 TOKEN_URL = os.getenv("TOKEN_URL")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
+RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI")
 
 # Environment-based configuration
 ENVIRONMENT = os.getenv("ENVIRONMENT", "prod").lower()
@@ -516,7 +517,7 @@ def index():
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    storage_uri=os.getenv("RATELIMIT_STORAGE_URI"),
+    storage_uri=RATELIMIT_STORAGE_URI,
     default_limits=["200 per day", "50 per hour"],
     default_limits_exempt_when=lambda: request.path.startswith('/static/')
 )
