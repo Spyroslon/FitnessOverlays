@@ -12,6 +12,8 @@ from datetime import datetime, timezone, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import safe_join
 from functools import wraps
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # --- Environment Variable Validation ---
 def check_env_vars():
@@ -20,7 +22,9 @@ def check_env_vars():
         "CLIENT_SECRET",
         "AUTH_BASE_URL",
         "TOKEN_URL",
+        "VERIFY_TOKEN",
         "SQLALCHEMY_DATABASE_URI",
+        "RATELIMIT_STORAGE_URI",
         "SECRET_KEY",
         "ENVIRONMENT"
     ]
@@ -36,6 +40,7 @@ CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 AUTH_BASE_URL = os.getenv("AUTH_BASE_URL")
 TOKEN_URL = os.getenv("TOKEN_URL")
+VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
 
 # Environment-based configuration
@@ -352,9 +357,11 @@ def validate_csrf_token(request):
 @app.before_request
 def csrf_protect():
     """Protect state-changing requests with CSRF validation."""
-    if request.path == '/api/activities/sync':
+
+    # Exempt webhook and known internal endpoints
+    if request.path in ['/webhook', '/api/activities/sync']:
         return
-        
+
     if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
         if not validate_csrf_token(request):
             logger.warning(f'CSRF validation failed - IP: {request.remote_addr}')
@@ -505,7 +512,35 @@ def index():
                                authenticated=False, 
                                csrf_token=generate_csrf_token())
 
+# Configure rate limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    storage_uri=os.getenv("RATELIMIT_STORAGE_URI"),
+    default_limits=["200 per day", "50 per hour"],
+    default_limits_exempt_when=lambda: request.path.startswith('/static/')
+)
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    """Handle rate limit exceeded based on endpoint type"""
+    logger.warning(f"Rate limit exceeded - IP: {request.remote_addr} - Path: {request.path}")
+    
+    # Return JSON for API and webhook endpoints
+    if request.path.startswith('/api/') or request.path == '/webhook':
+        return jsonify({
+            "error": "Rate limit exceeded",
+            "message": str(e.description)
+        }), 429
+    
+    # Redirect to index for web pages
+    return redirect(url_for('index'))
+
+# Register the rate limit handler
+limiter.error_handler = ratelimit_handler
+
 @app.route('/login')
+@limiter.limit("5 per minute")
 def login():
     """Start OAuth login with Strava."""
     try:
@@ -736,21 +771,82 @@ def sync_activities():
             using_cached=True
         )), 500 if not sync_log else 200
 
+def delete_user_data(athlete_id):
+    """Delete all user data from the database when they deauthorize"""
+    try:
+        logger.info(f"Deleting data for athlete {athlete_id}")
+        
+        # Delete activities
+        Activities.query.filter_by(athlete_id=athlete_id).delete()
+        
+        # Delete activity lists
+        ActivityLists.query.filter_by(athlete_id=athlete_id).delete()
+        
+        # Delete athlete record
+        Athletes.query.filter_by(athlete_id=athlete_id).delete()
+        
+        db.session.commit()
+        logger.info(f"Successfully deleted all data for athlete {athlete_id}")
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting user data for athlete {athlete_id}: {str(e)}")
+        raise
+
+@app.route("/webhook", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
+def webhook():
+    """Handle Strava webhook verification and events"""
+    if request.method == "GET":
+        # Strava webhook verification
+        if not VERIFY_TOKEN:
+            logger.error("STRAVA_VERIFY_TOKEN not configured")
+            return jsonify({"error": "Webhook not configured"}), 500
+            
+        if request.args.get("hub.verify_token") == VERIFY_TOKEN:
+            challenge = request.args.get("hub.challenge")
+            logger.info(f"Webhook verification successful with challenge: {challenge}")
+            return jsonify({
+                "hub.challenge": challenge
+            })
+        logger.warning(f"Invalid webhook verification token from IP: {request.remote_addr}")
+        return jsonify({"error": "Invalid verification token"}), 403
+
+    elif request.method == "POST":
+        try:
+            # Verify request signature if provided by Strava
+            signature = request.headers.get('X-Strava-Signature')
+            if not signature:
+                if ENVIRONMENT == "dev":  # or use a custom flag like app.config["DEBUG"]
+                    logger.warning("Skipping signature verification in development mode")
+                else:
+                    logger.warning(f"Missing Strava signature in webhook request from IP: {request.remote_addr}")
+                    return jsonify({"error": "Unauthorized"}), 403
+
+            event = request.json
+            logger.info(f"Received webhook event: {event}")
+
+            # Only handle deauthorization events
+            if (event.get("object_type") == "athlete" and
+                event.get("aspect_type") == "update" and
+                event.get("updates", {}).get("authorized") == "false"):
+
+                athlete_id = event.get("owner_id")
+                if athlete_id:
+                    # Delete user data
+                    delete_user_data(athlete_id)
+                    logger.info(f"Successfully processed deauthorization for athlete {athlete_id}")
+                else:
+                    logger.warning("Received deauthorization event without athlete_id")
+
+            return jsonify({"status": "ok"}), 200
+            
+        except Exception as e:
+            logger.error(f"Error processing webhook event: {str(e)}")
+            return jsonify({"error": "Internal server error"}), 500
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
-
-@app.before_request
-def require_authentication():
-    """Handle authentication requirements for different types of requests."""
-    
-    # Allow requests to static files, login, callback, root path
-    if request.path.startswith('/static/') or request.path in ['/login', '/callback', '/']:
-        return
-    
-    # If the user is not authenticated, render the 'auth_required.html' page
-    if 'athlete_id' not in session:
-        return render_template('auth_required.html')
 
 if __name__ == '__main__':
     logging.info("Starting Flask application...")
