@@ -115,3 +115,20 @@ npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --watch
 # For production builds (minified)
 npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify
 ```
+
+## 5. Strava Webhook Management
+
+```bash
+# List current webhook subscriptions
+curl -X GET "https://www.strava.com/api/v3/push_subscriptions?client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET"
+
+# Delete a webhook subscription
+curl -X DELETE "https://www.strava.com/api/v3/push_subscriptions/284758?client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET"
+
+# Create a new webhook subscription
+curl -X POST https://www.strava.com/api/v3/push_subscriptions \
+  -F client_id=YOUR_CLIENT_ID \
+  -F client_secret=YOUR_CLIENT_SECRET \
+  -F callback_url=https://fitnessoverlays.com/webhook \
+  -F verify_token=your_verify_token
+```
