@@ -64,7 +64,7 @@ app.secret_key = os.getenv("SECRET_KEY")
 if not app.secret_key:
     raise ValueError("SECRET_KEY environment variable not set. Cannot run application securely.")
 
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=3)
 
 # Validation of environment variables
 check_env_vars()
@@ -319,7 +319,7 @@ STATIC_DIR = 'static'
 @app.route('/static/<path:path>')
 def serve_static(path):
     """Securely serve static files"""
-    client_ip = request.remote_addr
+    client_ip = get_remote_address()
     ext = os.path.splitext(path.lower())[1]
 
     if ext not in ALLOWED_EXTENSIONS:
@@ -368,7 +368,7 @@ def csrf_protect():
 
     if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
         if not validate_csrf_token(request):
-            logger.warning(f'CSRF validation failed - IP: {request.remote_addr}')
+            logger.warning(f'CSRF validation failed - IP: {get_remote_address()}')
             return jsonify({"error": "Invalid CSRF token"}), 403
 
 def refresh_access_token(refresh_token):
@@ -451,17 +451,13 @@ def refresh_access_token(refresh_token):
 @app.route('/logout', methods=['POST'])
 def logout():
     """Clear the session data"""
-    logger.info(f"Athlete logged out - ID: {session['athlete_id']} - Name: {session['athlete_first_name']} {session['athlete_last_name']} - IP: {request.remote_addr}")
+    logger.info(f"Athlete logged out - ID: {session['athlete_id']} - Name: {session['athlete_first_name']} {session['athlete_last_name']} - IP: {get_remote_address()}")
     session.clear()
     return redirect('/')
 
 @app.route('/')
 def index():
-    logger.info(f"Landing page accessed - IP: {request.remote_addr}")
-
-    real_ip = request.remote_addr
-    xff_header = request.headers.get("X-Forwarded-For")
-    logger.info(f"REMOTE_ADDR: {real_ip} | X-Forwarded-For: {xff_header}")
+    logger.info(f"Landing page accessed - IP: {get_remote_address()} | X-Forwarded-For: {request.headers.get("X-Forwarded-For")}")
 
     try:
         csrf_token = generate_csrf_token()
@@ -533,7 +529,7 @@ limiter = Limiter(
 @app.errorhandler(429)
 def ratelimit_handler(e):
     """Handle rate limit exceeded based on endpoint type"""
-    logger.warning(f"Rate limit exceeded - IP: {request.remote_addr} - Path: {request.path}")
+    logger.warning(f"Rate limit exceeded - IP: {get_remote_address()} - Path: {request.path}")
     
     # Return JSON for API and webhook endpoints
     if request.path.startswith('/api/') or request.path == '/webhook':
@@ -576,7 +572,7 @@ def callback():
     try:
         # Check if user denied authorization
         if 'error' in request.args:
-            logger.info(f"User denied Strava authorization - IP: {request.remote_addr}")
+            logger.info(f"User denied Strava authorization - IP: {get_remote_address()}")
             return redirect('/')
 
         # Generate the dynamic callback URL consistently
@@ -604,7 +600,7 @@ def callback():
             logger.error('No athlete ID in token response')
             return redirect('/')
 
-        logger.info(f"Athlete Logged In - ID: {athlete_id} - Name: {athlete_data.get('firstname')} {athlete_data.get('lastname')} - IP: {request.remote_addr}")
+        logger.info(f"Athlete Logged In - ID: {athlete_id} - Name: {athlete_data.get('firstname')} {athlete_data.get('lastname')} - IP: {get_remote_address()}")
 
         try:
             # Find existing athlete or create new one
@@ -638,7 +634,7 @@ def callback():
         
         return redirect('/')
     except Exception as e:
-        logger.error(f'OAuth callback error details: {str(e)} - IP: {request.remote_addr}')
+        logger.error(f'OAuth callback error details: {str(e)} - IP: {get_remote_address()}')
         return redirect('/')
 
 # Add login_required decorator
@@ -825,7 +821,7 @@ def webhook():
             return jsonify({
                 "hub.challenge": challenge
             })
-        logger.warning(f"Invalid webhook verification token from IP: {request.remote_addr}")
+        logger.warning(f"Invalid webhook verification token from IP: {get_remote_address()}")
         return jsonify({"error": "Invalid verification token"}), 403
 
     elif request.method == "POST":
@@ -836,7 +832,7 @@ def webhook():
                 if ENVIRONMENT == "dev":  # or use a custom flag like app.config["DEBUG"]
                     logger.warning("Skipping signature verification in development mode")
                 else:
-                    logger.warning(f"Missing Strava signature in webhook request from IP: {request.remote_addr}")
+                    logger.warning(f"Missing Strava signature in webhook request from IP: {get_remote_address()}")
                     return jsonify({"error": "Unauthorized"}), 403
 
             event = request.json
