@@ -639,6 +639,14 @@ def login_required(f):
         if 'athlete_id' not in session:
             # Redirect to login page if not authenticated
             return redirect(url_for('login'))
+            
+        # Check if athlete still exists in database
+        athlete = db.session.get(Athletes, session['athlete_id'])
+        if not athlete:
+            # Clear session if athlete no longer exists
+            session.clear()
+            return redirect(url_for('login'))
+            
         return f(*args, **kwargs)
     return decorated_function
 
@@ -832,7 +840,7 @@ def webhook():
 
                 athlete_id = event.get("owner_id")
                 if athlete_id:
-                    # Delete user data
+                    # Delete user data - this will naturally invalidate their session
                     delete_user_data(athlete_id)
                     logger.info(f"Successfully processed deauthorization for athlete {athlete_id}")
                 else:
