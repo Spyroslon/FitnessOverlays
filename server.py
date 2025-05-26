@@ -261,7 +261,8 @@ with app.app_context():
 
 @app.after_request
 def after_request(response: Response) -> Response:
-    """Add security headers and handle caching."""
+    """Add security headers and control caching behavior."""
+    
     # --- Content Security Policy ---
     csp = {
         'default-src': ["'self'"],
@@ -293,19 +294,39 @@ def after_request(response: Response) -> Response:
     response.headers['Permissions-Policy'] = (
         'accelerometer=(), autoplay=(), camera=(), cross-origin-isolated=(), display-capture=(), '
         'encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), keyboard-map=(), '
-        'magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), '
-        'screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()'
+        'magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), '
+        'publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()'
     )
     response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
 
-    # --- Cache Control ---
-    if request.path.startswith('/static/'):
-        response.headers['Cache-Control'] = 'public, max-age=3600'
+    # --- Cache-Control Strategy ---
+    path = request.path
+
+    athlete = None
+    is_logged_in = False
+
+    if 'athlete_id' in session:
+        athlete = db.session.get(Athletes, session['athlete_id'])
+        if athlete:
+            is_logged_in = True
+        else:
+            session.clear()  # Wipe out invalid session
+
+    if path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    elif is_logged_in:
+        if path == '/customize':
+            response.headers['Cache-Control'] = 'private, max-age=600'
+        else:
+            response.headers['Cache-Control'] = 'private, no-store'
+            response.headers['Pragma'] = 'no-cache'
     else:
-        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
+        if path == '/':
+            response.headers['Cache-Control'] = 'public, max-age=300'
+        else:
+            response.headers['Cache-Control'] = 'public, max-age=60'
 
     # --- Cleanup ---
     response.headers.pop('X-Powered-By', None)
