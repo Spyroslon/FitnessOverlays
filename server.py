@@ -277,7 +277,7 @@ def after_request(response: Response) -> Response:
         'style-src': ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdnjs.cloudflare.com"],
         'font-src': ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com"],
         'img-src': ["'self'", "*.strava.com", "dgalywyr863hv.cloudfront.net", "data:"],
-        'connect-src': ["'self'", "www.strava.com", "strava.com"],
+        'connect-src': ["'self'", "www.strava.com", "strava.com", "www.google-analytics.com"],
         'frame-ancestors': ["'none'"],
         'form-action': ["'self'"],
         'base-uri': ["'self'"],
