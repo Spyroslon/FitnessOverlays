@@ -289,7 +289,9 @@ def after_request(response: Response) -> Response:
             "'self'",
             "data:",
             "*.strava.com",
-            "dgalywyr863hv.cloudfront.net"
+            "dgalywyr863hv.cloudfront.net",
+            "www.googletagmanager.com",
+            "www.google-analytics.com"
         ],
         'connect-src': [
             "'self'",
