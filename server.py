@@ -261,23 +261,43 @@ with app.app_context():
 
 @app.after_request
 def after_request(response: Response) -> Response:
-    """Add security headers and control caching behavior."""
-    
+    """Apply security headers, CSP, and cache-control strategy to all responses."""
+
     # --- Content Security Policy ---
     csp = {
         'default-src': ["'self'"],
         'script-src': [
-            "'self'", 
-            "'unsafe-inline'", 
+            "'self'",
+            "'unsafe-inline'",
             "cdn.tailwindcss.com",
             "www.googletagmanager.com",
             "www.google-analytics.com",
             "static.cloudflareinsights.com"
         ],
-        'style-src': ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdnjs.cloudflare.com"],
-        'font-src': ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com"],
-        'img-src': ["'self'", "*.strava.com", "dgalywyr863hv.cloudfront.net", "data:"],
-        'connect-src': ["'self'", "www.strava.com", "strava.com", "www.google-analytics.com"],
+        'style-src': [
+            "'self'",
+            "'unsafe-inline'",
+            "fonts.googleapis.com",
+            "cdnjs.cloudflare.com"
+        ],
+        'font-src': [
+            "'self'",
+            "fonts.gstatic.com",
+            "cdnjs.cloudflare.com"
+        ],
+        'img-src': [
+            "'self'",
+            "data:",
+            "*.strava.com",
+            "dgalywyr863hv.cloudfront.net"
+        ],
+        'connect-src': [
+            "'self'",
+            "www.strava.com",
+            "strava.com",
+            "www.google-analytics.com",
+            "region1.google-analytics.com"
+        ],
         'frame-ancestors': ["'none'"],
         'form-action': ["'self'"],
         'base-uri': ["'self'"],
@@ -288,7 +308,7 @@ def after_request(response: Response) -> Response:
     }
 
     if ENVIRONMENT == "prod":
-        csp['script-src'] = [s for s in csp['script-src'] if s != "cdn.tailwindcss.com"]
+        csp['script-src'] = [src for src in csp['script-src'] if src != "cdn.tailwindcss.com"]
 
     csp_string = '; '.join(f"{k} {' '.join(v)}" for k, v in csp.items())
     response.headers['Content-Security-Policy'] = csp_string
@@ -311,15 +331,15 @@ def after_request(response: Response) -> Response:
     # --- Cache-Control Strategy ---
     path = request.path
 
-    athlete = None
     is_logged_in = False
+    athlete_id = session.get("athlete_id")
 
-    if 'athlete_id' in session:
-        athlete = db.session.get(Athletes, session['athlete_id'])
+    if athlete_id:
+        athlete = db.session.get(Athletes, athlete_id)
         if athlete:
             is_logged_in = True
         else:
-            session.clear()  # Wipe out invalid session
+            session.clear()
 
     if path.startswith('/static/'):
         response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
@@ -335,7 +355,7 @@ def after_request(response: Response) -> Response:
         else:
             response.headers['Cache-Control'] = 'public, max-age=60'
 
-    # --- Cleanup ---
+    # --- Header Cleanup ---
     response.headers.pop('X-Powered-By', None)
     response.headers.pop('Server', None)
 
