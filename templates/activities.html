@@ -211,6 +211,9 @@
                 const icon = document.getElementById('sync-icon');
                 icon.classList.add('spinner');
 
+                const minSpinDuration = 1000;
+                const startTime = Date.now();
+
                 fetch('/api/activities/sync', { method, credentials: 'include' })
                     .then(res => res.json())
                     .then(data => {
@@ -243,7 +246,11 @@
                         document.getElementById('last-sync').textContent = 'Error fetching sync time';
                     })
                     .finally(() => {
-                        icon.classList.remove('spinner');
+                        const elapsed = Date.now() - startTime;
+                        const remaining = Math.max(0, minSpinDuration - elapsed);
+                        setTimeout(() => {
+                            icon.classList.remove('spinner');
+                        }, remaining);
                     });
             }
 

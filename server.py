@@ -371,6 +371,21 @@ def csrf_protect():
             logger.warning(f'CSRF validation failed - IP: {get_remote_address()}')
             return jsonify({"error": "Invalid CSRF token"}), 403
 
+@app.before_request
+def enforce_custom_domain():
+    host = request.host.split(":")[0]
+    path = request.path
+
+    # Allow API calls and webhooks to bypass domain enforcement
+    if path.startswith("/api") or path.startswith("/webhook"):
+        return
+
+    allowed_exact = {"fitnessoverlays.com", "localhost", "127.0.0.1"}
+    allowed_suffixes = (".ngrok.io", ".ngrok-free.app")
+
+    if host not in allowed_exact and not host.endswith(allowed_suffixes):
+        return redirect(f"https://fitnessoverlays.com{request.full_path}", code=301)
+
 def refresh_access_token(refresh_token):
     """Refresh the access token with robust error handling"""
     if not refresh_token:
