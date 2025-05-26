@@ -3,17 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/static/images/FitnessOverlaysUpdatedLogo.ico">
+    <link rel="icon" type="image/x-icon" href="/static/images/FitnessOverlaysLogo.ico">
     <meta name="copyright" content="FitnessOverlays - Copyright (c) 2025 Spyros Lontos">
     <meta name="license" content="AGPL-3.0">
     <meta name="csrf-token" content="{{ session['csrf_token'] }}">
-    <title>FitnessOverlays</title>
+    <title>Fitness Overlays - Create Stunning Strava Activity Visuals & Share Your Workouts</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <script src="/static/js/flowbite.min.js"></script>
     <link href="/static/css/tailwind.css" rel="stylesheet">
     <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <script src="/static/js/common.js" defer></script>
+    <script src="/static/js/flowbite.min.js"></script>
+
+    <link rel="alternate" hreflang="en" href="https://fitnessoverlays.com/" />
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Create stunning overlays for your Strava activities. Customize and share your fitness achievements with beautiful visual overlays.">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="author" content="Fitness Overlays">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://fitnessoverlays.com/">
+    <meta property="og:title" content="Fitness Overlays - Create Beautiful Strava Activity Overlays">
+    <meta property="og:description" content="Create stunning overlays for your Strava activities. Customize and share your fitness achievements with beautiful visual overlays.">
+    <!-- <meta property="og:image" content="https://fitnessoverlays.com/static/images/og-image.jpg"> -->
+    <meta property="og:site_name" content="Fitness Overlays">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://fitnessoverlays.com/">
+    <meta name="twitter:title" content="Fitness Overlays - Create Beautiful Strava Activity Overlays">
+    <meta name="twitter:description" content="Create stunning overlays for your Strava activities. Customize and share your fitness achievements with beautiful visual overlays.">
+    <!-- <meta name="twitter:image" content="https://fitnessoverlays.com/static/images/og-image.jpg"> -->
+    <meta name="twitter:site" content="@spyroslon">
+    <meta name="twitter:creator" content="@spyroslon">
+
+    <!-- Apple Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fitness Overlays">
+    <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png">
+    <link rel="apple-touch-startup-image" href="/static/images/apple-splash.png">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://fitnessoverlays.com/">
+
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Fitness Overlays",
+          "url": "https://fitnessoverlays.com/",
+          "description": "Create stunning overlays for your Strava activities. Customize and share your fitness achievements with beautiful visual overlays.",
+          "author": {
+            "@type": "Person",
+            "name": "Spyros Lontos"
+          }
+        }
+    </script>
 
     <style>
         .gradient-bg {
@@ -35,7 +89,7 @@
                     <div id="profile-picture-trigger" class="cursor-pointer relative">
                         <img id="profile-picture"
                             src="{{ athlete_profile }}"
-                            alt="Profile"
+                            alt="Profile picture of {{ athlete_first_name }} {{ athlete_last_name }}"
                             class="w-10 h-10 rounded-full object-cover border border-fitness-light-gray/50">
                         <span class="absolute bottom-0 left-7 w-3.5 h-3.5 bg-fitness-green border border-white rounded-full flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
@@ -89,7 +143,6 @@
         {% endif %}
     </header>
 
-
     {% block content %}{% endblock %}
 
     <footer class="w-full pt-8">
@@ -106,7 +159,7 @@
                 </div>
                 <div class="flex items-center justify-center space-x-5">
                     <img src="/static/images/api_logo_pwrdBy_strava_horiz_black.svg" 
-                        alt="Powered by Strava" 
+                        alt="Powered by Strava API" 
                         class="h-5 width-auto">
                     <div class="flex justify-center space-x-5">
                         <a href="https://strava.app.link/QzrdTbuZYSb"
@@ -141,7 +194,6 @@
         </div>
     </footer>
 
-{% block script %}{% endblock %}
-
+    {% block script %}{% endblock %}
 </body>
 </html>

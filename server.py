@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for, jsonify, send_from_directory, Response
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify, send_from_directory, Response, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
@@ -318,7 +318,7 @@ STATIC_DIR = 'static'
 
 @app.route('/static/<path:path>')
 def serve_static(path):
-    """Securely serve static files"""
+    """Securely serve static files with Cache-Control headers"""
     client_ip = get_remote_address()
     ext = os.path.splitext(path.lower())[1]
 
@@ -342,7 +342,9 @@ def serve_static(path):
         return jsonify({"error": "File not found"}), 404
 
     try:
-        return send_from_directory(STATIC_DIR, path)
+        response = make_response(send_from_directory(STATIC_DIR, path))
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        return response
     except Exception as e:
         logger.error(f'Failed to serve file: {path} - IP: {client_ip} - Error: {e}')
         return jsonify({"error": "Error accessing file"}), 500
@@ -876,6 +878,14 @@ def webhook():
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
+
+@app.route('/robots.txt')
+def robots_txt():
+    return send_from_directory('static', 'robots.txt')
+
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    return send_from_directory('static', 'sitemap.xml')
 
 if __name__ == '__main__':
     logging.info("Starting Flask application...")
