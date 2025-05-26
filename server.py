@@ -384,6 +384,7 @@ def enforce_custom_domain():
     allowed_suffixes = (".ngrok.io", ".ngrok-free.app")
 
     if host not in allowed_exact and not host.endswith(allowed_suffixes):
+        logger.warning(f'Redirecting athlete - IP: {get_remote_address()}')
         return redirect(f"https://fitnessoverlays.com{request.full_path}", code=301)
 
 def refresh_access_token(refresh_token):
