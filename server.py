@@ -15,6 +15,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from functools import wraps
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import mimetypes
 
 # --- Environment Variable Validation ---
 def check_env_vars():
@@ -392,7 +393,8 @@ def serve_static(path):
         return jsonify({"error": "File not found"}), 404
 
     try:
-        response = make_response(send_from_directory(STATIC_DIR, path))
+        mime_type = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+        response = make_response(send_from_directory(STATIC_DIR, path, mimetype=mime_type))
         response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
         return response
     except Exception as e:
@@ -438,6 +440,19 @@ def enforce_custom_domain():
     if host not in allowed_exact and not host.endswith(allowed_suffixes):
         logger.warning(f'Redirecting athlete - IP: {get_remote_address()}')
         return redirect(f"https://fitnessoverlays.com{request.full_path}", code=301)
+
+@app.before_request
+def rate_limit_unknown_paths():
+    allowed_paths = [
+        "/favicon.ico",
+        "/robots.txt",
+        "/sitemap.xml",
+        "/static/",
+    ]
+    
+    if request.endpoint is None and not any(request.path.startswith(p) for p in allowed_paths):
+        logger.info(f"Triggered 404: for path {request.path}")
+        limiter.check()
 
 def refresh_access_token(refresh_token):
     """Refresh the access token with robust error handling"""
@@ -706,7 +721,6 @@ def callback():
         logger.error(f'OAuth callback error details: {str(e)} - IP: {get_remote_address()}')
         return redirect('/')
 
-# Add login_required decorator
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -724,6 +738,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+@limiter.limit("100 per hour", key_func=lambda: session.get("athlete_id", get_remote_address()))
 @app.route('/customize')
 @login_required
 def customize():
@@ -737,6 +752,7 @@ def customize():
                         athlete_profile=session.get("athlete_profile"),
                         csrf_token=session['csrf_token'])
 
+@limiter.limit("100 per hour", key_func=lambda: session.get("athlete_id", get_remote_address()))
 @app.route('/activities')
 @login_required
 def activities():
@@ -772,6 +788,7 @@ def create_sync_response(activities, page, per_page, sync_log, seconds_remaining
 
     return response
 
+@limiter.limit("100 per hour", key_func=lambda: session.get("athlete_id", get_remote_address()))
 @app.route('/api/activities/sync', methods=['GET'])
 @login_required
 def sync_activities():
@@ -927,17 +944,18 @@ def webhook():
             return jsonify({"error": "Internal server error"}), 500
 
 @app.errorhandler(404)
-@limiter.limit("10 per minute")
 def page_not_found(e):
     return render_template('404.html'), 404
 
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(os.path.join("static", "images"), "FitnessOverlaysLogo.ico", mimetype="image/vnd.microsoft.icon")
+
 @app.route('/robots.txt')
-@limiter.limit("30 per minute")
 def robots_txt():
     return send_from_directory('static', 'robots.txt')
 
 @app.route('/sitemap.xml')
-@limiter.limit("30 per minute")
 def sitemap_xml():
     return send_from_directory('static', 'sitemap.xml')
 
