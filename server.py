@@ -635,6 +635,7 @@ def login():
         return jsonify({"error": "Authentication failed"}), 401
 
 @app.route('/callback')
+@limiter.limit("5 per minute")
 def callback():
     """Handle the OAuth callback from Strava"""
     try:
@@ -926,14 +927,17 @@ def webhook():
             return jsonify({"error": "Internal server error"}), 500
 
 @app.errorhandler(404)
+@limiter.limit("10 per minute")
 def page_not_found(e):
     return render_template('404.html'), 404
 
 @app.route('/robots.txt')
+@limiter.limit("30 per minute")
 def robots_txt():
     return send_from_directory('static', 'robots.txt')
 
 @app.route('/sitemap.xml')
+@limiter.limit("30 per minute")
 def sitemap_xml():
     return send_from_directory('static', 'sitemap.xml')
 
