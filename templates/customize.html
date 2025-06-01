@@ -53,14 +53,14 @@
                 <div class="flex justify-between items-center">
                     <h2 id="activityName" class="text-lg text-fitness-dark-gray"></h2>
                     <a id="stravaLink" href="#" target="_blank" 
-                       class="bg-fitness-orange text-white p-3 rounded-lg text-sm font-medium transition-colors text-center">
+                       class="bg-fitness-orange text-white p-3 rounded-lg text-xs font-medium transition-colors text-center">
                         View on Strava
                     </a>
                 </div>
             </div>
 
-            <div class="w-full mx-auto p-3">
-                <div class="bg-white rounded-xl shadow-lg p-4 max-w-sm mx-auto flex items-center justify-center">
+            <div class="w-full mx-auto py-3">
+                <div class="bg-white rounded-xl shadow-lg p-4 max-w-md mx-auto flex items-center justify-center">
                     <div class="w-full flex items-center justify-center relative">
                         <canvas id="overlayCanvas" class="block dark-checkerboard rounded-md shadow-md mx-auto w-full h-full"></canvas>
                         <div id="loadingOverlay" class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-md">
@@ -241,8 +241,8 @@
             };
 
             const SIZE_MULTIPLIERS = {
-                small: 0.7, // Adjusted to be slightly smaller than before
-                medium: 0.85, // Adjusted to be between small and large
+                small: 0.6, // Adjusted to be slightly smaller than before
+                medium: 0.8, // Adjusted to be between small and large
                 large: 1.0 // Set to the current size used for Medium
             };
 
@@ -466,7 +466,7 @@
             const VERTICAL_PADDING_FACTOR = 0.05; // 5% of canvas height as vertical padding
             const METRIC_GROUP_SPACING = 20; // px between metric groups
             const LABEL_VALUE_SPACING = 6;
-            const HORIZONTAL_PADDING = 20;
+            const HORIZONTAL_PADDING_FACTOR = 0.05; // 5% of canvas width as horizontal padding
 
             function resizeCanvas() {
                 const container = canvas.parentElement;
@@ -511,7 +511,8 @@
                         const dpr = window.devicePixelRatio || 1;
                         const logicalWidth = overlayCanvas.width / dpr;
                         const logicalHeight = overlayCanvas.height / dpr;
-                        const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
+                        const hPadding = logicalWidth * HORIZONTAL_PADDING_FACTOR;
+                        const availableWidth = logicalWidth - (hPadding * 2);
                         const columnWidthForSizing = availableWidth / actualColsForSizing;
                         const verticalPadding = logicalHeight * VERTICAL_PADDING_FACTOR;
                         const availableHeight = logicalHeight - (verticalPadding * 2);
@@ -553,13 +554,13 @@
                             if (drawableColumns === 1) {
                                 context.textAlign = state.textAlign;
                                 switch (state.textAlign) {
-                                    case 'left': xPos = HORIZONTAL_PADDING; break;
-                                    case 'right': xPos = logicalWidth - HORIZONTAL_PADDING; break;
+                                    case 'left': xPos = hPadding; break;
+                                    case 'right': xPos = logicalWidth - hPadding; break;
                                     default: xPos = logicalWidth / 2;
                                 }
                             } else {
                                 context.textAlign = state.textAlign;
-                                const slotLeft = HORIZONTAL_PADDING + (columnWidth * columnIndex);
+                                const slotLeft = hPadding + (columnWidth * columnIndex);
                                 const slotCenter = slotLeft + (columnWidth / 2);
                                 const slotRight = slotLeft + columnWidth;
                                 switch (state.textAlign) {
@@ -637,7 +638,8 @@
 
                 const logicalWidth = canvasRef.width / dpr;
                 const logicalHeight = canvasRef.height / dpr;
-                const availableWidth = logicalWidth - (HORIZONTAL_PADDING * 2);
+                const cropHPadding = logicalWidth * HORIZONTAL_PADDING_FACTOR;
+                const availableWidth = logicalWidth - (cropHPadding * 2);
                 const columnWidth = availableWidth / actualColumns;
 
                 // Calculate font sizes
@@ -686,7 +688,7 @@
                     const yPos = startY + (rowIndex * (itemHeight + itemSpacing));
                     
                     // Calculate x position based on alignment and column
-                    const slotLeft = HORIZONTAL_PADDING + (columnWidth * columnIndex);
+                    const slotLeft = cropHPadding + (columnWidth * columnIndex);
                     const slotCenter = slotLeft + (columnWidth / 2);
                     const slotRight = slotLeft + columnWidth;
                     
