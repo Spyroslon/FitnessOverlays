@@ -1,4 +1,4 @@
-# 1. Start with an official Python base image
+    # 1. Start with an official Python base image
     #    Using a specific version is good practice. 'slim' is smaller.
     FROM python:3.13-slim 
     
@@ -37,8 +37,7 @@
     COPY . .
     
     # 10. Build Tailwind CSS for production
-    #     Run this *after* copying all code, including HTML templates
-    RUN npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify
+    RUN npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css
     
     # 11. Expose the port the app runs on (Gunicorn default is 8000)
     EXPOSE 8000
