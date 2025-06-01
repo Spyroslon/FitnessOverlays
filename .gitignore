@@ -28,4 +28,3 @@ npm-debug.log*
 # Node.js / Build artifacts
 /node_modules/
 /static/css/tailwind.css
-/static/css/tailwind_test.css

@@ -344,8 +344,10 @@ def after_request(response: Response) -> Response:
         else:
             session.clear()
 
-    if path.startswith('/static/'):
+    if path.startswith('/static/images/'):
         response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    elif path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=300'
     elif is_logged_in:
         if path == '/customize':
             response.headers['Cache-Control'] = 'private, max-age=600'
