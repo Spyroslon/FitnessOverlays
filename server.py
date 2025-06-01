@@ -196,7 +196,7 @@ class Activities(db.Model):
 
     def is_sync_allowed(self):
         """Check if enough time has passed since last sync for this athlete"""
-        last_sync = self.get_last_sync(self.athlete_id)
+        last_sync = self.get_last_sync(self.athlete_id, self.activity_id)
         if not last_sync:
             return True
         current_time = datetime.now(timezone.utc)
@@ -205,7 +205,7 @@ class Activities(db.Model):
 
     def get_cooldown_remaining(self):
         """Get remaining cooldown time in seconds"""
-        last_sync = self.get_last_sync(self.athlete_id)
+        last_sync = self.get_last_sync(self.athlete_id, self.activity_id)
         if not last_sync:
             return 0
         current_time = datetime.now(timezone.utc)
@@ -869,6 +869,107 @@ def sync_activities():
             warning="Failed to sync data, showing cached data" if sync_log else None,
             using_cached=True
         )), 500 if not sync_log else 200
+
+@limiter.limit("100 per hour", key_func=lambda: session.get("athlete_id", get_remote_address()))
+@app.route('/api/activities/<int:activity_id>', methods=['GET'])
+@login_required
+def get_activity(activity_id):
+    """Fetch specific activity data from Strava with caching and cooldown"""
+    athlete_id = session['athlete_id']
+    logger.info(f"Fetching Activity {activity_id} - Athlete ID: {athlete_id}")
+
+    # Check cache and cooldown
+    activity = Activities.query.filter_by(
+        athlete_id=athlete_id,
+        activity_id=activity_id
+    ).first()
+
+    if activity:
+        seconds_remaining = activity.get_cooldown_remaining()
+        if seconds_remaining > 0:
+            logger.info(f"Returning cached activity {activity_id} - {seconds_remaining}s cooldown remaining")
+            return jsonify({
+                "activity": activity.data,
+                "cooldown": {
+                    "active": True,
+                    "seconds_remaining": seconds_remaining,
+                    "total_cooldown": Activities.SYNC_COOLDOWN.total_seconds()
+                },
+                "cached": True
+            })
+
+    # Fetch fresh data
+    try:
+        logger.info(f"Fetching fresh data for activity {activity_id} from Strava")
+        response = requests.get(
+            f"https://www.strava.com/api/v3/activities/{activity_id}",
+            headers={"Authorization": f"Bearer {session['access_token']}"},
+            timeout=15
+        )
+
+        if not response.ok:
+            logger.error(f"Strava API error for activity {activity_id}: {response.status_code}")
+            if activity:
+                seconds_remaining = activity.get_cooldown_remaining()
+                return jsonify({
+                    "activity": activity.data,
+                    "cooldown": {
+                        "active": True,
+                        "seconds_remaining": seconds_remaining,
+                        "total_cooldown": Activities.SYNC_COOLDOWN.total_seconds()
+                    },
+                    "cached": True,
+                    "warning": "Failed to fetch fresh data, showing cached data"
+                }), response.status_code
+            return jsonify({"error": "Failed to fetch activity data"}), response.status_code
+
+        activity_data = response.json()
+        current_time = datetime.now(timezone.utc)
+
+        # Update cache
+        try:
+            if activity:
+                activity.data = activity_data
+                activity.last_synced = current_time
+            else:
+                activity = Activities(
+                    activity_id=activity_id,
+                    athlete_id=athlete_id,
+                    data=activity_data,
+                    last_synced=current_time
+                )
+                db.session.add(activity)
+            db.session.commit()
+            logger.info(f"Successfully cached activity {activity_id}")
+            return jsonify({
+                "activity": activity_data,
+                "cooldown": {
+                    "active": False,
+                    "seconds_remaining": 0,
+                    "total_cooldown": Activities.SYNC_COOLDOWN.total_seconds()
+                },
+                "cached": False
+            })
+        except Exception as db_error:
+            db.session.rollback()
+            logger.error(f'Database error caching activity {activity_id}: {str(db_error)}')
+            raise
+
+    except Exception as e:
+        logger.error(f'Error fetching activity {activity_id}: {str(e)}')
+        if activity:
+            seconds_remaining = activity.get_cooldown_remaining()
+            return jsonify({
+                "activity": activity.data,
+                "cooldown": {
+                    "active": True,
+                    "seconds_remaining": seconds_remaining,
+                    "total_cooldown": Activities.SYNC_COOLDOWN.total_seconds()
+                },
+                "cached": True,
+                "warning": "Failed to fetch fresh data, showing cached data"
+            }), 500
+        return jsonify({"error": "Failed to fetch activity data"}), 500
 
 def delete_user_data(athlete_id):
     """Delete all user data from the database when they deauthorize"""

@@ -61,8 +61,11 @@
 
             <div class="w-full mx-auto p-3">
                 <div class="bg-white rounded-xl shadow-lg p-4 max-w-sm mx-auto flex items-center justify-center">
-                    <div class="w-full flex items-center justify-center">
+                    <div class="w-full flex items-center justify-center relative">
                         <canvas id="overlayCanvas" class="block dark-checkerboard rounded-md shadow-md mx-auto w-full h-full"></canvas>
+                        <div id="loadingOverlay" class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-md">
+                            <div class="animate-spin rounded-full h-12 w-12 border-4 border-fitness-orange border-t-transparent"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -131,14 +134,14 @@
                     </div>
                                     
                     <div id="overlayOptions" class="grid grid-cols-3 md:grid-cols-4 gap-2">
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="distance">Distance</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="movingTime">Time</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="pace">Pace</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="averageSpeed">Avg Speed</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="avgHeartRate">Avg HR</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="maxHeartRate">Max HR</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="calories">Calories</button>
-                        <button class="overlay-option p-2 rounded-lg text-white bg-fitness-gray transition-colors text-sm" data-metric="elevationGain">Elevation</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="distance">Distance</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="movingTime">Time</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="pace">Pace</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="averageSpeed">Avg Speed</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="avgHeartRate">Avg HR</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="maxHeartRate">Max HR</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="calories">Calories</button>
+                        <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="elevationGain">Elevation</button>
                     </div>
                 
                 </div>
@@ -161,7 +164,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75" />
                             </svg>
                         </button>
-                        <span class="text-xs text-center text-text-black/70">Copy Image</span>
+                        <span class="text-xs text-center text-black/70">Copy Image</span>
                     </div>
                     <div id="saveImageContainer" class="flex-1 flex flex-col items-center gap-1">
                         <button id="saveImageBtn" 
@@ -183,17 +186,29 @@
     </div>
 
     <!-- Image Save Modal -->
-    <div id="imageSaveModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-[60] hidden">
-        <div class="bg-white rounded-lg shadow-xl p-4 max-w-sm w-full text-center relative aspect-[9/16] max-h-[50vh] flex flex-col">
-            <button id="closeModalBtn" 
-                    class="absolute top-1 right-1 m-1 p-1.5 bg-fitness-light-gray hover:bg-fitness-light-gray rounded-full transition-colors z-10">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-fitness-gray" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414z" clip-rule="evenodd" />
-                </svg>
+    <div id="imageSaveModal" class="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm max-h-[90vh] flex flex-col items-center overflow-hidden">
+
+            <!-- Close Button -->
+            <button id="closeModalBtn" class="absolute top-3 right-3 p-2 rounded-full bg-white hover:bg-gray-100 shadow transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414z" clip-rule="evenodd" />
+            </svg>
             </button>
-            <p class="text-fitness-gray mb-2 font-medium text-sm flex-shrink-0">Long-press image to save</p>
-            <div class="flex-grow flex items-center justify-center overflow-hidden">
-                <img id="modalImage" src="" alt="Generated Overlay with customized stats" class="max-w-full max-h-full object-contain rounded border border-fitness-light-gray dark-checkerboard">
+
+            <!-- Instruction -->
+            <div class="flex items-center gap-2 mt-5 mb-2 text-sm text-gray-600 px-4">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="text-fitness-green flex-shrink-0">
+                <path d="M10.75 2.44995C11.45 1.85995 12.58 1.85995 13.26 2.44995L14.84 3.79995C15.14 4.04995 15.71 4.25995 16.11 4.25995H17.81C18.87 4.25995 19.74 5.12995 19.74 6.18995V7.88995C19.74 8.28995 19.95 8.84995 20.2 9.14995L21.55 10.7299C22.14 11.4299 22.14 12.5599 21.55 13.2399L20.2 14.8199C19.95 15.1199 19.74 15.6799 19.74 16.0799V17.7799C19.74 18.8399 18.87 19.7099 17.81 19.7099H16.11C15.71 19.7099 15.15 19.9199 14.85 20.1699L13.27 21.5199C12.57 22.1099 11.44 22.1099 10.76 21.5199L9.18001 20.1699C8.88001 19.9199 8.31 19.7099 7.92 19.7099H6.17C5.11 19.7099 4.24 18.8399 4.24 17.7799V16.0699C4.24 15.6799 4.04 15.1099 3.79 14.8199L2.44 13.2299C1.86 12.5399 1.86 11.4199 2.44 10.7299L3.79 9.13995C4.04 8.83995 4.24 8.27995 4.24 7.88995V6.19995C4.24 5.13995 5.11 4.26995 6.17 4.26995H7.9C8.3 4.26995 8.86 4.05995 9.16 3.80995L10.75 2.44995Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 8.13V12.96" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M11.9945 16H12.0035" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Tap & hold to save or copy</span>
+            </div>
+
+            <!-- Image Area -->
+            <div class="flex-grow w-full px-4 pb-4 overflow-auto flex items-center justify-center">
+            <img id="modalImage" src="" alt="Generated Overlay" class="max-w-full max-h-[50vh] object-contain border border-gray-200 rounded-lg dark-checkerboard">
             </div>
         </div>
     </div>
@@ -243,39 +258,59 @@
 
             // Function to load and process activity data from sessionStorage
             function loadActivityFromSession() {
-                const storedActivity = sessionStorage.getItem('currentActivity');
-                // console.log("Checking sessionStorage for 'currentActivity' on page load:", storedActivity);
-
-                if (!storedActivity) {
-                    console.warn('No activity data found in session storage. Canvas will be empty.');
+                const activityId = sessionStorage.getItem('selectedActivityId');
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                
+                if (!activityId) {
+                    console.warn('No activity ID found in session storage. Canvas will be empty.');
+                    loadingOverlay.classList.add('hidden');
                     return;
                 }
 
-                try {
-                    const parsedData = JSON.parse(storedActivity);
-                    console.log("Successfully parsed activity data:", parsedData);
-                    state.activityData = parsedData; // Store parsed data in state
-                    state.activityId = parsedData.id;
+                // Show loading state
+                activityName.textContent = 'Loading...';
+                activityName.classList.remove('font-bold', 'px-2', 'py-1', 'rounded-md', 'inline-block');
+                loadingOverlay.classList.remove('hidden');
+
+                // Fetch activity data from server
+                fetch(`/api/activities/${activityId}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Server Response Data:", {
+                        isCached: data.cached,
+                        cooldownActive: data.cooldown?.active,
+                        secondsRemaining: data.cooldown?.seconds_remaining,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    state.activityData = data.activity;
+                    state.activityId = data.activity.id;
 
                     // Display Activity Info Card
-                    activityName.textContent = parsedData.name || 'Untitled Activity';
-                    // Add success indicator styling
-                    activityName.classList.add('font-bold', 'px-2', 'py-1', 'rounded-md', 'inline-block'); // Added classes
-                    stravaLink.href = `https://www.strava.com/activities/${parsedData.id}`;
+                    activityName.textContent = data.activity.name || 'Untitled Activity';
+                    activityName.classList.add('font-bold', 'px-2', 'py-1', 'rounded-md', 'inline-block');
+                    stravaLink.href = `https://www.strava.com/activities/${data.activity.id}`;
 
-                    // Create metrics map with availability status (Assign to the higher-scoped variable)
+                    // Create metrics map with availability status
                     metricsAvailability = {
-                        distance: !!parsedData.distance,
-                        movingTime: !!parsedData.moving_time,
-                        pace: !!(parsedData.moving_time && parsedData.distance),
-                        elevationGain: !!parsedData.total_elevation_gain,
-                        avgHeartRate: !!parsedData.average_heartrate,
-                        maxHeartRate: !!parsedData.max_heartrate,
-                        calories: !!parsedData.calories,
-                        averageSpeed: !!parsedData.average_speed
+                        distance: !!data.activity.distance,
+                        movingTime: !!data.activity.moving_time,
+                        pace: !!(data.activity.moving_time && data.activity.distance),
+                        elevationGain: !!data.activity.total_elevation_gain,
+                        avgHeartRate: !!data.activity.average_heartrate,
+                        maxHeartRate: !!data.activity.max_heartrate,
+                        calories: !!data.activity.calories,
+                        averageSpeed: !!data.activity.average_speed
                     };
 
-                    console.log("metricsAvailability:", metricsAvailability);
+                    console.log("Available metrics:", metricsAvailability);
 
                     // Update buttons based on data availability
                     document.querySelectorAll('.overlay-option').forEach(button => {
@@ -292,49 +327,44 @@
                     });
 
                     // Update StravaData only for available metrics
-                    StravaData.distance = metricsAvailability.distance ? (parsedData.distance / 1000).toFixed(2) + ' km' : null;
-                    StravaData.movingTime = metricsAvailability.movingTime ? formatDuration(parsedData.moving_time) : null;
-                    StravaData.pace = metricsAvailability.pace ? formatPace(parsedData.moving_time, parsedData.distance) + ' /km' : null;
-                    StravaData.elevationGain = metricsAvailability.elevationGain ? Math.round(parsedData.total_elevation_gain) + 'm' : null;
-                    StravaData.avgHeartRate = metricsAvailability.avgHeartRate ? Math.round(parsedData.average_heartrate) + ' bpm' : null;
-                    StravaData.maxHeartRate = metricsAvailability.maxHeartRate ? Math.round(parsedData.max_heartrate) + ' bpm' : null;
-                    StravaData.calories = metricsAvailability.calories ? Math.round(parsedData.calories) : null;
-                    StravaData.averageSpeed = metricsAvailability.averageSpeed ? (parsedData.average_speed * 3.6).toFixed(1) + ' km/h' : null;
+                    StravaData.distance = metricsAvailability.distance ? (data.activity.distance / 1000).toFixed(2) + ' km' : null;
+                    StravaData.movingTime = metricsAvailability.movingTime ? formatDuration(data.activity.moving_time) : null;
+                    StravaData.pace = metricsAvailability.pace ? formatPace(data.activity.moving_time, data.activity.distance) + ' /km' : null;
+                    StravaData.elevationGain = metricsAvailability.elevationGain ? Math.round(data.activity.total_elevation_gain) + 'm' : null;
+                    StravaData.avgHeartRate = metricsAvailability.avgHeartRate ? Math.round(data.activity.average_heartrate) + ' bpm' : null;
+                    StravaData.maxHeartRate = metricsAvailability.maxHeartRate ? Math.round(data.activity.max_heartrate) + ' bpm' : null;
+                    StravaData.calories = metricsAvailability.calories ? Math.round(data.activity.calories) : null;
+                    StravaData.averageSpeed = metricsAvailability.averageSpeed ? (data.activity.average_speed * 3.6).toFixed(1) + ' km/h' : null;
 
-                    // --- Apply Button Styles Based on Availability and Default Selection ---
+                    console.log("Processed Strava data:", StravaData);
+
+                    // Apply button styles based on availability and default selection
                     document.querySelectorAll('.overlay-option').forEach(button => {
                         const metric = button.dataset.metric;
-
-                        // Reset classes and disabled state
                         button.classList.remove('bg-fitness-green', 'bg-fitness-gray', 'bg-fitness-light-gray', 'cursor-not-allowed');
                         button.disabled = false;
 
                         if (!metricsAvailability[metric]) {
-                            // State 1: Unavailable Metric -> Darker Grey, Disabled
                             button.disabled = true;
                             button.classList.add('bg-fitness-light-gray', 'cursor-not-allowed');
                         } else {
-                            // Metric is Available
                             if (state.selectedMetrics.includes(metric)) {
-                                // State 2: Available AND Selected (including defaults) -> Strava Orange, Enabled
                                 button.classList.add('bg-fitness-green');
                             } else {
-                                // State 3: Available BUT Not Selected -> Strava Grey, Enabled
                                 button.classList.add('bg-fitness-gray');
                             }
                         }
                     });
 
                     generateOverlay();
-
-                    // console.log(`Activity "${parsedData.name || 'Untitled Activity'}" loaded from session storage.`);
-
-                } catch (error) {
-                    console.error('Error parsing activity data from sessionStorage:', error);
-                    console.log("Corrupted data found:", storedActivity); // Log the problematic data
-                    sessionStorage.removeItem('currentActivity');
-                    alert('Error loading activity data from storage. Please load the activity again.');
-                }
+                    loadingOverlay.classList.add('hidden');
+                })
+                .catch(error => {
+                    console.error('Error loading activity:', error);
+                    activityName.textContent = 'Error loading activity';
+                    showToast('Failed to load activity details');
+                    loadingOverlay.classList.add('hidden');
+                });
             }
 
             function formatDuration(seconds) {
@@ -866,7 +896,7 @@
                         // Create a temporary canvas sized to the bounding box
                         const tempCanvas = document.createElement('canvas');
                         const tempCtx = tempCanvas.getContext('2d');
-                        tempCanvas.width = bbox.width * 2; // Double resolution for high-quality export
+                        tempCanvas.width = bbox.width * 2;
                         tempCanvas.height = bbox.height * 2;
 
                         // Draw the relevant part of the original canvas onto the temporary canvas
@@ -893,7 +923,7 @@
                         // Create a temporary canvas sized to the bounding box
                         const tempCanvas = document.createElement('canvas');
                         const tempCtx = tempCanvas.getContext('2d');
-                        tempCanvas.width = bbox.width * 2; // Double resolution for high-quality export
+                        tempCanvas.width = bbox.width * 2;
                         tempCanvas.height = bbox.height * 2;
 
                         // Draw the relevant part of the original canvas onto the temporary canvas
