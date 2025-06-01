@@ -7,10 +7,7 @@ module.exports = {
     './static/js/**/*.js',       // ✅ JS files
     './extras/**/*.html',        // 🆕 HTML in extras
     './*.html',                  // 🆕 fallback for root-level HTML if needed
-    './node_modules/flowbite/**/*.js'
-  ],
-  safelist: [
-    'max-w-md',
+    'node_modules/flowbite/**/*.js'
   ],
   theme: {
     extend: {
