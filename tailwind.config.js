@@ -9,6 +9,9 @@ module.exports = {
     './*.html',                  // 🆕 fallback for root-level HTML if needed
     './node_modules/flowbite/**/*.js'
   ],
+  safelist: [
+    'max-w-md',
+  ],
   theme: {
     extend: {
       // --- Add your customizations here ---
