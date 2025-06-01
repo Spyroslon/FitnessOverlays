@@ -78,15 +78,49 @@
             const itemsPerPage = 5;
             let allActivities = [];
             let cooldownIntervalId;
-    
+
             function createActivityTile(activity) {
-                const isRun = activity.type === 'Run';
-                const gradient = isRun
-                    ? 'from-green-400/90 to-green-600/90'
-                    : 'from-blue-400/90 to-blue-600/90';
+                let gradient, mainLabel, mainValue;
+
+                switch (activity.type) {
+                    case 'Run':
+                        gradient = 'from-green-400/90 to-green-600/90';
+                        mainLabel = 'Avg Pace';
+                        mainValue = formatPace(activity.moving_time, activity.distance);
+                        break;
+                    case 'Ride':
+                        gradient = 'from-orange-400/90 to-orange-600/90';
+                        mainLabel = 'Avg Speed';
+                        mainValue = formatSpeed(activity.distance, activity.moving_time);
+                        break;
+                    case 'Swim':
+                        gradient = 'from-blue-400/90 to-blue-600/90';
+                        mainLabel = 'Avg Pace';
+                        mainValue = formatSwimPace(activity.moving_time, activity.distance);
+                        break;
+                    case 'Walk':
+                    case 'Hike':
+                        gradient = 'from-lime-400/90 to-lime-600/90';
+                        mainLabel = 'Avg Pace';
+                        mainValue = formatPace(activity.moving_time, activity.distance);
+                        break;
+                    default:
+                        gradient = 'from-gray-400/90 to-gray-600/90';
+                        if (activity.average_heartrate) {
+                            mainLabel = 'Avg HR';
+                            mainValue = `${Math.round(activity.average_heartrate)} bpm`;
+                        } else if (activity.distance > 0) {
+                            mainLabel = 'Distance';
+                            mainValue = formatDistance(activity.distance);
+                        } else {
+                            mainLabel = 'Duration';
+                            mainValue = formatDuration(activity.moving_time);
+                        }
+                }
 
                 const tile = document.createElement('div');
-                tile.className = 'bg-gray-100 rounded-2xl shadow hover:shadow-lg transition-all duration-300 overflow-hidden group border border-fitness-light-gray';
+                tile.className = 'bg-gray-100 rounded-2xl shadow hover:shadow-lg transition-all duration-300 overflow-hidden group border border-fitness-light-gray cursor-pointer';
+                tile.onclick = () => saveActivityAndRedirect(activity);
 
                 tile.innerHTML = `
                     <div class="relative">
@@ -112,21 +146,15 @@
                                     <div class="text-base font-semibold">${formatDuration(activity.moving_time)}</div>
                                 </div>
                                 <div class="text-center border-r border-gray-100">
-                                    <div class="text-xs uppercase font-medium text-zinc-400 mb-1">
-                                        ${isRun ? 'Avg Pace' : 'Avg Speed'}
-                                    </div>
-                                    <div class="text-base font-semibold">
-                                        ${isRun ? formatPace(activity.moving_time, activity.distance) : formatSpeed(activity.distance, activity.moving_time)}
-                                    </div>
+                                    <div class="text-xs uppercase font-medium text-zinc-400 mb-1">${mainLabel}</div>
+                                    <div class="text-base font-semibold">${mainValue}</div>
                                 </div>
                                 <div class="flex items-center justify-center">
-                                    <button aria-label="Save and open activity details"
-                                            onclick="saveActivityAndRedirect(${JSON.stringify(activity).replace(/"/g, '&quot;')})"
-                                            class="w-9 h-9 bg-black/20 hover:bg-black/20 rounded-lg flex items-center justify-center backdrop-blur-sm transition-transform duration-200 group-hover:scale-110">
+                                    <div class="w-9 h-9 bg-black/20 rounded-lg flex items-center justify-center backdrop-blur-sm transition-transform duration-200 group-hover:scale-110">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-zinc-700" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                                         </svg>
-                                    </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -155,13 +183,13 @@
                 const hours = Math.floor(seconds / 3600);
                 const minutes = Math.floor((seconds % 3600) / 60);
                 const remainingSeconds = seconds % 60;
-                
+
                 if (hours > 0) {
                     return `${hours}h ${minutes}m`;
                 }
                 return `${minutes}m ${remainingSeconds}s`;
             }
-    
+
             function formatDistance(meters) {
                 return (meters / 1000).toFixed(2) + ' km';
             }
@@ -180,6 +208,14 @@
                 return `${speedInKmh.toFixed(1)} km/h`;
             }
 
+            function formatSwimPace(seconds, distance) {
+                if (!distance || distance < 100) return 'N/A';
+                const pacePer100m = seconds / (distance / 100);
+                const minutes = Math.floor(pacePer100m / 60);
+                const secs = Math.round(pacePer100m % 60);
+                return `${minutes}:${secs.toString().padStart(2, '0')} /100m`;
+            }
+
             function formatSyncTime(timestamp) {
                 const diffSec = Math.floor((Date.now() - timestamp) / 1000);
                 if (diffSec < 60) return 'Just now';
@@ -192,7 +228,24 @@
             }
 
             function saveActivityAndRedirect(activity) {
-                sessionStorage.setItem('currentActivity', JSON.stringify(activity));
+                // Prevent multiple clicks
+                if (event.currentTarget.classList.contains('loading')) return;
+                
+                // Show loading state only on the arrow icon
+                const arrowIcon = event.currentTarget.querySelector('.w-9.h-9');
+                if (!arrowIcon) return;
+                
+                const originalContent = arrowIcon.innerHTML;
+                arrowIcon.innerHTML = `
+                    <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                `;
+                event.currentTarget.classList.add('loading');
+
+                // Store just the activity ID and redirect
+                sessionStorage.setItem('selectedActivityId', activity.id);
                 window.location.href = '/customize';
             }
     
