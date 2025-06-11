@@ -7,10 +7,13 @@ Disallow: /webhook
 Disallow: /login
 Disallow: /logout
 Disallow: /callback
-Disallow: /static/js/
-Disallow: /static/css/
-Disallow: /static/fonts/
 Allow: /
+Allow: /static/js/
+Allow: /static/css/
+Allow: /static/images/
+Allow: /favicon.ico
+Allow: /sitemap.xml
+Allow: /robots.txt
 
 # ================================
 # Googlebot Specific Rules
