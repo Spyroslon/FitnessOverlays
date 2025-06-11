@@ -17,11 +17,11 @@
 
         <section class="w-full text-center relative z-10 fade-in py-8 md:py-12">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-0">
-                <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-fitness-dark-gray leading-tight mb-6">
-                    Turn Your Strava Activities into Awesome Overlays
+                <h1 class="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-fitness-dark-gray leading-tight mb-6">
+                    Convert Your Strava Activities into Transparent Fitness Overlays for Instagram
                 </h1>
                 <p class="text-base sm:text-lg md:text-xl text-fitness-gray max-w-2xl mx-auto">
-                    Create high-resolution, minimalist overlays from your Strava activities. Designed to be shared. Made to inspire.
+                    Easily generate customizable Strava activity overlays to share on Instagram Stories, Reels, or TikTok. Perfect for runners, cyclists, and fitness creators.
                 </p>
             </div>
 
@@ -36,46 +36,50 @@
                     </a>
                 </div>
             {% else %}
-                <div id="connect-strava" class="inline-block transform hover:scale-110 transition-transform duration-200 cursor-pointer py-10">
+                <div id="connect-strava" class="inline-block py-10">
                     <img src="/static/images/btn_strava_connect_with_orange_x2.svg" 
                          alt="Connect your Strava account to create your customized overlays" 
-                         class="h-14 sm:h-16 drop-shadow-lg rounded-lg">
+                         class="h-14 sm:h-16 drop-shadow-lg rounded-lg transform hover:scale-110 transition-transform duration-200 cursor-pointer ">
+                    <p class="text-sm text-fitness-gray text-center mt-4 select-none">
+                        Completely free. Just log in with Strava.
+                    </p>
                 </div>
+                
             {% endif %}
 
             <div class="w-full flex flex-col items-center">
-                <div class="w-full max-w-2xl">
-                    <h3 class="text-2xl md:text-3xl font-bold text-center text-fitness-dark-gray mb-6">Overlay Showcase</h3>
-            
+                <div class="w-full max-w-2xl px-4 sm:px-6">
+                    <h3 class="text-3xl sm:text-4xl font-extrabold text-center text-fitness-dark-gray mb-8 tracking-tight">Overlay Showcase</h3>
+
                     <div id="default-carousel" class="relative mx-auto w-full max-w-[400px] px-4 sm:px-0" data-carousel="slide">
                         <div class="relative overflow-hidden rounded-lg drop-shadow-lg aspect-[9/16]">
                             <div class="hidden duration-700 ease-in-out" data-carousel-item="active">
-                                <img src="/static/images/14118553438_overlay_tiny.png" 
+                                <img src="/static/images/goats-river-strava-overlay.png" 
                                      class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-lg" 
-                                     alt="Example fitness overlay showing running stats">
+                                     alt="Strava run overlay on a scenic trail photo with goats by a river in Düsseldorf, showing distance, time, pace, and heart rate metrics">
                             </div>
                             <div class="hidden duration-700 ease-in-out" data-carousel-item>
-                                <img src="/static/images/13521772127_overlay_tiny.png" 
+                                <img src="/static/images/sunset-lake-strava-workout.png" 
                                      class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-lg" 
-                                     alt="Example fitness overlay showing running stats">
+                                     alt="Strava workout overlay with transparent background showing run stats over a golden sunset lake scene, including distance, time, pace, calories, and heart rate data">
                             </div>
                             <div class="hidden duration-700 ease-in-out" data-carousel-item>
-                                <img src="/static/images/13960924927_overlay_tiny.png" 
+                                <img src="/static/images/rhine-running-overlay.png" 
                                      class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-lg" 
-                                     alt="Example fitness overlay showing running stats">
+                                     alt="Strava overlay on a photo of the Rhine River in Düsseldorf showing running distance, time, pace, heart rate, and calories burned">
                             </div>
                             <div class="hidden duration-700 ease-in-out" data-carousel-item>
-                                <img src="/static/images/13398638296_overlay_tiny.png" 
+                                <img src="/static/images/foggy-winter-park-run.png" 
                                      class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-lg" 
-                                     alt="Example fitness overlay showing running stats">
+                                     alt="Winter park run with heavy fog and a transparent Strava overlay showing pace, heart rate, distance, and workout stats">
                             </div>
                             <div class="hidden duration-700 ease-in-out" data-carousel-item>
-                                <img src="/static/images/13984241619_overlay_tiny.png" 
+                                <img src="/static/images/cherry-blossom-strava-metrics.png" 
                                      class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-lg" 
-                                     alt="Example fitness overlay showing running stats">
+                                     alt="Spring cherry blossom tree with an Instagram-ready Strava overlay showing run distance, time, and pace">
                             </div>
                         </div>
-            
+
                         <div class="mt-4 flex justify-center space-x-3 rtl:space-x-reverse">
                             <button type="button" class="w-3 h-3 rounded-full bg-fitness-light-gray aria-[current=true]:bg-fitness-dark-gray" aria-current="true" aria-label="Slide 1" data-carousel-slide-to="0"></button>
                             <button type="button" class="w-3 h-3 rounded-full bg-fitness-light-gray aria-[current=true]:bg-fitness-dark-gray" aria-current="false" aria-label="Slide 2" data-carousel-slide-to="1"></button>
@@ -146,7 +150,7 @@
         <section class="w-full py-8 md:py-12">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center">
-                    <h2 class="text-4xl md:text-5xl font-bold text-fitness-dark-gray">Awesome Features</h2>
+                    <h2 class="text-4xl md:text-5xl font-bold text-fitness-dark-gray">Top Features of Our Strava Overlay Generator</h2>
                     <p class="my-4 text-lg text-fitness-gray">Everything you need to make your Strava stats pop.</p>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-center">
