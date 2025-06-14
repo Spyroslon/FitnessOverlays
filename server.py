@@ -1090,18 +1090,6 @@ def sitemap_xml():
             <changefreq>weekly</changefreq>
             <priority>1.0</priority>
         </url>
-        <url>
-            <loc>https://fitnessoverlays.com/customize</loc>
-            {f'<lastmod>{get_lastmod("templates/customize.html")}</lastmod>' if get_lastmod("templates/customize.html") else ''}
-            <changefreq>weekly</changefreq>
-            <priority>0.8</priority>
-        </url>
-        <url>
-            <loc>https://fitnessoverlays.com/activities</loc>
-            {f'<lastmod>{get_lastmod("templates/activities.html")}</lastmod>' if get_lastmod("templates/activities.html") else ''}
-            <changefreq>weekly</changefreq>
-            <priority>0.8</priority>
-        </url>
     </urlset>'''
     return Response(sitemap, mimetype='application/xml')
 
