@@ -540,67 +540,90 @@ def logout():
     session.clear()
     return redirect('/')
 
+def ensure_valid_token():
+    """Helper function to validate and refresh access token if needed.
+    Returns True if token is valid or was successfully refreshed, False otherwise."""
+    if 'access_token' not in session or 'expires_at' not in session:
+        logger.warning("Missing token data in session")
+        session.clear()
+        return False
+
+    current_time = time.time()
+    token_expires_at = session['expires_at']
+    time_until_expiry = token_expires_at - current_time
+
+    if time_until_expiry <= 300:  # 5 minutes buffer
+        logger.info(f"Token expiring in {int(time_until_expiry)}s, attempting refresh")
+        new_token = refresh_access_token(session.get('refresh_token'))
+        
+        if not new_token:
+            logger.warning("Token refresh failed")
+            session.clear()
+            return False
+            
+        session['access_token'] = new_token['access_token']
+        session['refresh_token'] = new_token['refresh_token']
+        session['expires_at'] = new_token['expires_at']
+        logger.info(f"Token refreshed successfully - New expiry: {datetime.fromtimestamp(new_token['expires_at']).isoformat()}")
+        return True
+
+    logger.info(f"Token valid – expires in {int(time_until_expiry)}s (at {datetime.fromtimestamp(token_expires_at).isoformat()})")
+    return True
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check login status and athlete existence
+        if 'athlete_id' not in session:
+            return redirect(url_for('login'))
+            
+        athlete = db.session.get(Athletes, session['athlete_id'])
+        if not athlete:
+            session.clear()
+            return redirect(url_for('login'))
+
+        # Validate and refresh token if needed
+        if not ensure_valid_token():
+            return redirect(url_for('login'))
+
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/')
 def index():
     logger.info(f"Landing page accessed - IP: {get_remote_address()} | X-Forwarded-For: {request.headers.get("X-Forwarded-For")}")
 
     try:
         csrf_token = generate_csrf_token()
-        current_time = time.time()
 
         if "access_token" not in session:
             logger.info("Index: No access token in session")
             return render_template("index.html", 
-                                   authenticated=False, 
-                                   csrf_token=csrf_token)
+                                    authenticated=False, 
+                                    csrf_token=csrf_token)
 
-        if "expires_at" not in session:
-            logger.warning("Index: Token exists but no expiry time")
-            session.clear()
+        # Validate and refresh token if needed
+        if not ensure_valid_token():
             return render_template("index.html", 
-                                   authenticated=False, 
-                                   csrf_token=csrf_token)
-
-        token_expires_at = session["expires_at"]
-        time_until_expiry = token_expires_at - current_time
-
-        if time_until_expiry <= 0:
-            logger.info("Index: Token expired, trying refresh")
-            new_token = refresh_access_token(session.get("refresh_token"))
-            if not new_token:
-                logger.warning("Index: Token refresh failed")
-                session.clear()
-                return render_template("index.html", 
-                                       authenticated=False, 
-                                       csrf_token=csrf_token)
-            session["access_token"] = new_token["access_token"]
-            session["refresh_token"] = new_token["refresh_token"]
-            session["expires_at"] = new_token["expires_at"]
-
-        elif time_until_expiry < 300:
-            logger.info("Index: Proactively refreshing token")
-            new_token = refresh_access_token(session.get("refresh_token"))
-            if new_token:
-                session["access_token"] = new_token["access_token"]
-                session["refresh_token"] = new_token["refresh_token"]
-                session["expires_at"] = new_token["expires_at"]
+                                    authenticated=False, 
+                                    csrf_token=csrf_token)
 
         # Authenticated, token is valid
         logger.info(f"Index: Authenticated user - Athlete ID: {session.get('athlete_id')} - Athlete Name: {session['athlete_first_name']} {session['athlete_last_name']}")
         return render_template("index.html",
-                               authenticated=True,
-                               athlete_id=session.get("athlete_id"),
-                               athlete_first_name=session.get("athlete_first_name"),
-                               athlete_last_name=session.get("athlete_last_name"),
-                               athlete_profile=session.get("athlete_profile"),
-                               csrf_token=csrf_token)
+                                authenticated=True,
+                                athlete_id=session.get("athlete_id"),
+                                athlete_first_name=session.get("athlete_first_name"),
+                                athlete_last_name=session.get("athlete_last_name"),
+                                athlete_profile=session.get("athlete_profile"),
+                                csrf_token=csrf_token)
 
     except Exception as e:
         logger.error(f"Index: Unexpected error: {str(e)}")
         session.clear()
         return render_template("index.html", 
-                               authenticated=False, 
-                               csrf_token=generate_csrf_token())
+                                authenticated=False, 
+                                csrf_token=generate_csrf_token())
 
 # Configure rate limiter
 limiter = Limiter(
@@ -703,6 +726,9 @@ def callback():
             db.session.commit()
             logger.info(f'Successfully updated athlete data in database for ID: {athlete_id}')
             
+            # Set session as permanent before setting any session data
+            session.permanent = True
+            
             # Store athlete info in session
             session['athlete_id'] = athlete_id
             session['athlete_username'] = athlete_data.get('username')
@@ -713,6 +739,9 @@ def callback():
             session['refresh_token'] = token['refresh_token']
             session['expires_at'] = token['expires_at']
             
+            # Generate new CSRF token for the session
+            session['csrf_token'] = generate_csrf_token()
+            
         except Exception as db_error:
             db.session.rollback()
             logger.error(f'Database error during callback: {str(db_error)}')
@@ -722,23 +751,6 @@ def callback():
     except Exception as e:
         logger.error(f'OAuth callback error details: {str(e)} - IP: {get_remote_address()}')
         return redirect('/')
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'athlete_id' not in session:
-            # Redirect to login page if not authenticated
-            return redirect(url_for('login'))
-            
-        # Check if athlete still exists in database
-        athlete = db.session.get(Athletes, session['athlete_id'])
-        if not athlete:
-            # Clear session if athlete no longer exists
-            session.clear()
-            return redirect(url_for('login'))
-            
-        return f(*args, **kwargs)
-    return decorated_function
 
 @limiter.limit("100 per hour", key_func=lambda: session.get("athlete_id", get_remote_address()))
 @app.route('/customize')
