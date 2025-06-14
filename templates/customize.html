@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block style %}
-    <style> 
+    <style>
         .dark-checkerboard {
             background-image:
             linear-gradient(45deg, #333333 25%, transparent 25%),
@@ -53,7 +53,7 @@
                 <div class="flex justify-between items-center">
                     <h2 id="activityName" class="text-lg text-fitness-dark-gray"></h2>
                     <a id="stravaLink" href="#" target="_blank" 
-                       class="bg-fitness-orange text-white p-3 rounded-lg text-xs font-medium transition-colors text-center">
+                        class="bg-fitness-orange text-white p-3 rounded-lg text-xs font-medium transition-colors text-center">
                         View on Strava
                     </a>
                 </div>
@@ -86,16 +86,16 @@
                                 <!-- Size set via CSS -->
                         </div>
                         <!-- Alignment Cycle Button -->
-                         <div class="flex flex-col items-center gap-1">
+                        <div class="flex flex-col items-center gap-1">
                             <!-- <div class="size-label">Align</div> -->
-                             <button id="alignCycleBtn" 
-                                     class="flex flex-col items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-gray-100"
-                                     title="Cycle Text Alignment">
-                                 <!-- SVG inserted by JS, size class will be added there -->
-                             </button>
-                         </div>
+                            <button id="alignCycleBtn" 
+                                    class="flex flex-col items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-gray-100"
+                                    title="Cycle Text Alignment">
+                                <!-- SVG inserted by JS, size class will be added there -->
+                            </button>
+                        </div>
                         <!-- Label Size Cycle Button -->
-                         <div class="flex flex-col items-center gap-2">
+                        <div class="flex flex-col items-center gap-2">
                             <button id="labelSizeCycleBtn" 
                                     class="flex items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 w-12 h-12 text-sm text-center hover:bg-gray-100" 
                                     title="Cycle Label Size">
@@ -103,7 +103,7 @@
                             </button>
                         </div>
                         <!-- Value Size Cycle Button -->
-                         <div class="flex flex-col items-center gap-2">
+                        <div class="flex flex-col items-center gap-2">
                             <button id="valueSizeCycleBtn" 
                                     class="flex items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 w-12 h-12 text-sm text-center hover:bg-gray-100" 
                                     title="Cycle Value Size">
@@ -111,7 +111,7 @@
                             </button>
                         </div>
                         <!-- Columns Cycle Button -->
-                         <div class="flex flex-col items-center gap-2">
+                        <div class="flex flex-col items-center gap-2">
                             <button id="columnToggle" 
                                     class="flex flex-col items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 gap-0 w-12 h-12 text-sm text-center leading-none hover:bg-gray-100" 
                                     title="Toggle number of columns">
@@ -121,6 +121,14 @@
                                 <span id="columnCount" class="text-xs leading-none">1</span>
                             </button>
                         </div>
+                        <!-- Font Cycle Button -->
+                        <div class="flex flex-col items-center gap-1">
+                            <button id="fontCycleBtn" 
+                                    class="flex items-center justify-center border-2 border-fitness-green bg-white text-fitness-gray rounded-lg transition-all duration-200 font-bold p-1 w-20 h-12 text-sm text-center hover:bg-gray-100 font-[var(--current-font,Poppins)]" 
+                                    title="Cycle Font">
+                                <span id="fontNameDisplay" class="truncate max-w-[100px]">Modern</span>
+                            </button>
+                        </div>
                         <!-- Reset Button -->
                         <div class="flex flex-col items-center gap-1">
                             <button id="resetSettingsBtn"
@@ -128,7 +136,7 @@
                                     title="Reset all overlay settings">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                                  </svg>
+                                </svg>
                             </button>
                         </div>
                     </div>
@@ -237,8 +245,54 @@
                 textAlign: sessionStorage.getItem('textAlign') || 'center',
                 labelSize: sessionStorage.getItem('labelSize') || 'medium',
                 valueSize: sessionStorage.getItem('valueSize') || 'large',
-                columns: parseInt(sessionStorage.getItem('columns'), 10) || 1
+                columns: parseInt(sessionStorage.getItem('columns'), 10) || 1,
+                currentFont: sessionStorage.getItem('currentFont') || 'Poppins'
             };
+
+            // Define font cycle order with labels
+            const FONT_ORDER = [
+                'Poppins',
+                'Lato',
+                'Oswald',
+                'Lora',
+                'Special Elite'
+            ];
+
+            const FONT_LABEL = {
+                'Poppins': 'Modern',
+                'Lato': 'Clean',
+                'Oswald': 'Bold',
+                'Lora': 'Elegant',
+                'Special Elite': 'Retro'
+            };
+
+            // Initialize fonts
+            let fontsLoaded = false;
+            Promise.all([
+                document.fonts.ready,
+                ...FONT_ORDER.map(font => 
+                    Promise.all([
+                        document.fonts.load(`12px ${font}`),
+                        document.fonts.load(`bold 12px ${font}`)
+                    ])
+                )
+            ]).then(() => {
+                console.log('All fonts loaded');
+                fontsLoaded = true;
+                // Update font button display
+                const fontCycleBtn = document.getElementById('fontCycleBtn');
+                const fontNameDisplay = document.getElementById('fontNameDisplay');
+                if (fontCycleBtn && fontNameDisplay) {
+                    fontCycleBtn.style.setProperty('--current-font', state.currentFont);
+                    fontNameDisplay.textContent = FONT_LABEL[state.currentFont];
+                }
+                // Redraw if we have data
+                if (state.activityData) {
+                    generateOverlay(StravaData);
+                }
+            }).catch(error => {
+                console.error('Error loading fonts:', error);
+            });
 
             const SIZE_MULTIPLIERS = {
                 small: 0.6, // Adjusted to be slightly smaller than before
@@ -454,7 +508,7 @@
             }
             
             function updateColumnButton() {
-                 if (columnCountSpan) {
+                if (columnCountSpan) {
                     columnCountSpan.textContent = state.columns;
                 }
             }
@@ -489,101 +543,102 @@
             }
 
             function drawMetrics(data, context = ctx) {
-                // Ensure Roboto is loaded before drawing
-                document.fonts.load("12px Roboto").then(() => {
-                    document.fonts.ready.then(() => {
-                        const metrics = state.selectedMetrics
-                            .map(key => ({
-                                name: getMetricLabel(key),
-                                value: data[key]
-                            }))
-                            .filter(metric => metric.value !== null && metric.value !== undefined);
+                if (!fontsLoaded) {
+                    console.log('Waiting for fonts to load...');
+                    setTimeout(() => drawMetrics(data, context), 100);
+                    return;
+                }
 
-                        if (metrics.length === 0) return;
+                const metrics = state.selectedMetrics
+                    .map(key => ({
+                        name: getMetricLabel(key),
+                        value: data[key]
+                    }))
+                    .filter(metric => metric.value !== null && metric.value !== undefined);
 
-                        const numItems = metrics.length;
-                        const requestedColumns = state.columns;
-                        let actualColsForSizing = Math.min(requestedColumns, numItems);
-                        if (numItems === 1) actualColsForSizing = 1;
-                        actualColsForSizing = Math.max(1, actualColsForSizing);
-                        const itemsPerColumnForSizing = Math.ceil(numItems / actualColsForSizing);
+                if (metrics.length === 0) return;
 
-                        const dpr = window.devicePixelRatio || 1;
-                        const logicalWidth = overlayCanvas.width / dpr;
-                        const logicalHeight = overlayCanvas.height / dpr;
-                        const hPadding = logicalWidth * HORIZONTAL_PADDING_FACTOR;
-                        const availableWidth = logicalWidth - (hPadding * 2);
-                        const columnWidthForSizing = availableWidth / actualColsForSizing;
-                        const verticalPadding = logicalHeight * VERTICAL_PADDING_FACTOR;
-                        const availableHeight = logicalHeight - (verticalPadding * 2);
+                const numItems = metrics.length;
+                const requestedColumns = state.columns;
+                let actualColsForSizing = Math.min(requestedColumns, numItems);
+                if (numItems === 1) actualColsForSizing = 1;
+                actualColsForSizing = Math.max(1, actualColsForSizing);
+                const itemsPerColumnForSizing = Math.ceil(numItems / actualColsForSizing);
 
-                        const maxItemHeight = (availableHeight - (METRIC_GROUP_SPACING * (itemsPerColumnForSizing - 1))) / Math.max(1, itemsPerColumnForSizing);
-                        const maxFontBase = Math.min(
-                            maxItemHeight * 0.45,
-                            columnWidthForSizing * 0.15,
-                            BASE_FONT_SIZE
-                        );
+                const dpr = window.devicePixelRatio || 1;
+                const logicalWidth = overlayCanvas.width / dpr;
+                const logicalHeight = overlayCanvas.height / dpr;
+                const hPadding = logicalWidth * HORIZONTAL_PADDING_FACTOR;
+                const availableWidth = logicalWidth - (hPadding * 2);
+                const columnWidthForSizing = availableWidth / actualColsForSizing;
+                const verticalPadding = logicalHeight * VERTICAL_PADDING_FACTOR;
+                const availableHeight = logicalHeight - (verticalPadding * 2);
 
-                        let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
-                        let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
-                        let groupSpacing = METRIC_GROUP_SPACING;
+                const maxItemHeight = (availableHeight - (METRIC_GROUP_SPACING * (itemsPerColumnForSizing - 1))) / Math.max(1, itemsPerColumnForSizing);
+                const maxFontBase = Math.min(
+                    maxItemHeight * 0.45,
+                    columnWidthForSizing * 0.15,
+                    BASE_FONT_SIZE
+                );
 
-                        let neededHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing +
-                                        (groupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
-                        const scaleFactor = Math.min(1, availableHeight / Math.max(1, neededHeight));
-                        titleFontSize *= scaleFactor;
-                        valueFontSize *= scaleFactor;
-                        groupSpacing *= scaleFactor;
-                        titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
-                        valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
-                        groupSpacing = Math.max(groupSpacing, LABEL_VALUE_SPACING * 0.5);
+                let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
+                let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
+                let groupSpacing = METRIC_GROUP_SPACING;
 
-                        const finalItemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
-                        const drawableColumns = Math.min(requestedColumns, numItems);
-                        const numRows = Math.ceil(numItems / requestedColumns);
-                        const finalTotalContentHeight = (finalItemHeight * numRows) + (groupSpacing * Math.max(0, numRows - 1));
-                        const startY = verticalPadding + (availableHeight - finalTotalContentHeight) / 2;
+                let neededHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing +
+                                (groupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
+                const scaleFactor = Math.min(1, availableHeight / Math.max(1, neededHeight));
+                titleFontSize *= scaleFactor;
+                valueFontSize *= scaleFactor;
+                groupSpacing *= scaleFactor;
+                titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
+                valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
+                groupSpacing = Math.max(groupSpacing, LABEL_VALUE_SPACING * 0.5);
 
-                        context.textBaseline = 'middle';
+                const finalItemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
+                const drawableColumns = Math.min(requestedColumns, numItems);
+                const numRows = Math.ceil(numItems / requestedColumns);
+                const finalTotalContentHeight = (finalItemHeight * numRows) + (groupSpacing * Math.max(0, numRows - 1));
+                const startY = verticalPadding + (availableHeight - finalTotalContentHeight) / 2;
 
-                        metrics.forEach((metric, index) => {
-                            const columnIndex = index % requestedColumns;
-                            const rowIndex = Math.floor(index / requestedColumns);
-                            const columnWidth = availableWidth / drawableColumns;
-                            let xPos;
-                            if (drawableColumns === 1) {
-                                context.textAlign = state.textAlign;
-                                switch (state.textAlign) {
-                                    case 'left': xPos = hPadding; break;
-                                    case 'right': xPos = logicalWidth - hPadding; break;
-                                    default: xPos = logicalWidth / 2;
-                                }
-                            } else {
-                                context.textAlign = state.textAlign;
-                                const slotLeft = hPadding + (columnWidth * columnIndex);
-                                const slotCenter = slotLeft + (columnWidth / 2);
-                                const slotRight = slotLeft + columnWidth;
-                                switch (state.textAlign) {
-                                    case 'left': xPos = slotLeft; break;
-                                    case 'right': xPos = slotRight; break;
-                                    default: xPos = slotCenter;
-                                }
-                            }
-                            const itemSlotTopY = startY + (rowIndex * (finalItemHeight + groupSpacing));
-                            const itemSlotCenterY = itemSlotTopY + finalItemHeight / 2;
-                            context.fillStyle = state.textColor;
-                            const textPairHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
-                            const labelYOffset = -(textPairHeight / 2) + (titleFontSize / 2);
-                            const valueYOffset = (textPairHeight / 2) - (valueFontSize / 2);
-                            context.font = `${titleFontSize}px Roboto`;
-                            context.fillText(metric.name, xPos, itemSlotCenterY + labelYOffset);
-                            context.font = `bold ${valueFontSize}px Roboto`;
-                            context.fillText(metric.value, xPos, itemSlotCenterY + valueYOffset);
-                        });
+                context.textBaseline = 'middle';
 
-                        context.textBaseline = 'alphabetic';
-                    });
+                metrics.forEach((metric, index) => {
+                    const columnIndex = index % requestedColumns;
+                    const rowIndex = Math.floor(index / requestedColumns);
+                    const columnWidth = availableWidth / drawableColumns;
+                    let xPos;
+                    if (drawableColumns === 1) {
+                        context.textAlign = state.textAlign;
+                        switch (state.textAlign) {
+                            case 'left': xPos = hPadding; break;
+                            case 'right': xPos = logicalWidth - hPadding; break;
+                            default: xPos = logicalWidth / 2;
+                        }
+                    } else {
+                        context.textAlign = state.textAlign;
+                        const slotLeft = hPadding + (columnWidth * columnIndex);
+                        const slotCenter = slotLeft + (columnWidth / 2);
+                        const slotRight = slotLeft + columnWidth;
+                        switch (state.textAlign) {
+                            case 'left': xPos = slotLeft; break;
+                            case 'right': xPos = slotRight; break;
+                            default: xPos = slotCenter;
+                        }
+                    }
+                    const itemSlotTopY = startY + (rowIndex * (finalItemHeight + groupSpacing));
+                    const itemSlotCenterY = itemSlotTopY + finalItemHeight / 2;
+                    context.fillStyle = state.textColor;
+                    const textPairHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
+                    const labelYOffset = -(textPairHeight / 2) + (titleFontSize / 2);
+                    const valueYOffset = (textPairHeight / 2) - (valueFontSize / 2);
+                    context.font = `${titleFontSize}px ${state.currentFont}`;
+                    context.fillText(metric.name, xPos, itemSlotCenterY + labelYOffset);
+                    context.font = `bold ${valueFontSize}px ${state.currentFont}`;
+                    context.fillText(metric.value, xPos, itemSlotCenterY + valueYOffset);
                 });
+
+                context.textBaseline = 'alphabetic';
             }
 
             // Existing code
@@ -656,9 +711,9 @@
 
                 // Pre-measure all text to get accurate bounds
                 const textMeasurements = metrics.map(metric => {
-                    context.font = `${titleFontSize}px Roboto`;
+                    context.font = `${titleFontSize}px ${state.currentFont}`;
                     const labelWidth = context.measureText(metric.name).width;
-                    context.font = `bold ${valueFontSize}px Roboto`;
+                    context.font = `bold ${valueFontSize}px ${state.currentFont}`;
                     const valueWidth = context.measureText(metric.value).width;
                     return {
                         labelWidth,
@@ -1087,6 +1142,7 @@
                 const defaultLabelSize = 'medium';
                 const defaultValueSize = 'large';
                 const defaultColumns = 1;
+                const defaultFont = 'Poppins';
 
                 // 1. Clear saved state from sessionStorage
                 sessionStorage.removeItem('selectedMetrics');
@@ -1095,14 +1151,16 @@
                 sessionStorage.removeItem('labelSize');
                 sessionStorage.removeItem('valueSize');
                 sessionStorage.removeItem('columns');
+                sessionStorage.removeItem('currentFont');
 
                 // 2. Reset the state object
-                state.selectedMetrics = [...defaultMetrics]; // Use spread for new array
+                state.selectedMetrics = [...defaultMetrics];
                 state.textColor = defaultTextColor;
                 state.textAlign = defaultTextAlign;
                 state.labelSize = defaultLabelSize;
                 state.valueSize = defaultValueSize;
                 state.columns = defaultColumns;
+                state.currentFont = defaultFont;
 
                 // 3. Update Controls UI
                 if (colorWheel) colorWheel.value = defaultTextColor;
@@ -1110,6 +1168,14 @@
                 updateLabelSizeButton();
                 updateValueSizeButton();
                 updateColumnButton();
+                
+                // Update font button
+                const fontCycleBtn = document.getElementById('fontCycleBtn');
+                const fontNameDisplay = document.getElementById('fontNameDisplay');
+                if (fontCycleBtn && fontNameDisplay) {
+                    fontCycleBtn.style.setProperty('--current-font', defaultFont);
+                    fontNameDisplay.textContent = FONT_LABEL[defaultFont];
+                }
 
                 // 4. Update Metric Buttons UI
                 document.querySelectorAll('.overlay-option').forEach(button => {
@@ -1157,6 +1223,17 @@
                 }
             });
             // --- End Image Save Modal Logic ---
+
+            // Add font cycle button event listener
+            const fontCycleBtn = document.getElementById('fontCycleBtn');
+            const fontNameDisplay = document.getElementById('fontNameDisplay');
+            fontCycleBtn?.addEventListener('click', () => {
+                state.currentFont = FONT_ORDER[(FONT_ORDER.indexOf(state.currentFont) + 1) % FONT_ORDER.length];
+                fontCycleBtn.style.setProperty('--current-font', state.currentFont);
+                fontNameDisplay.textContent = FONT_LABEL[state.currentFont];
+                sessionStorage.setItem('currentFont', state.currentFont);
+                generateOverlay(StravaData);
+            });
 
             loadActivityFromSession();
         });

@@ -22,10 +22,12 @@ module.exports = {
         'fitness-orange': '#ea580c', // Using the same color value as orange-600
       },
       fontFamily: {
-        // This overrides the default sans-serif font stack
-        // If you only want to ADD Roboto, you might need a different approach,
-        // but usually, setting the default 'sans' is what you want.
         sans: ['Roboto', 'sans-serif'],
+        poppins: ['Poppins', 'sans-serif'],
+        lato: ['Lato', 'sans-serif'],
+        oswald: ['Oswald', 'sans-serif'],
+        lora: ['Lora', 'serif'],
+        'special-elite': ['Special Elite', 'cursive']
       },
       keyframes: { // You can also move keyframes/animations here from index.html
         fadeIn: {
