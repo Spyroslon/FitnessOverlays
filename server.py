@@ -1070,9 +1070,40 @@ def favicon():
 def robots_txt():
     return send_from_directory('static', 'robots.txt')
 
+def get_lastmod(filepath):
+    """Get last modification date of a file in ISO format with timezone awareness"""
+    try:
+        timestamp = os.path.getmtime(filepath)
+        dt = datetime.fromtimestamp(timestamp, timezone.utc)
+        return dt.date().isoformat()
+    except Exception:
+        return None
+
 @app.route('/sitemap.xml')
 def sitemap_xml():
-    return send_from_directory('static', 'sitemap.xml')
+    """Generate sitemap with actual file modification dates"""
+    sitemap = f'''<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        <url>
+            <loc>https://fitnessoverlays.com/</loc>
+            {f'<lastmod>{get_lastmod("templates/index.html")}</lastmod>' if get_lastmod("templates/index.html") else ''}
+            <changefreq>weekly</changefreq>
+            <priority>1.0</priority>
+        </url>
+        <url>
+            <loc>https://fitnessoverlays.com/customize</loc>
+            {f'<lastmod>{get_lastmod("templates/customize.html")}</lastmod>' if get_lastmod("templates/customize.html") else ''}
+            <changefreq>weekly</changefreq>
+            <priority>0.8</priority>
+        </url>
+        <url>
+            <loc>https://fitnessoverlays.com/activities</loc>
+            {f'<lastmod>{get_lastmod("templates/activities.html")}</lastmod>' if get_lastmod("templates/activities.html") else ''}
+            <changefreq>weekly</changefreq>
+            <priority>0.8</priority>
+        </url>
+    </urlset>'''
+    return Response(sitemap, mimetype='application/xml')
 
 if __name__ == '__main__':
     logging.info("Starting Flask application...")
