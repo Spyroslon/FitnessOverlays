@@ -1070,10 +1070,24 @@ def favicon():
 def robots_txt():
     return send_from_directory('static', 'robots.txt')
 
+@app.route('/faq')
+def faq():
+    """Serve the FAQ page"""
+    return render_template("faq.html",
+                        authenticated=bool(session.get("athlete_id")),
+                        athlete_id=session.get("athlete_id"),
+                        athlete_first_name=session.get("athlete_first_name"),
+                        athlete_last_name=session.get("athlete_last_name"),
+                        athlete_profile=session.get("athlete_profile"),
+                        csrf_token=session.get('csrf_token', generate_csrf_token()))
+
 def get_lastmod(filepath):
     """Get last modification date of a file in ISO format with timezone awareness"""
     try:
         timestamp = os.path.getmtime(filepath)
+        if filepath.endswith('.html'):
+            base_timestamp = os.path.getmtime('templates/base.html')
+            timestamp = max(timestamp, base_timestamp)
         dt = datetime.fromtimestamp(timestamp, timezone.utc)
         return dt.date().isoformat()
     except Exception:
@@ -1089,6 +1103,12 @@ def sitemap_xml():
             {f'<lastmod>{get_lastmod("templates/index.html")}</lastmod>' if get_lastmod("templates/index.html") else ''}
             <changefreq>weekly</changefreq>
             <priority>1.0</priority>
+        </url>
+        <url>
+            <loc>https://fitnessoverlays.com/faq</loc>
+            {f'<lastmod>{get_lastmod("templates/faq.html")}</lastmod>' if get_lastmod("templates/faq.html") else ''}
+            <changefreq>monthly</changefreq>
+            <priority>0.8</priority>
         </url>
     </urlset>'''
     return Response(sitemap, mimetype='application/xml')
