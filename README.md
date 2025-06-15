@@ -1,66 +1,72 @@
 # FitnessOverlays 🏃📱
 
-[Live Website → fitnessoverlays.onrender.com](https://fitnessoverlays.onrender.com/)
+## 🌍 Live Website
 
-## Turn Your Strava Activities into Awesome Overlays
+[fitnessoverlays.com](https://fitnessoverlays.com/)
 
-FitnessOverlays lets you quickly create stylish overlays from your Strava activities, ready to share on Instagram Stories or wherever you like.
+## Turn Your Strava Activities into Custom Overlays
 
----
-
-## How It Works
-
-1. **Connect**: Click the Strava button to securely link your account.
-2. **Select Activity**: Browse your activities and select the one you want to use.
-3. **Customize**: Select which stats to show, pick colors, adjust text size, alignment, and columns.
-4. **Copy & Share**: Copy the overlay image (with transparent background) or text, and share it in your Instagram Story or anywhere you like.
+FitnessOverlays lets you create clean, Instagram-ready overlays from your Strava activities. Designed to work smoothly on both mobile and desktop.
 
 ---
 
-## Overlay Data Options
+## ⚙️ How It Works
 
-### Key Metrics (if available from Strava)
-
-* **Distance** (e.g., `11.01 km`)
-* **Moving Time** (e.g., `1h 5m 52s`)
-* **Pace** (e.g., `5:58 /km`)
-* **Avg Speed** (e.g., `10.1 km/h`)
-* **Avg Heart Rate** (e.g., `159 bpm`)
-* **Max Heart Rate** (e.g., `187 bpm`)
-* **Calories** (e.g., `809`)
-* **Elevation Gain** (e.g., `25 m`)
-
-### Customization Options
-
-* **Metric Selection**: Enable/disable any metric (buttons auto-disable if data is missing)
-* **Text Color**: Use the color wheel for any overlay text color
-* **Text Alignment**: Cycle between left, center, right
-* **Label/Value Size**: Cycle between small, medium, large for both label and value
-* **Columns**: Show metrics in 1–4 columns
-* **Reset**: One-click reset to default overlay settings
-
-### Export & Sharing
-
-* **Copy Text**: Copies all selected metrics as plain text
-* **Copy Image**: Copies a cropped, high-res PNG of the overlay (transparent background)
-* **Save Image**: Download the overlay image (desktop) or long-press to save (mobile)
+1. **Connect** your Strava account securely via OAuth.
+2. **Choose an activity** from your personal Strava history.
+3. **Customize** your overlay:
+   - Pick stats to include
+   - Choose text size, color, alignment
+   - Select number of columns
+4. **Export** as a transparent PNG or plain text
 
 ---
 
-## Example Overlays
+## 📊 Metrics Supported
 
-See the [live site](https://fitnessoverlays.onrender.com/) for real examples and a carousel of sample overlays.
+Available metrics depend on the activity and include:
+
+- **Distance** (`11.01 km`)
+- **Moving Time** (`1h 5m 52s`)
+- **Pace** (`5:58 /km`) or **Speed** (`10.1 km/h`)
+- **Avg/Max Heart Rate**
+- **Calories**
+- **Elevation Gain**
 
 ---
 
-## Quick Start for Developers
+## 🧩 Customization Options
 
-See `NOTES.md` for full setup instructions, including local development, Docker, and Tailwind CSS build steps.
+- Enable or disable each metric
+- Adjust text color, alignment, size and font
+- Select 1 to 4 columns
+- Reset to default layout in one click
 
 ---
 
-## License
+## 📤 Export & Share
 
-&copy; 2025 FitnessOverlays - Licensed under [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html)
+- **Copy as text**
+- **Copy image** (transparent PNG)
+- **Download** or long-press to save on mobile
+
+---
+
+## ❓ FAQ
+
+For common questions like disconnecting from Strava or privacy details, visit the [FAQ page](https://fitnessoverlays.com/faq).
+
+---
+
+## 🧪 Developer Info
+
+For local setup, Docker, and Tailwind usage, see [`NOTES.md`](./NOTES.md).
+
+---
+
+## 📄 License
+
+&copy; 2025 FitnessOverlays  
+Licensed under [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html)
 
 ![Powered by Strava](static/images/api_logo_pwrdBy_strava_horiz_orange.svg)
