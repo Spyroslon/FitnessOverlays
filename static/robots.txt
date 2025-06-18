@@ -7,13 +7,15 @@ Disallow: /webhook
 Disallow: /login
 Disallow: /logout
 Disallow: /callback
-Allow: /
+Disallow: /customize
+Disallow: /activities
 Allow: /static/js/
 Allow: /static/css/
 Allow: /static/images/
 Allow: /favicon.ico
 Allow: /sitemap.xml
 Allow: /robots.txt
+Allow: /faq
 
 # ================================
 # Googlebot Specific Rules
@@ -24,7 +26,15 @@ Disallow: /webhook
 Disallow: /login
 Disallow: /logout
 Disallow: /callback
-Allow: /
+Disallow: /customize
+Disallow: /activities
+Allow: /static/js/
+Allow: /static/css/
+Allow: /static/images/
+Allow: /favicon.ico
+Allow: /sitemap.xml
+Allow: /robots.txt
+Allow: /faq
 
 # ================================
 # Bingbot Specific Rules
@@ -35,7 +45,15 @@ Disallow: /webhook
 Disallow: /login
 Disallow: /logout
 Disallow: /callback
-Allow: /
+Disallow: /customize
+Disallow: /activities
+Allow: /static/js/
+Allow: /static/css/
+Allow: /static/images/
+Allow: /favicon.ico
+Allow: /sitemap.xml
+Allow: /robots.txt
+Allow: /faq
 
 # ================================
 # SEO Enhancements
