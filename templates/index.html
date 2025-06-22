@@ -36,13 +36,32 @@
                     </a>
                 </div>
             {% else %}
-                <div id="connect-strava" class="inline-block py-10">
-                    <img src="/static/images/btn_strava_connect_with_orange_x2.svg" 
-                        alt="Connect your Strava account to create your customized overlays" 
-                        class="h-14 sm:h-16 drop-shadow-lg rounded-lg transform hover:scale-110 transition-transform duration-200 cursor-pointer ">
-                    <p class="text-sm text-fitness-gray text-center mt-4 select-none">
-                        Completely free. Just log in with Strava.
-                    </p>
+                <div class="inline-block py-10">
+                    <div>
+                        <div id="connect-strava">
+                            <img src="/static/images/btn_strava_connect_with_orange_x2.svg" 
+                                alt="Connect your Strava account to create your customized overlays" 
+                                class="h-14 sm:h-16 drop-shadow-lg rounded-lg transform hover:scale-110 transition-transform duration-200 cursor-pointer ">
+                        </div>
+                        <p class="text-sm text-fitness-gray text-center mt-2 select-none">
+                            Completely free. Just log in with Strava.
+                        </p>
+                    </div>
+                    <div class="text-fitness-gray text-sm my-4 text-center select-none">or</div>
+                    <div class="text-center">
+                        <div>
+                            <a href="/demo" 
+                                class="bg-gradient-to-br from-fitness-green to-fitness-light-green text-fitness-dark-gray font-bold py-3 px-6 text-base rounded-xl
+                                        transform hover:scale-110 transition-all duration-200 
+                                        drop-shadow-lg border border-fitness-green
+                                        inline-flex items-center space-x-2">
+                                <span>Try Demo</span>
+                            </a>
+                            <p class="text-xs text-fitness-gray text-center mt-2 select-none">
+                                See how it works
+                            </p>
+                        </div>
+                    </div>
                 </div>
                 
             {% endif %}
@@ -51,7 +70,7 @@
                 <div class="w-full max-w-2xl px-4 sm:px-6">
                     <h3 class="text-3xl sm:text-4xl font-extrabold text-center text-fitness-dark-gray mb-8 tracking-tight">Overlay Showcase</h3>
 
-                    <div id="default-carousel" class="relative mx-auto w-full max-w-[400px] px-4 sm:px-0" data-carousel="slide">
+                    <div id="default-carousel" class="relative mx-auto w-full max-w-[350px] px-4 sm:px-0" data-carousel="slide">
                         <div class="relative overflow-hidden rounded-lg drop-shadow-lg aspect-[9/16]">
                             <div class="hidden duration-700 ease-in-out" data-carousel-item="active">
                                 <img src="/static/images/goats-river-strava-overlay.png" 

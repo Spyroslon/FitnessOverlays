@@ -16,6 +16,7 @@ Allow: /favicon.ico
 Allow: /sitemap.xml
 Allow: /robots.txt
 Allow: /faq
+Allow: /demo
 Allow: /
 
 # ================================
@@ -36,6 +37,7 @@ Allow: /favicon.ico
 Allow: /sitemap.xml
 Allow: /robots.txt
 Allow: /faq
+Allow: /demo
 
 # ================================
 # Bingbot Specific Rules
@@ -55,6 +57,7 @@ Allow: /favicon.ico
 Allow: /sitemap.xml
 Allow: /robots.txt
 Allow: /faq
+Allow: /demo
 
 # ================================
 # SEO Enhancements

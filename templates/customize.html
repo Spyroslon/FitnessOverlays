@@ -51,11 +51,36 @@
             <!-- Activity Info Card -->
             <div id="activityInfoCard" class="bg-white rounded-xl shadow-lg p-3">
                 <div class="flex justify-between items-center">
-                    <h1 id="activityName" class="text-lg text-fitness-dark-gray"></h1>
+                    {% if demo_mode %}
+                    <div class="flex flex-row items-center w-full gap-2 bg-gradient-to-r from-fitness-orange to-orange-500 rounded-lg py-2.5 px-4 shadow-sm">
+                        <!-- Left: Icon + Label -->
+                        <span class="flex items-center gap-2 text-base font-bold text-white uppercase tracking-wide select-none flex-1">
+                            <svg class="w-4 h-4 text-white opacity-90" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                                <path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            Demo Mode
+                        </span>
+                        <!-- Right: CTA Link with dynamic text and href -->
+                        <div class="flex justify-end flex-shrink-0">
+                            <a href="{{ '/activities' if authenticated else '/' }}"
+                                class="bg-fitness-green text-white p-3 rounded-lg text-xs font-medium text-center hover:scale-110 transition-transform duration-200 ">
+                                {{ 'Use your own data' if authenticated else 'Get started' }}
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="flex items-center gap-3">
+                        <h1 id="activityName" class="text-lg text-fitness-dark-gray font-semibold"></h1>
+                    </div>
+                    {% endif %}
+
+                    {% if not demo_mode %}
                     <a id="stravaLink" href="#" target="_blank" 
-                        class="bg-fitness-orange text-white p-3 rounded-lg text-xs font-medium transition-colors text-center">
+                    class="bg-fitness-orange text-white p-3 rounded-lg text-xs font-medium transition-colors text-center hover:bg-orange-600">
                         View on Strava
                     </a>
+                    {% endif %}
                 </div>
             </div>
 
@@ -224,6 +249,15 @@
 
 
 {% block script %}
+    <!-- Demo mode data (processed server-side) -->
+    <script type="text/javascript">
+        {% if demo_mode %}
+        window.demoActivityData = {{ activity | tojson | safe }};
+        {% else %}
+        window.demoActivityData = null;
+        {% endif %}
+    </script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -309,116 +343,143 @@
             const activityName = document.getElementById('activityName');
             const stravaLink = document.getElementById('stravaLink');
 
-
             // Function to load and process activity data from sessionStorage
             function loadActivityFromSession() {
-                const activityId = sessionStorage.getItem('selectedActivityId');
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                
-                if (!activityId) {
-                    console.warn('No activity ID found in session storage. Canvas will be empty.');
-                    loadingOverlay.classList.add('hidden');
-                    return;
-                }
-
-                // Show loading state
-                activityName.textContent = 'Loading...';
-                activityName.classList.remove('font-bold', 'px-2', 'py-1', 'rounded-md', 'inline-block');
-                loadingOverlay.classList.remove('hidden');
-
-                // Fetch activity data from server
-                fetch(`/api/activities/${activityId}`, {
-                    method: 'GET',
-                    credentials: 'include'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Server Response Data:", {
-                        isCached: data.cached,
-                        cooldownActive: data.cooldown?.active,
-                        secondsRemaining: data.cooldown?.seconds_remaining,
-                        timestamp: new Date().toISOString()
-                    });
-
-                    if (data.error) {
-                        throw new Error(data.error);
+                if (window.demoActivityData) {
+                    // Demo mode - use activity data passed from server
+                    processActivityData(window.demoActivityData);
+                    // Hide loading overlay for demo mode
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.add('hidden');
+                    }
+                } else {
+                    // Normal mode - load from session storage
+                    const activityId = sessionStorage.getItem('selectedActivityId');
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    
+                    if (!activityId) {
+                        console.warn('No activity ID found in session storage. Canvas will be empty.');
+                        loadingOverlay.classList.add('hidden');
+                        return;
                     }
 
-                    state.activityData = data.activity;
-                    state.activityId = data.activity.id;
+                    // Show loading state
+                    activityName.textContent = 'Loading...';
+                    activityName.classList.remove('font-bold', 'px-2', 'py-1', 'rounded-md', 'inline-block');
+                    loadingOverlay.classList.remove('hidden');
 
-                    // Display Activity Info Card
-                    activityName.textContent = data.activity.name || 'Untitled Activity';
+                    // Fetch activity data from server
+                    fetch(`/api/activities/${activityId}`, {
+                        method: 'GET',
+                        credentials: 'include'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Server Response Data:", {
+                            isCached: data.cached,
+                            cooldownActive: data.cooldown?.active,
+                            secondsRemaining: data.cooldown?.seconds_remaining,
+                            timestamp: new Date().toISOString()
+                        });
+
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+
+                        processActivityData(data.activity);
+                        loadingOverlay.classList.add('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Error loading activity:', error);
+                        activityName.textContent = 'Error loading activity';
+                        showToast('Failed to load activity details');
+                        loadingOverlay.classList.add('hidden');
+                    });
+                }
+            }
+
+            // Function to process activity data (extracted from the fetch response handling)
+            function processActivityData(activityData) {
+                state.activityData = activityData;
+                state.activityId = activityData.id;
+
+                // Display Activity Info Card
+                if (activityName) {
+                    activityName.textContent = activityData.name || 'Untitled Activity';
                     activityName.classList.add('font-bold', 'px-2', 'py-1', 'rounded-md', 'inline-block');
-                    stravaLink.href = `https://www.strava.com/activities/${data.activity.id}`;
+                }
+                
+                // Only set Strava link if the element exists (not in demo mode)
+                if (stravaLink) {
+                    stravaLink.href = `https://www.strava.com/activities/${activityData.id}`;
+                }
 
-                    // Create metrics map with availability status
-                    metricsAvailability = {
-                        distance: !!data.activity.distance,
-                        movingTime: !!data.activity.moving_time,
-                        pace: !!(data.activity.moving_time && data.activity.distance),
-                        elevationGain: !!data.activity.total_elevation_gain,
-                        avgHeartRate: !!data.activity.average_heartrate,
-                        maxHeartRate: !!data.activity.max_heartrate,
-                        calories: !!data.activity.calories,
-                        averageSpeed: !!data.activity.average_speed
-                    };
+                // Create metrics map with availability status
+                metricsAvailability = {
+                    distance: !!activityData.distance,
+                    movingTime: !!activityData.moving_time,
+                    pace: !!(activityData.moving_time && activityData.distance),
+                    elevationGain: !!activityData.total_elevation_gain,
+                    avgHeartRate: !!activityData.average_heartrate,
+                    maxHeartRate: !!activityData.max_heartrate,
+                    calories: !!activityData.calories,
+                    averageSpeed: !!activityData.average_speed
+                };
 
-                    console.log("Available metrics:", metricsAvailability);
+                console.log("Available metrics:", metricsAvailability);
 
-                    // Update buttons based on data availability
-                    document.querySelectorAll('.overlay-option').forEach(button => {
-                        const metric = button.dataset.metric;
-                        if (!metricsAvailability[metric]) {
-                            button.disabled = true;
-                            button.classList.remove('bg-fitness-gray', 'bg-fitness-green');
-                            button.classList.add('bg-fitness-light-gray', 'cursor-not-allowed');
+                // Update buttons based on data availability
+                document.querySelectorAll('.overlay-option').forEach(button => {
+                    const metric = button.dataset.metric;
+                    if (!metricsAvailability[metric]) {
+                        button.disabled = true;
+                        button.classList.remove('bg-fitness-gray', 'bg-fitness-green');
+                        button.classList.add('bg-fitness-light-gray', 'cursor-not-allowed');
+                    } else {
+                        button.disabled = false;
+                        button.classList.remove('bg-fitness-light-gray', 'cursor-not-allowed');
+                        button.classList.add('bg-fitness-gray');
+                    }
+                });
+
+                // Update StravaData only for available metrics
+                StravaData.distance = metricsAvailability.distance ? (activityData.distance / 1000).toFixed(2) + ' km' : null;
+                StravaData.movingTime = metricsAvailability.movingTime ? formatDuration(activityData.moving_time) : null;
+                StravaData.pace = metricsAvailability.pace ? formatPace(activityData.moving_time, activityData.distance) + ' /km' : null;
+                StravaData.elevationGain = metricsAvailability.elevationGain ? Math.round(activityData.total_elevation_gain) + 'm' : null;
+                StravaData.avgHeartRate = metricsAvailability.avgHeartRate ? Math.round(activityData.average_heartrate) + ' bpm' : null;
+                StravaData.maxHeartRate = metricsAvailability.maxHeartRate ? Math.round(activityData.max_heartrate) + ' bpm' : null;
+                StravaData.calories = metricsAvailability.calories ? Math.round(activityData.calories) : null;
+                StravaData.averageSpeed = metricsAvailability.averageSpeed ? (activityData.average_speed * 3.6).toFixed(1) + ' km/h' : null;
+
+                console.log("Processed Strava data:", StravaData);
+
+                // Apply button styles based on availability and default selection
+                document.querySelectorAll('.overlay-option').forEach(button => {
+                    const metric = button.dataset.metric;
+                    button.classList.remove('bg-fitness-green', 'bg-fitness-gray', 'bg-fitness-light-gray', 'cursor-not-allowed');
+                    button.disabled = false;
+
+                    if (!metricsAvailability[metric]) {
+                        button.disabled = true;
+                        button.classList.add('bg-fitness-light-gray', 'cursor-not-allowed');
+                    } else {
+                        if (state.selectedMetrics.includes(metric)) {
+                            button.classList.add('bg-fitness-green');
                         } else {
-                            button.disabled = false;
-                            button.classList.remove('bg-fitness-light-gray', 'cursor-not-allowed');
                             button.classList.add('bg-fitness-gray');
                         }
-                    });
-
-                    // Update StravaData only for available metrics
-                    StravaData.distance = metricsAvailability.distance ? (data.activity.distance / 1000).toFixed(2) + ' km' : null;
-                    StravaData.movingTime = metricsAvailability.movingTime ? formatDuration(data.activity.moving_time) : null;
-                    StravaData.pace = metricsAvailability.pace ? formatPace(data.activity.moving_time, data.activity.distance) + ' /km' : null;
-                    StravaData.elevationGain = metricsAvailability.elevationGain ? Math.round(data.activity.total_elevation_gain) + 'm' : null;
-                    StravaData.avgHeartRate = metricsAvailability.avgHeartRate ? Math.round(data.activity.average_heartrate) + ' bpm' : null;
-                    StravaData.maxHeartRate = metricsAvailability.maxHeartRate ? Math.round(data.activity.max_heartrate) + ' bpm' : null;
-                    StravaData.calories = metricsAvailability.calories ? Math.round(data.activity.calories) : null;
-                    StravaData.averageSpeed = metricsAvailability.averageSpeed ? (data.activity.average_speed * 3.6).toFixed(1) + ' km/h' : null;
-
-                    console.log("Processed Strava data:", StravaData);
-
-                    // Apply button styles based on availability and default selection
-                    document.querySelectorAll('.overlay-option').forEach(button => {
-                        const metric = button.dataset.metric;
-                        button.classList.remove('bg-fitness-green', 'bg-fitness-gray', 'bg-fitness-light-gray', 'cursor-not-allowed');
-                        button.disabled = false;
-
-                        if (!metricsAvailability[metric]) {
-                            button.disabled = true;
-                            button.classList.add('bg-fitness-light-gray', 'cursor-not-allowed');
-                        } else {
-                            if (state.selectedMetrics.includes(metric)) {
-                                button.classList.add('bg-fitness-green');
-                            } else {
-                                button.classList.add('bg-fitness-gray');
-                            }
-                        }
-                    });
-
-                    generateOverlay();
-                    loadingOverlay.classList.add('hidden');
-                })
-                .catch(error => {
-                    console.error('Error loading activity:', error);
-                    activityName.textContent = 'Error loading activity';
-                    showToast('Failed to load activity details');
-                    loadingOverlay.classList.add('hidden');
+                    }
                 });
+
+                generateOverlay();
+                
+                // Ensure loading overlay is hidden
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('hidden');
+                }
             }
 
             function formatDuration(seconds) {

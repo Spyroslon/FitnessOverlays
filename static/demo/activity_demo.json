@@ -1,0 +1,27 @@
+{
+    "resource_state": 3,
+    "name": "One week left - Fast Finish Long Run",
+    "distance": 22508.1,
+    "moving_time": 7744,
+    "elapsed_time": 7995,
+    "total_elevation_gain": 44.9,
+    "type": "Run",
+    "sport_type": "Run",
+    "workout_type": 2,
+    "id": 14225883179,
+    "start_date": "2025-04-19T15:53:09Z",
+    "start_date_local": "2025-04-19T17:53:09Z",
+    "timezone": "(GMT+01:00) Europe/Berlin",
+    "utc_offset": 7200,
+    "map": {
+        "id": "a14225883179",
+        "resource_state": 3,
+        "summary_polyline": "espwHk{mh@dC_BTc@Hw@?u@g@uA[Ym@Cc@gA\\oGHoFVqDE}ALm@?eC\\sE@iBNm@AqD`@{Bf@k@\\}@VKf@y@Ho@Y_APwAOcAzBoAh@kCd@a@f@Qx@@bB{@HDBV?lAHTXLx@a@`Bn@`FV|@g@p@?\\`@f@P|@CdCn@fByAj@ORTh@fBr@h@h@PjBvDt@lD`@fENl@j@S`AiA`Au@bAPlBpB~@\\ZQ^m@ZeAR}APq@f@{@RIzALpD`AjBCXQPiFCoBh@iCVkDr@gFp@kIL{GIiC@QPKjHHp@j@X~@NpA@rA\\jHd@pFc@jOPhAd@z@d@VnSfD`EdA`L~BhDIr@SDSQ{B{Bb@uAB}F{AgJiBwQsCo@[Uw@AoA^}KKyA_@mCo@uMQ][LSEa@_Ag@SmF?iAM?sAHm@Iw@FaCOHAhAJjAEtCDLvHJt@t@XzAf@hLd@vFc@tNJ~@d@dA~Ar@bRbDrQ~DdBDfBWLWIcBK_@qCl@oAIgF{AaJeBqQmC{@a@O_@G_AZmMo@_Gg@kLUk@c@d@BbC`@pIf@lFe@tNJ~@d@dA~Ar@bRbDrQ~DdBDfCe@IyBGW}Ah@eBN{Bs@wCs@oEs@mBk@}RyCm@[Q{@Ci@`@eLKqBc@eDa@sKOaAUM[b@DhEZ|FVnBPlCc@~NPpAb@x@vKbCrAHvGpAvFjA|G~Az@F|C[JWI}BGG_Bf@qBF_Ds@yAm@m]{Fc@WYiA\\oKCsBi@sEc@_LMs@QS]b@HxDVjGd@jEDnAa@rNRpA\\f@dAd@nUbEfOfDvDMZKJQQiCuBl@sBAwFaBo@?_HaBgOyByBk@Yo@Ew@ZoKAwAi@wDU_H[kEOW[PSGiAkAqHGI^DXKfB@pDM`Di@vGWfAUlBGBUdEWtAWpFCfDQXgBH}Ac@kBmAWi@GuC[kAUc@?SRk@p@{@Nc@JsAAgAQ{AuAoD{Au@}Hg@]}@]NWnAu@`Bm@b@cAzAIZEtCWhGt@nERh@ZZbARjBz@Rb@Y`BuClCYWaAcHy@aDmAyB}AeAw@kBsAPi@v@c@PYAu@e@wBEiAs@sBb@_EG{Ac@qAV}@a@s@~@SxAKTkBRs@lBSbB?`AJrAWdBMlHSvBo@xCWrBs@rC]j@}@r@i@lA]DMZG|CSzEOnB"
+    },
+    "average_speed": 2.907,
+    "max_speed": 4.56,
+    "has_heartrate": true,
+    "average_heartrate": 167.2,
+    "max_heartrate": 192,
+    "calories": 1857.7
+}

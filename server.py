@@ -16,6 +16,7 @@ from functools import wraps
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import mimetypes
+import json
 
 # --- Environment Variable Validation ---
 def check_env_vars():
@@ -448,6 +449,7 @@ def rate_limit_unknown_paths():
     allowed_paths = [
         "/favicon.ico",
         "/robots.txt",
+        "/llms.txt"
         "/sitemap.xml",
         "/static/",
     ]
@@ -1070,6 +1072,10 @@ def favicon():
 def robots_txt():
     return send_from_directory('static', 'robots.txt')
 
+@app.route('/llms.txt')
+def llms_txt():
+    return send_from_directory('static', 'llms.txt')
+
 @app.route('/faq')
 def faq():
     """Serve the FAQ page"""
@@ -1080,6 +1086,38 @@ def faq():
                         athlete_last_name=session.get("athlete_last_name"),
                         athlete_profile=session.get("athlete_profile"),
                         csrf_token=session.get('csrf_token', generate_csrf_token()))
+
+@limiter.limit("30 per hour")
+@app.route('/demo')
+def demo():
+    """Serve the demo page with sample activity data for unauthenticated users"""
+    logger.info(f"Demo page accessed - IP: {get_remote_address()}")
+
+    # Load the demo activity JSON
+    with open('static/demo/activity_demo.json', 'r', encoding='utf-8') as f:
+        activity = json.load(f)
+
+    # Check if user is authenticated
+    is_authenticated = False
+    athlete_id = session.get("athlete_id")
+
+    if athlete_id:
+        athlete = db.session.get(Athletes, athlete_id)
+        if athlete:
+            is_authenticated = True
+            logger.info(f"Authenticated user accessing demo - Athlete ID: {athlete_id} - Name: {session.get('athlete_first_name')} {session.get('athlete_last_name')} - IP: {get_remote_address()}")
+
+    return render_template(
+        'customize.html',
+        activity=activity,
+        demo_mode=True,
+        authenticated=is_authenticated,
+        athlete_id=session.get("athlete_id") if is_authenticated else None,
+        athlete_first_name=session.get("athlete_first_name") if is_authenticated else None,
+        athlete_last_name=session.get("athlete_last_name") if is_authenticated else None,
+        athlete_profile=session.get("athlete_profile") if is_authenticated else None,
+        csrf_token=session.get('csrf_token') if is_authenticated else generate_csrf_token()
+    )
 
 def get_lastmod(filepath):
     """Get last modification date of a file in ISO format with timezone awareness"""
@@ -1109,6 +1147,12 @@ def sitemap_xml():
             {f'<lastmod>{get_lastmod("templates/faq.html")}</lastmod>' if get_lastmod("templates/faq.html") else ''}
             <changefreq>monthly</changefreq>
             <priority>0.8</priority>
+        </url>
+        <url>
+            <loc>https://fitnessoverlays.com/demo</loc>
+            {f'<lastmod>{get_lastmod("templates/customize.html")}</lastmod>' if get_lastmod("templates/customize.html") else ''}
+            <changefreq>monthly</changefreq>
+            <priority>0.9</priority>
         </url>
     </urlset>'''
     return Response(sitemap, mimetype='application/xml')
