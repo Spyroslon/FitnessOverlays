@@ -165,7 +165,7 @@
                             </button>
                         </div>
                     </div>
-                                    
+
                     <div id="overlayOptions" class="grid grid-cols-3 md:grid-cols-4 gap-2">
                         <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="distance">Distance</button>
                         <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="movingTime">Time</button>
@@ -175,6 +175,14 @@
                         <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="maxHeartRate">Max HR</button>
                         <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="calories">Calories</button>
                         <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="elevationGain">Elevation</button>
+                    </div>
+
+                    <!-- Map color and button row -->
+                    <div class="flex flex-row items-center justify-center gap-4 mt-4">
+                        <input type="color" id="mapColorWheel" value="#FF5722"
+                            class="appearance-none bg-transparent cursor-pointer p-0 w-12 h-12 rounded-lg transition-transform hover:scale-105 focus:scale-105"
+                            title="Choose map color">
+                        <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12 min-w-[96px]" data-metric="map" id="mapButton">Map</button>
                     </div>
                 
                 </div>
@@ -258,6 +266,8 @@
         {% endif %}
     </script>
 
+    <script src="https://unpkg.com/@mapbox/polyline"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -273,14 +283,15 @@
                 activityId: null,
                 activityData: null,
                 athleteId: null,
-                selectedMetrics: JSON.parse(sessionStorage.getItem('selectedMetrics')) || ['distance', 'movingTime', 'pace'],
+                selectedMetrics: JSON.parse(sessionStorage.getItem('selectedMetrics')) || ['distance', 'movingTime', 'pace', 'map'],
                 isAuthenticated: false,
                 textColor: sessionStorage.getItem('textColor') || '#ffffff',
                 textAlign: sessionStorage.getItem('textAlign') || 'center',
                 labelSize: sessionStorage.getItem('labelSize') || 'medium',
                 valueSize: sessionStorage.getItem('valueSize') || 'large',
                 columns: parseInt(sessionStorage.getItem('columns'), 10) || 1,
-                currentFont: sessionStorage.getItem('currentFont') || 'Poppins'
+                currentFont: sessionStorage.getItem('currentFont') || 'Poppins',
+                mapColor: sessionStorage.getItem('mapColor') || '#FF5722'
             };
 
             // Define font cycle order with labels
@@ -424,7 +435,8 @@
                     avgHeartRate: !!activityData.average_heartrate,
                     maxHeartRate: !!activityData.max_heartrate,
                     calories: !!activityData.calories,
-                    averageSpeed: !!activityData.average_speed
+                    averageSpeed: !!activityData.average_speed,
+                    map: !!(activityData.map && activityData.map.polyline)
                 };
 
                 console.log("Available metrics:", metricsAvailability);
@@ -452,6 +464,7 @@
                 StravaData.maxHeartRate = metricsAvailability.maxHeartRate ? Math.round(activityData.max_heartrate) + ' bpm' : null;
                 StravaData.calories = metricsAvailability.calories ? Math.round(activityData.calories) : null;
                 StravaData.averageSpeed = metricsAvailability.averageSpeed ? (activityData.average_speed * 3.6).toFixed(1) + ' km/h' : null;
+                StravaData.map = metricsAvailability.map ? activityData.map : null;
 
                 console.log("Processed Strava data:", StravaData);
 
@@ -501,11 +514,10 @@
                 return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
             }
 
-            // --- Canvas Drawing Logic (Moved outside DOMContentLoaded for clarity) ---
-
             const canvas = document.getElementById('overlayCanvas');
             const ctx = canvas.getContext('2d');
             const colorWheel = document.getElementById('colorWheel');
+            const mapColorWheel = document.getElementById('mapColorWheel');
             const copyTextBtn = document.getElementById('copyTextBtn');
             const copyImageBtn = document.getElementById('copyImageBtn');
             const toast = document.getElementById('toast');
@@ -582,6 +594,7 @@
             const METRIC_GROUP_SPACING = 20; // px between metric groups
             const LABEL_VALUE_SPACING = 6;
             const HORIZONTAL_PADDING_FACTOR = 0.05; // 5% of canvas width as horizontal padding
+            const MAP_PADDING = 0; // Set to 0 for flush, or e.g. 5 for slight gap
 
             function resizeCanvas() {
                 const container = canvas.parentElement;
@@ -603,102 +616,229 @@
                 generateOverlay();
             }
 
+            function drawPolyline(data, context = ctx, mapBoxX, mapBoxY, mapBoxWidth, mapBoxHeight, mapAlign = 'center') {
+                if (!data.map || !data.map.polyline) return;
+                if (typeof polyline === 'undefined') return;
+                let points;
+                try {
+                    points = polyline.decode(data.map.polyline);
+                } catch (e) {
+                    console.warn('Failed to decode polyline:', e);
+                    return;
+                }
+                if (!points || points.length < 2) return;
+                let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+                points.forEach(([lat, lng]) => {
+                    if (lat < minLat) minLat = lat;
+                    if (lat > maxLat) maxLat = lat;
+                    if (lng < minLng) minLng = lng;
+                    if (lng > maxLng) maxLng = lng;
+                });
+                if (maxLat - minLat < 1e-5) maxLat += 0.0005;
+                if (maxLng - minLng < 1e-5) maxLng += 0.0005;
+                const meanLatRad = ((minLat + maxLat) / 2) * Math.PI / 180;
+                const cosMeanLat = Math.cos(meanLatRad);
+                const projectedRaw = points.map(([lat, lng]) => [
+                    (lng - minLng) * cosMeanLat,
+                    lat - minLat
+                ]);
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                projectedRaw.forEach(([x, y]) => {
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                });
+                if (maxX - minX < 1e-6) maxX += 0.0001;
+                if (maxY - minY < 1e-6) maxY += 0.0001;
+                const projWidth = maxX - minX;
+                const projHeight = maxY - minY;
+                const scale = Math.min(mapBoxWidth / projWidth, mapBoxHeight / projHeight);
+                let offsetX;
+                if (mapAlign === 'left') {
+                    offsetX = mapBoxX;
+                } else if (mapAlign === 'right') {
+                    offsetX = mapBoxX + (mapBoxWidth - projWidth * scale);
+                } else {
+                    offsetX = mapBoxX + (mapBoxWidth - projWidth * scale) / 2;
+                }
+                const offsetY = mapBoxY + (mapBoxHeight - projHeight * scale) / 2;
+                const projected = projectedRaw.map(([x, y]) => [
+                    offsetX + (x - minX) * scale,
+                    offsetY + (projHeight - (y - minY)) * scale
+                ]);
+                context.save();
+                context.beginPath();
+                projected.forEach(([x, y], i) => {
+                    if (i === 0) context.moveTo(x, y);
+                    else context.lineTo(x, y);
+                });
+                context.lineWidth = 3;
+                context.strokeStyle = state.mapColor || '#FF5722';
+                context.shadowColor = 'rgba(0,0,0,0.18)';
+                context.shadowBlur = 2;
+                context.globalAlpha = 1;
+                context.stroke();
+                context.restore();
+            }
+
             function drawMetrics(data, context = ctx) {
+                // Draw polyline under metrics
+                // We'll draw the map after calculating layout, so we can position it as a metric
                 if (!fontsLoaded) {
                     console.log('Waiting for fonts to load...');
                     setTimeout(() => drawMetrics(data, context), 100);
                     return;
                 }
 
-                const metrics = state.selectedMetrics
+                // Filter out 'map' from metrics to avoid rendering it as label/value
+                let metrics = state.selectedMetrics
+                    .filter(key => key !== 'map')
                     .map(key => ({
                         name: getMetricLabel(key),
                         value: data[key]
                     }))
                     .filter(metric => metric.value !== null && metric.value !== undefined);
 
-                if (metrics.length === 0) return;
-
-                const numItems = metrics.length;
+                // If map is the only selected metric, show ONLY the map, centered
+                const mapSelected = state.selectedMetrics.includes('map') && data.map && data.map.polyline;
+                const onlyMap = mapSelected && metrics.length === 0;
+                let numMetrics = metrics.length;
                 const requestedColumns = state.columns;
-                let actualColsForSizing = Math.min(requestedColumns, numItems);
-                if (numItems === 1) actualColsForSizing = 1;
-                actualColsForSizing = Math.max(1, actualColsForSizing);
-                const itemsPerColumnForSizing = Math.ceil(numItems / actualColsForSizing);
+                let actualColsForSizing = onlyMap ? 0 : Math.min(requestedColumns, numMetrics);
+                if (!onlyMap && numMetrics === 1) actualColsForSizing = 1;
+                actualColsForSizing = onlyMap ? 0 : Math.max(1, actualColsForSizing);
+                const itemsPerColumnForSizing = onlyMap ? 0 : Math.ceil(numMetrics / actualColsForSizing);
 
                 const dpr = window.devicePixelRatio || 1;
                 const logicalWidth = overlayCanvas.width / dpr;
                 const logicalHeight = overlayCanvas.height / dpr;
                 const hPadding = logicalWidth * HORIZONTAL_PADDING_FACTOR;
                 const availableWidth = logicalWidth - (hPadding * 2);
-                const columnWidthForSizing = availableWidth / actualColsForSizing;
+                const columnWidthForSizing = onlyMap ? 0 : availableWidth / actualColsForSizing;
                 const verticalPadding = logicalHeight * VERTICAL_PADDING_FACTOR;
                 const availableHeight = logicalHeight - (verticalPadding * 2);
 
-                const maxItemHeight = (availableHeight - (METRIC_GROUP_SPACING * (itemsPerColumnForSizing - 1))) / Math.max(1, itemsPerColumnForSizing);
-                const maxFontBase = Math.min(
+                const maxItemHeight = onlyMap ? 0 : (availableHeight - (METRIC_GROUP_SPACING * (itemsPerColumnForSizing - 1))) / Math.max(1, itemsPerColumnForSizing);
+                const maxFontBase = onlyMap ? 0 : Math.min(
                     maxItemHeight * 0.45,
                     columnWidthForSizing * 0.15,
                     BASE_FONT_SIZE
                 );
 
-                let titleFontSize = maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
-                let valueFontSize = maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
-                let groupSpacing = METRIC_GROUP_SPACING;
+                let titleFontSize = onlyMap ? 0 : maxFontBase * SIZE_MULTIPLIERS[state.labelSize];
+                let valueFontSize = onlyMap ? 0 : maxFontBase * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
+                let groupSpacing = onlyMap ? 0 : METRIC_GROUP_SPACING;
 
-                let neededHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing +
-                                (groupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
-                const scaleFactor = Math.min(1, availableHeight / Math.max(1, neededHeight));
+                // If only map, neededHeight is just the map box
+                let neededHeight;
+                let mapBoxWidth = 0, mapBoxHeight = 0, mapBoxMaxWidth = 0, maxMapBoxHeight = 0;
+                if (mapSelected) {
+                    // Default map scale is 1.5x, then scale with value size
+                    const mapScale = 1.5 * (SIZE_MULTIPLIERS[state.valueSize] || 1);
+                    mapBoxMaxWidth = availableWidth * 0.7 * mapScale;
+                    mapBoxWidth = mapBoxMaxWidth;
+                    mapBoxHeight = mapBoxWidth * 2 / 3;
+                    maxMapBoxHeight = logicalHeight * 0.28 * 0.5 * mapScale;
+                    if (mapBoxHeight > maxMapBoxHeight) {
+                        mapBoxHeight = maxMapBoxHeight;
+                        mapBoxWidth = mapBoxHeight * 3 / 2;
+                    }
+                    neededHeight = onlyMap ? mapBoxHeight : (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing + (groupSpacing * Math.max(0, itemsPerColumnForSizing - 1)) + mapBoxHeight;
+                } else {
+                    neededHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing + (groupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
+                }
+                // Save original mapBoxWidth/Height for scaling
+                let originalMapBoxWidth = mapBoxWidth;
+                let originalMapBoxHeight = mapBoxHeight;
+
+                // Calculate total needed height (metrics + map)
+                let metricsBlockHeight = (titleFontSize + valueFontSize + LABEL_VALUE_SPACING) * itemsPerColumnForSizing + (groupSpacing * Math.max(0, itemsPerColumnForSizing - 1));
+                let totalNeededHeight = metricsBlockHeight + mapBoxHeight;
+                if (onlyMap) totalNeededHeight = mapBoxHeight;
+
+                // Unified scale factor
+                const scaleFactor = Math.min(1, availableHeight / totalNeededHeight);
+                // Apply scale
+                mapBoxWidth = originalMapBoxWidth * scaleFactor;
+                mapBoxHeight = originalMapBoxHeight * scaleFactor;
                 titleFontSize *= scaleFactor;
                 valueFontSize *= scaleFactor;
                 groupSpacing *= scaleFactor;
-                titleFontSize = Math.max(titleFontSize, MIN_FONT_SIZE);
-                valueFontSize = Math.max(valueFontSize, MIN_FONT_SIZE);
-                groupSpacing = Math.max(groupSpacing, LABEL_VALUE_SPACING * 0.5);
+                titleFontSize = onlyMap ? 0 : Math.max(titleFontSize, MIN_FONT_SIZE);
+                valueFontSize = onlyMap ? 0 : Math.max(valueFontSize, MIN_FONT_SIZE);
+                groupSpacing = onlyMap ? 0 : Math.max(groupSpacing, LABEL_VALUE_SPACING * 0.5);
+                if (mapSelected) mapBoxHeight *= scaleFactor;
 
-                const finalItemHeight = titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
-                const drawableColumns = Math.min(requestedColumns, numItems);
-                const numRows = Math.ceil(numItems / requestedColumns);
-                const finalTotalContentHeight = (finalItemHeight * numRows) + (groupSpacing * Math.max(0, numRows - 1));
+                const finalItemHeight = onlyMap ? 0 : titleFontSize + valueFontSize + LABEL_VALUE_SPACING;
+                const drawableColumns = onlyMap ? 0 : Math.min(requestedColumns, numMetrics);
+                const numRows = onlyMap ? 0 : Math.ceil(numMetrics / requestedColumns);
+                let finalTotalContentHeight = onlyMap ? mapBoxHeight : (finalItemHeight * numRows) + (groupSpacing * Math.max(0, numRows - 1)) + (mapSelected ? mapBoxHeight : 0);
                 const startY = verticalPadding + (availableHeight - finalTotalContentHeight) / 2;
 
                 context.textBaseline = 'middle';
 
-                metrics.forEach((metric, index) => {
-                    const columnIndex = index % requestedColumns;
-                    const rowIndex = Math.floor(index / requestedColumns);
-                    const columnWidth = availableWidth / drawableColumns;
-                    let xPos;
-                    if (drawableColumns === 1) {
-                        context.textAlign = state.textAlign;
-                        switch (state.textAlign) {
-                            case 'left': xPos = hPadding; break;
-                            case 'right': xPos = logicalWidth - hPadding; break;
-                            default: xPos = logicalWidth / 2;
+                // Draw metrics
+                if (!onlyMap) {
+                    metrics.forEach((metric, index) => {
+                        const columnIndex = index % requestedColumns;
+                        const rowIndex = Math.floor(index / requestedColumns);
+                        const columnWidth = availableWidth / drawableColumns;
+                        let xPos;
+                        if (drawableColumns === 1) {
+                            context.textAlign = state.textAlign;
+                            switch (state.textAlign) {
+                                case 'left': xPos = hPadding; break;
+                                case 'right': xPos = logicalWidth - hPadding; break;
+                                default: xPos = logicalWidth / 2;
+                            }
+                        } else {
+                            context.textAlign = state.textAlign;
+                            const slotLeft = hPadding + (columnWidth * columnIndex);
+                            const slotCenter = slotLeft + (columnWidth / 2);
+                            const slotRight = slotLeft + columnWidth;
+                            switch (state.textAlign) {
+                                case 'left': xPos = slotLeft; break;
+                                case 'right': xPos = slotRight; break;
+                                default: xPos = slotCenter;
+                            }
                         }
-                    } else {
-                        context.textAlign = state.textAlign;
-                        const slotLeft = hPadding + (columnWidth * columnIndex);
-                        const slotCenter = slotLeft + (columnWidth / 2);
-                        const slotRight = slotLeft + columnWidth;
-                        switch (state.textAlign) {
-                            case 'left': xPos = slotLeft; break;
-                            case 'right': xPos = slotRight; break;
-                            default: xPos = slotCenter;
-                        }
-                    }
-                    const itemSlotTopY = startY + (rowIndex * (finalItemHeight + groupSpacing));
-                    const itemSlotCenterY = itemSlotTopY + finalItemHeight / 2;
-                    context.fillStyle = state.textColor;
-                    const textPairHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
-                    const labelYOffset = -(textPairHeight / 2) + (titleFontSize / 2);
-                    const valueYOffset = (textPairHeight / 2) - (valueFontSize / 2);
-                    context.font = `${titleFontSize}px ${state.currentFont}`;
-                    context.fillText(metric.name, xPos, itemSlotCenterY + labelYOffset);
-                    context.font = `bold ${valueFontSize}px ${state.currentFont}`;
-                    context.fillText(metric.value, xPos, itemSlotCenterY + valueYOffset);
-                });
+                        const itemSlotTopY = startY + (rowIndex * (finalItemHeight + groupSpacing));
+                        const itemSlotCenterY = itemSlotTopY + finalItemHeight / 2;
+                        context.fillStyle = state.textColor;
+                        const textPairHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
+                        const labelYOffset = -(textPairHeight / 2) + (titleFontSize / 2);
+                        const valueYOffset = (textPairHeight / 2) - (valueFontSize / 2);
+                        context.font = `${titleFontSize}px ${state.currentFont}`;
+                        context.fillText(metric.name, xPos, itemSlotCenterY + labelYOffset);
+                        context.font = `bold ${valueFontSize}px ${state.currentFont}`;
+                        context.fillText(metric.value, xPos, itemSlotCenterY + valueYOffset);
+                    });
+                }
 
+                // Draw map as a metric at the bottom or centered if only map
+                if (mapSelected && mapBoxHeight > 0) {
+                    // Use scaled mapBoxWidth and mapBoxHeight from earlier, NOT recomputed
+                    let mapBoxX;
+                    let mapAlign = state.textAlign;
+                    switch(state.textAlign) {
+                        case 'left':
+                            mapBoxX = hPadding;
+                            break;
+                        case 'right':
+                            mapBoxX = logicalWidth - hPadding - mapBoxWidth;
+                            break;
+                        default:
+                            mapBoxX = hPadding + (availableWidth - mapBoxWidth) / 2;
+                    }
+                    let mapBoxY;
+                    if (onlyMap) {
+                        mapBoxY = startY;
+                    } else {
+                        mapBoxY = startY + (finalItemHeight + groupSpacing) * numRows;
+                    }
+                    drawPolyline(data, context, mapBoxX, mapBoxY, mapBoxWidth, mapBoxHeight, mapAlign);
+                }
                 context.textBaseline = 'alphabetic';
             }
 
@@ -730,135 +870,123 @@
                 drawMetrics(data);
             }
 
-            function getCroppedDimensions(data, context, canvasRef) {
-                if (!canvasRef) return { x: 0, y: 0, width: 0, height: 0 };
-                
-                const metrics = state.selectedMetrics
-                    .map(key => ({
-                        name: getMetricLabel(key),
-                        value: data[key]
-                    }))
-                    .filter(metric => metric.value !== null && metric.value !== undefined);
+function getCroppedDimensions(data, context, canvasRef) {
+    if (!canvasRef) return { x: 0, y: 0, width: 0, height: 0 };
 
-                if (metrics.length === 0) {
-                    return { x: 0, y: 0, width: 0, height: 0 };
-                }
+    const metrics = state.selectedMetrics
+        .filter(key => key !== 'map')
+        .map(key => ({
+            name: getMetricLabel(key),
+            value: data[key]
+        }))
+        .filter(metric => metric.value !== null && metric.value !== undefined);
 
-                const numItems = metrics.length;
-                const requestedColumns = state.columns;
-                const dpr = window.devicePixelRatio || 1;
-                
-                // Calculate actual columns based on number of items
-                let actualColumns = Math.min(requestedColumns, numItems);
-                actualColumns = Math.max(1, actualColumns);
+    const mapSelected = state.selectedMetrics.includes('map') && data.map && data.map.polyline;
+    const onlyMap = mapSelected && metrics.length === 0;
 
-                const logicalWidth = canvasRef.width / dpr;
-                const logicalHeight = canvasRef.height / dpr;
-                const cropHPadding = logicalWidth * HORIZONTAL_PADDING_FACTOR;
-                const availableWidth = logicalWidth - (cropHPadding * 2);
-                const columnWidth = availableWidth / actualColumns;
+    const numItems = metrics.length;
+    const requestedColumns = state.columns;
+    const dpr = window.devicePixelRatio || 1;
 
-                // Calculate font sizes
-                const titleFontSize = BASE_FONT_SIZE * SIZE_MULTIPLIERS[state.labelSize];
-                const valueFontSize = BASE_FONT_SIZE * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
-                const itemSpacing = METRIC_GROUP_SPACING * 0.8; // Slightly reduced spacing
+    // Logical canvas size (CSS pixels)
+    const logicalWidth = canvasRef.width / dpr;
+    const logicalHeight = canvasRef.height / dpr;
 
-                // Initialize bounds with maximum possible values
-                let minX = canvasRef.width, minY = canvasRef.height;
-                let maxX = 0, maxY = 0;
+    // Horizontal padding around content
+    const hPadding = logicalWidth * HORIZONTAL_PADDING_FACTOR;
 
-                // Set up context for text measurements
-                context.textBaseline = 'middle';
+    // Available width for metrics and map
+    const availableWidth = logicalWidth - (hPadding * 2);
 
-                // Pre-measure all text to get accurate bounds
-                const textMeasurements = metrics.map(metric => {
-                    context.font = `${titleFontSize}px ${state.currentFont}`;
-                    const labelWidth = context.measureText(metric.name).width;
-                    context.font = `bold ${valueFontSize}px ${state.currentFont}`;
-                    const valueWidth = context.measureText(metric.value).width;
-                    return {
-                        labelWidth,
-                        valueWidth,
-                        totalWidth: Math.max(labelWidth, valueWidth)
-                    };
-                });
+    // Metrics layout
+    let actualCols = onlyMap ? 0 : Math.min(requestedColumns, numItems);
+    actualCols = Math.max(1, actualCols);
+    const itemsPerColumn = onlyMap ? 0 : Math.ceil(numItems / actualCols);
 
-                // Calculate layout and bounds
-                const numRows = Math.ceil(numItems / actualColumns);
-                const itemHeight = titleFontSize + LABEL_VALUE_SPACING + valueFontSize;
-                const totalContentHeight = (itemHeight * numRows) + (itemSpacing * (numRows - 1));
+    // Font sizes based on base and multipliers
+    const baseTitleFontSize = BASE_FONT_SIZE * SIZE_MULTIPLIERS[state.labelSize];
+    const baseValueFontSize = BASE_FONT_SIZE * VALUE_FONT_SIZE_MULTIPLIER * SIZE_MULTIPLIERS[state.valueSize];
 
-                // Calculate vertical centering offset
-                const verticalPadding = Math.min(
-                    logicalHeight * 0.1, // Max 10% of height
-                    Math.max(20, itemHeight * 0.2) // At least 20px or 20% of item height
-                );
-                const startY = (logicalHeight - totalContentHeight) / 2;
+    // Metric item height and spacing
+    const itemHeight = baseTitleFontSize + LABEL_VALUE_SPACING + baseValueFontSize;
+    const groupSpacing = METRIC_GROUP_SPACING;
 
-                metrics.forEach((metric, index) => {
-                    const columnIndex = index % actualColumns;
-                    const rowIndex = Math.floor(index / actualColumns);
-                    
-                    // Calculate item position
-                    const measurement = textMeasurements[index];
-                    const yPos = startY + (rowIndex * (itemHeight + itemSpacing));
-                    
-                    // Calculate x position based on alignment and column
-                    const slotLeft = cropHPadding + (columnWidth * columnIndex);
-                    const slotCenter = slotLeft + (columnWidth / 2);
-                    const slotRight = slotLeft + columnWidth;
-                    
-                    let xPos, localMinX, localMaxX;
-                    switch (state.textAlign) {
-                        case 'left':
-                            xPos = slotLeft;
-                            localMinX = xPos * dpr;
-                            localMaxX = (xPos + measurement.totalWidth) * dpr;
-                            break;
-                        case 'right':
-                            xPos = slotRight;
-                            localMinX = (xPos - measurement.totalWidth) * dpr;
-                            localMaxX = xPos * dpr;
-                            break;
-                        default: // center
-                            xPos = slotCenter;
-                            localMinX = (xPos - measurement.totalWidth/2) * dpr;
-                            localMaxX = (xPos + measurement.totalWidth/2) * dpr;
-                    }
+    // Calculate metrics bounding box (without padding)
+    const metricsWidth = onlyMap ? 0 : availableWidth;
+    const metricsHeight = onlyMap ? 0 : (itemHeight * itemsPerColumn) + (groupSpacing * Math.max(0, itemsPerColumn - 1));
 
-                    // Update global bounds
-                    minX = Math.min(minX, localMinX);
-                    maxX = Math.max(maxX, localMaxX);
-                    minY = Math.min(minY, yPos * dpr);
-                    maxY = Math.max(maxY, (yPos + itemHeight) * dpr);
-                });
+    // Calculate map box size similar to drawMetrics()
+    let mapBoxWidth = 0, mapBoxHeight = 0;
+    if (mapSelected) {
+        const mapScale = 1.5 * (SIZE_MULTIPLIERS[state.valueSize] || 1);
+        const maxMapWidth = availableWidth * 0.7 * mapScale;
+        mapBoxWidth = maxMapWidth;
+        mapBoxHeight = mapBoxWidth * 2 / 3;
 
-                // Calculate padding based on content size
-                const contentWidth = maxX - minX;
-                const contentHeight = maxY - minY;
-                const horizontalPadding = Math.min(
-                    contentWidth * 0.1, // 10% of content width
-                    Math.max(15 * dpr, titleFontSize * 0.4 * dpr) // At least 15px or 40% of title font size
-                );
-                const verticalPaddingScaled = verticalPadding * dpr;
+        const maxMapHeightAllowed = logicalHeight * 0.28 * 0.5 * mapScale;
+        if (mapBoxHeight > maxMapHeightAllowed) {
+            mapBoxHeight = maxMapHeightAllowed;
+            mapBoxWidth = mapBoxHeight * 3 / 2;
+        }
+    }
 
-                // Apply padding while ensuring bounds stay within canvas
-                minX = Math.max(0, minX - horizontalPadding);
-                minY = Math.max(0, minY - verticalPaddingScaled);
-                maxX = Math.min(canvasRef.width, maxX + horizontalPadding);
-                maxY = Math.min(canvasRef.height, maxY + verticalPaddingScaled);
+    // Total height = metrics + map height + spacing between them if both present
+    const totalContentHeight = onlyMap
+        ? mapBoxHeight
+        : metricsHeight + (mapSelected ? mapBoxHeight + groupSpacing : 0);
 
-                // Ensure minimum dimensions and aspect ratio
-                const width = Math.max(contentWidth * 0.2, maxX - minX); // At least 20% of content width
-                const height = Math.max(contentHeight * 0.2, maxY - minY); // At least 20% of content height
+    // Vertical start position for centering content
+    const vPadding = logicalHeight * VERTICAL_PADDING_FACTOR;
+    const startY = vPadding + (logicalHeight - totalContentHeight - (vPadding * 2)) / 2;
 
-                return {
-                    x: minX,
-                    y: minY,
-                    width,
-                    height
-                };
-            }
+    // Calculate metrics bounding box coordinates
+    const metricsMinX = hPadding;
+    const metricsMaxX = hPadding + metricsWidth;
+    const metricsMinY = startY;
+    const metricsMaxY = metricsMinY + metricsHeight;
+
+    // Calculate map bounding box coordinates
+    let mapMinX = 0, mapMinY = 0, mapMaxX = 0, mapMaxY = 0;
+    if (mapSelected) {
+        // Align map box based on textAlign (like drawMetrics)
+        switch(state.textAlign) {
+            case 'left':
+                mapMinX = hPadding;
+                break;
+            case 'right':
+                mapMinX = logicalWidth - hPadding - mapBoxWidth;
+                break;
+            default:
+                mapMinX = hPadding + (availableWidth - mapBoxWidth) / 2;
+        }
+        mapMaxX = mapMinX + mapBoxWidth;
+
+        mapMinY = onlyMap ? startY : metricsMaxY + groupSpacing;
+        mapMaxY = mapMinY + mapBoxHeight;
+    }
+
+    // Combine bounds for cropping
+    const minX = Math.min(metricsMinX, mapMinX || logicalWidth);
+    const minY = Math.min(metricsMinY, mapMinY || logicalHeight);
+    const maxX = Math.max(metricsMaxX, mapMaxX || 0);
+    const maxY = Math.max(metricsMaxY, mapMaxY || 0);
+
+    // Convert back to device pixels and apply extra padding (10%)
+    const padX = ((maxX - minX) * 0.1) * dpr;
+    const padY = ((maxY - minY) * 0.1) * dpr;
+
+    const cropX = Math.max(0, (minX * dpr) - padX);
+    const cropY = Math.max(0, (minY * dpr) - padY);
+    const cropWidth = Math.min(canvasRef.width - cropX, ((maxX - minX) * dpr) + (padX * 2));
+    const cropHeight = Math.min(canvasRef.height - cropY, ((maxY - minY) * dpr) + (padY * 2));
+
+    return {
+        x: cropX,
+        y: cropY,
+        width: cropWidth,
+        height: cropHeight
+    };
+}
 
             function getMetricLabel(metricKey) {
                 const labels = {
@@ -896,6 +1024,14 @@
                 generateOverlay(StravaData);
                 // Save state
                 sessionStorage.setItem('textColor', state.textColor);
+            });
+
+            // Map color wheel handler
+            mapColorWheel.value = state.mapColor;
+            mapColorWheel.addEventListener('input', (e) => {
+                state.mapColor = e.target.value;
+                generateOverlay(StravaData);
+                sessionStorage.setItem('mapColor', state.mapColor);
             });
 
             // Copy Text Button - Seems mostly correct, ensure toast
@@ -1197,8 +1333,9 @@
             const resetSettingsBtn = document.getElementById('resetSettingsBtn');
             resetSettingsBtn?.addEventListener('click', () => {
                 // Define default values
-                const defaultMetrics = ['distance', 'movingTime', 'pace'];
+                const defaultMetrics = ['distance', 'movingTime', 'pace', 'map'];
                 const defaultTextColor = '#ffffff';
+                const defaultMapColor = '#FF5722';
                 const defaultTextAlign = 'center';
                 const defaultLabelSize = 'medium';
                 const defaultValueSize = 'large';
@@ -1208,6 +1345,7 @@
                 // 1. Clear saved state from sessionStorage
                 sessionStorage.removeItem('selectedMetrics');
                 sessionStorage.removeItem('textColor');
+                sessionStorage.removeItem('mapColor');
                 sessionStorage.removeItem('textAlign');
                 sessionStorage.removeItem('labelSize');
                 sessionStorage.removeItem('valueSize');
@@ -1217,6 +1355,7 @@
                 // 2. Reset the state object
                 state.selectedMetrics = [...defaultMetrics];
                 state.textColor = defaultTextColor;
+                state.mapColor = defaultMapColor;
                 state.textAlign = defaultTextAlign;
                 state.labelSize = defaultLabelSize;
                 state.valueSize = defaultValueSize;
@@ -1225,6 +1364,7 @@
 
                 // 3. Update Controls UI
                 if (colorWheel) colorWheel.value = defaultTextColor;
+                if (mapColorWheel) mapColorWheel.value = defaultMapColor;
                 updateAlignButton();
                 updateLabelSizeButton();
                 updateValueSizeButton();

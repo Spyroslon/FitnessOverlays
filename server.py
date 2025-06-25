@@ -274,7 +274,8 @@ def after_request(response: Response) -> Response:
             "cdn.tailwindcss.com",
             "www.googletagmanager.com",
             "www.google-analytics.com",
-            "static.cloudflareinsights.com"
+            "static.cloudflareinsights.com",
+            "unpkg.com"
         ],
         'style-src': [
             "'self'",

@@ -32,12 +32,13 @@ Available metrics depend on the activity and include:
 - **Avg/Max Heart Rate**
 - **Calories**
 - **Elevation Gain**
+- **Map** (activity route as a graphic overlay)
 
 ---
 
 ## 🧩 Customization Options
 
-- Enable or disable each metric
+- Enable or disable each metric (including the map/route)
 - Adjust text color, alignment, size and font
 - Select 1 to 4 columns
 - Reset to default layout in one click
@@ -47,7 +48,7 @@ Available metrics depend on the activity and include:
 ## 📤 Export & Share
 
 - **Copy as text**
-- **Copy image** (transparent PNG)
+- **Copy image** (transparent PNG, including map if selected)
 - **Download** or long-press to save on mobile
 
 ---
