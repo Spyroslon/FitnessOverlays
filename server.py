@@ -146,19 +146,59 @@ db = SQLAlchemy(app)
 
 # Define the Athletes model
 class Athletes(db.Model):
-    athlete_id = db.Column(db.BigInteger, primary_key=True)  # Primary key
+    athlete_id = db.Column(db.BigInteger, primary_key=True)
     access_token = db.Column(db.String(100), nullable=False)
     refresh_token = db.Column(db.String(100), nullable=False)
-    expires_at = db.Column(db.BigInteger, nullable=False)  # Epoch timestamp
-    athlete_username = db.Column(db.String(100))  # Optional
-    athlete_first_name = db.Column(db.String(100))  # Optional
-    athlete_last_name = db.Column(db.String(100))  # Optional
-    athlete_profile = db.Column(db.String(255))  # Optional - URL to profile picture
+    expires_at = db.Column(db.BigInteger, nullable=False)
+
+    athlete_username = db.Column(db.String(100))
+    athlete_first_name = db.Column(db.String(100))
+    athlete_last_name = db.Column(db.String(100))
+    athlete_profile = db.Column(db.String(255))
+    profile_medium = db.Column(db.String(255))
+
     first_authentication = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     last_authentication = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
+    sex = db.Column(db.String(10))
+    city = db.Column(db.String(100))
+    state = db.Column(db.String(100))
+    country = db.Column(db.String(100))
+
+    follower_count = db.Column(db.Integer)
+    friend_count = db.Column(db.Integer)
+
+    date_preference = db.Column(db.String(20))
+    measurement_preference = db.Column(db.String(20))
+
+    weight = db.Column(db.Float)
+    premium = db.Column(db.Boolean)
+    athlete_type = db.Column(db.Integer)
+
     def __repr__(self):
         return f'<Athletes {self.athlete_id}>'
+
+    def update_from_dict(self, data: dict):
+        field_map = {
+            'athlete_username': 'username',
+            'athlete_first_name': 'firstname',
+            'athlete_last_name': 'lastname',
+            'athlete_profile': 'profile',
+            'profile_medium': 'profile_medium',
+            'sex': 'sex',
+            'city': 'city',
+            'state': 'state',
+            'country': 'country',
+            'follower_count': 'follower_count',
+            'friend_count': 'friend_count',
+            'date_preference': 'date_preference',
+            'measurement_preference': 'measurement_preference',
+            'weight': 'weight',
+            'premium': 'premium',
+            'athlete_type': 'athlete_type',
+        }
+        for model_field, data_key in field_map.items():
+            setattr(self, model_field, data.get(data_key))
 
     def update_from_token(self, token_data, athlete_data=None):
         """Update athlete data from token response and athlete info"""
@@ -166,12 +206,11 @@ class Athletes(db.Model):
         self.refresh_token = token_data['refresh_token']
         self.expires_at = token_data['expires_at']
         self.last_authentication = datetime.now(timezone.utc)
-        
         if athlete_data:
-            self.athlete_username = athlete_data.get('username')
-            self.athlete_first_name = athlete_data.get('firstname')
-            self.athlete_last_name = athlete_data.get('lastname')
-            self.athlete_profile = athlete_data.get('profile')
+            self.update_from_dict(athlete_data)
+
+    def update_from_athlete_details(self, details: dict):
+        self.update_from_dict(details)
 
 # Define the Activities model
 class Activities(db.Model):
@@ -256,6 +295,22 @@ class ActivityLists(db.Model):
         if time_since_sync > self.SYNC_COOLDOWN:
             return 0
         return int((self.SYNC_COOLDOWN - time_since_sync).total_seconds())
+
+def fetch_athlete_details(access_token: str) -> dict | None:
+    """Fetch athlete details from Strava API."""
+    try:
+        response = requests.get(
+            "https://www.strava.com/api/v3/athlete",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=30
+        )
+        if response.ok:
+            logger.info(f'Response >>> {response.json()}')
+            return response.json()
+        logger.error(f"Failed to fetch athlete details: {response.status_code}")
+    except Exception as e:
+        logger.error(f"Error fetching athlete details: {e}")
+    return None
 
 # Create database tables
 with app.app_context():
@@ -518,6 +573,10 @@ def refresh_access_token(refresh_token):
         # Update DB
         try:
             athlete.update_from_token(token_data)
+            # Fetch and update extended athlete details after token refresh
+            athlete_details = fetch_athlete_details(token_data['access_token'])
+            if athlete_details:
+                athlete.update_from_athlete_details(athlete_details)
             db.session.commit()
             logger.info(f'Token refreshed for athlete {athlete_id}')
         except Exception as e:
@@ -666,7 +725,7 @@ def login():
         oauth = OAuth2Session(
             CLIENT_ID,
             redirect_uri=callback_url,
-            scope=["activity:read_all"]
+            scope=["read,activity:read_all,profile:read_all"]
         )
         authorization_url, state = oauth.authorization_url(AUTH_BASE_URL)
         session['oauth_state'] = state
@@ -724,8 +783,14 @@ def callback():
             else:
                 logger.info(f'Updating existing athlete record for ID: {athlete_id}')
             
-            # Update athlete data with new tokens and info
+            # Update athlete data with new tokens and info (all fields)
             athlete.update_from_token(token, athlete_data)
+
+            # Fetch and update extended athlete details
+            athlete_details = fetch_athlete_details(token['access_token'])
+            if athlete_details:
+                athlete.update_from_athlete_details(athlete_details)
+
             db.session.commit()
             logger.info(f'Successfully updated athlete data in database for ID: {athlete_id}')
             
@@ -741,6 +806,8 @@ def callback():
             session['access_token'] = token['access_token']
             session['refresh_token'] = token['refresh_token']
             session['expires_at'] = token['expires_at']
+            session['date_preference'] = athlete_data.get('date_preference')
+            session['measurement_preference'] = athlete_data.get('measurement_preference')
             
             # Generate new CSRF token for the session
             session['csrf_token'] = generate_csrf_token()
