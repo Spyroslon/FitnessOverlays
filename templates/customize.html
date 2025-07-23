@@ -85,7 +85,7 @@
             </div>
 
             <div class="w-full mx-auto py-3">
-                <div class="bg-white rounded-xl shadow-lg p-4 max-w-md mx-auto flex items-center justify-center">
+                <div class="bg-white rounded-lg shadow-lg p-2 max-w-md mx-auto flex items-center justify-center">
                     <div class="w-full flex items-center justify-center relative">
                         <canvas id="overlayCanvas" class="block dark-checkerboard rounded-md shadow-md mx-auto w-full h-full"></canvas>
                         <div id="loadingOverlay" class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-md">
@@ -177,8 +177,13 @@
                         <button class="overlay-option p-3 rounded-lg text-white bg-fitness-gray transition-colors text-sm h-12" data-metric="elevationGain">Elevation</button>
                     </div>
 
+                    <!-- Divider -->
+                    <div class="relative flex items-center">
+                        <div class="flex-grow border-t border-gray-300"></div>
+                    </div>
+
                     <!-- Map color and button row -->
-                    <div class="flex flex-row items-center justify-center gap-4 mt-4">
+                    <div class="flex flex-row items-center justify-center gap-2">
                         <input type="color" id="mapColorWheel" value="#FF5722"
                             class="appearance-none bg-transparent cursor-pointer p-0 w-12 h-12 rounded-lg transition-transform hover:scale-105 focus:scale-105"
                             title="Choose map color">
@@ -260,9 +265,9 @@
     <!-- Demo mode data (processed server-side) -->
     <script type="text/javascript">
         {% if demo_mode %}
-        window.demoActivityData = {{ activity | tojson | safe }};
+            window.demoActivityData = {{ activity | tojson | safe }};
         {% else %}
-        window.demoActivityData = null;
+            window.demoActivityData = null;
         {% endif %}
     </script>
 
