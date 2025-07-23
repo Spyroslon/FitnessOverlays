@@ -305,7 +305,6 @@ def fetch_athlete_details(access_token: str) -> dict | None:
             timeout=30
         )
         if response.ok:
-            logger.info(f'Response >>> {response.json()}')
             return response.json()
         logger.error(f"Failed to fetch athlete details: {response.status_code}")
     except Exception as e:
