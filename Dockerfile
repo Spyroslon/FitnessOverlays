@@ -37,7 +37,7 @@
     COPY . .
     
     # 10. Build Tailwind CSS for production
-    RUN npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify
+    RUN npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/tailwind.css --minify
     
     # 11. Expose the port the app runs on (Gunicorn default is 8000)
     EXPOSE 8000

@@ -1,15 +1,35 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer utilities {
-    .bg-fitness-radial {
-      background-image: radial-gradient(100% 50% at 50% 0%, rgba(0, 163, 255, 0.3) 0%, rgba(0, 163, 255, 0.15) 40%, rgba(0, 163, 255, 0) 100%);
+@plugin "flowbite/plugin";
+
+@theme {
+    --color-fitness-gray: oklch(44.6% 0.03 256.802); /* gray-600 */
+    --color-fitness-dark-gray: oklch(13% 0.028 261.692); /* gray-950 */
+    --color-fitness-light-gray: oklch(87.2% 0.01 258.338); /* gray-300 */
+    --color-fitness-green: oklch(62.7% 0.194 149.214); /* green-600 */
+    --color-fitness-dark-green: oklch(44.8% 0.119 151.328); /* green-800 */
+    --color-fitness-light-green: oklch(87.1% 0.15 154.449); /* green-300 */
+    --color-fitness-orange: oklch(64.6% 0.222 41.116); /* orange-600 */
+
+    --font-sans: 'Roboto', sans-serif;
+    --font-poppins: 'Poppins', sans-serif;
+    --font-lato: 'Lato', sans-serif;
+    --font-oswald: 'Oswald', sans-serif;
+    --font-lora: 'Lora', serif;
+    --font-special-elite: 'Special Elite', cursive;
+
+    --animation-fade-in: fadeIn 0.5s ease-out forwards;
+    --animation-pulse-opacity: pulseOpacity 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@layer base {
+    @keyframes fadeIn {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
     }
-    .bg-grid-pattern {
-      background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-    }
-    .bg-grid-size {
-      background-size: 16px 16px;
+
+    @keyframes pulseOpacity {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
     }
 }

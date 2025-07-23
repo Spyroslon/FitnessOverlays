@@ -81,39 +81,13 @@ docker rm fitnessoverlays-web
 
 ```bash
 # --- Tailwind Setup & Build ---
-npm install -D tailwindcss
-
-# Initialize Tailwind (creates tailwind.config.js)
-npx tailwindcss init
-
-# Configure './tailwind.config.js' - *IMPORTANT*
-# You MUST tell Tailwind where your template files are. Example:
-# module.exports = {
-#   content: [
-#     "./static/html/**/*.html",
-#     "./static/js/**/*.js",
-#     // Add other paths if needed
-#   ],
-#   theme: {
-#     extend: {},
-#   },
-#   plugins: [],
-# }
-
-# Create your main input CSS file (e.g., ./static/css/input.css)
-# Add the Tailwind directives:
-# @tailwind base;
-# @tailwind components;
-# @tailwind utilities;
-
-# Build the output CSS file (run this after changes to templates/config)
-npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css
+https://tailwindcss.com/docs/installation/tailwind-cli
 
 # Build and watch for changes during development
-npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --watch
+npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/tailwind.css --watch
 
 # For production builds (minified)
-npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify
+npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/tailwind.css --minify
 ```
 
 ## 5. Strava Webhook Management
